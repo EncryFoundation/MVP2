@@ -16,9 +16,8 @@ class Networker extends CommonActor {
   }
 
   def bornKids(): Unit = {
-    //context.actorOf(Props[UDPActor].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "udp")
-    context.actorOf(Props[Sender], "sender")
-    context.actorOf(Props[Receiver], "receiver")
+    context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
 
