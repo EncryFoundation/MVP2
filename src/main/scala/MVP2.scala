@@ -1,8 +1,6 @@
 import Actors.Starter
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
-import com.typesafe.scalalogging.StrictLogging
-import scala.concurrent.ExecutionContextExecutor
 
 object MVP2 extends App {
 
