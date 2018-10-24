@@ -1,8 +1,6 @@
 package Actors
 
-import akka.actor.Actor
-
-class Networker extends Actor {
+class Networker extends CommonActor {
 
   import Messages.InfoMessage
 
@@ -11,9 +9,8 @@ class Networker extends Actor {
     bornKids()
   }
 
-  override def receive: Receive = {
+  override def specialBehavior: Receive = {
     case message: InfoMessage => println(message.info)
-    case smth: Any => println(s"Got smth strange: $smth.")
   }
 
   def bornKids(): Unit = {
