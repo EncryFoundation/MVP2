@@ -6,6 +6,12 @@ scalaVersion := "2.12.6"
 val akkaVersion = "2.5.13"
 val akkaHttpVersion = "10.0.9"
 
+val loggingDependencies = Seq(
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.+",
+  "ch.qos.logback" % "logback-classic" % "1.+",
+  "ch.qos.logback" % "logback-core" % "1.+"
+)
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
@@ -22,7 +28,7 @@ libraryDependencies ++= Seq(
   "org.influxdb" % "influxdb-java" % "2.10",
   "org.apache.commons" % "commons-io" % "1.3.2",
   "commons-net" % "commons-net" % "3.6"
-)
+) ++ loggingDependencies
 
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
