@@ -1,11 +1,13 @@
 package Actors
 
 import java.net.InetSocketAddress
-import Messages.{Ping, Pong, UdpSocket}
+
+import Messages.{KnownPeers, Ping, Pong, UdpSocket}
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -30,5 +32,6 @@ class Sender extends Actor with StrictLogging {
     case Pong =>
       connection ! Udp.Send(ByteString("Pong"), remote)
       logger.info(s"Send pong to remote: $connection")
+    case KnownPeers(peers) =>
   }
 }
