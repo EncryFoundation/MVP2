@@ -1,11 +1,12 @@
 package encry.Actors
 
 import akka.actor.{Actor, Props}
+import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Starter extends Actor {
+class Starter extends Actor with StrictLogging {
 
   import encry.Messages.InfoMessage
 
@@ -13,12 +14,12 @@ class Starter extends Actor {
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))
 
   override def preStart(): Unit = {
-    println("Starting the Starter!")
+    logger.info("Starting the Starter!")
     bornKids()
   }
 
   override def receive: Receive = {
-    case message: InfoMessage => println(message.info)
+    case message: InfoMessage => logger.info(message.info)
   }
 
   def bornKids(): Unit = {

@@ -1,8 +1,9 @@
 package encry.Actors
 
 import akka.actor.{Actor, DeadLetter, UnhandledMessage}
+import com.typesafe.scalalogging.StrictLogging
 
-class Zombie extends Actor {
+class Zombie extends Actor with StrictLogging {
 
   override def preStart(): Unit = {
     context.system.eventStream.subscribe(self, classOf[DeadLetter])
@@ -10,8 +11,8 @@ class Zombie extends Actor {
   }
 
   override def receive: Receive = {
-    case deadMessage: DeadLetter => println(s"Dead letter: ${deadMessage.toString}.")
-    case unhandled: UnhandledMessage => println(s"Unhandled message ${unhandled.toString}")
+    case deadMessage: DeadLetter => logger.info(s"Dead letter: ${deadMessage.toString}.")
+    case unhandled: UnhandledMessage => logger.info(s"Unhandled message ${unhandled.toString}")
   }
 
 }

@@ -1,11 +1,11 @@
-package Actors
+package encry.Actors
 
 import java.net.InetSocketAddress
-import Messages.{Ping, Pong, UdpSocket}
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
+import encry.Messages.{Ping, Pong, UdpSocket}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
