@@ -9,9 +9,9 @@ class InfluxActor extends Actor with StrictLogging {
   val influxPort: Int = 0
 
   val influxDB: InfluxDB = InfluxDBFactory.connect(
-    "",
-    "",
-    ""
+    "http://99.99.99.99",
+    "admin",
+    "admin"
   )
 
   override def preStart(): Unit = {

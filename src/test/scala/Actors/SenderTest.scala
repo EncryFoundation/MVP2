@@ -1,7 +1,7 @@
 package Actors
 
 import java.net.InetSocketAddress
-import Actors.Sender.{Ping, Pong, UdpSocket}
+import Messages.{Ping, Pong, UdpSocket}
 import akka.actor.{ActorSystem, Props}
 import akka.io.Udp
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
