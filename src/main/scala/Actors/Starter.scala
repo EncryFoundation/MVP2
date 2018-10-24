@@ -15,8 +15,6 @@ class Starter extends Actor {
 
   val settings: Settings = Settings.settings
 
-  println(settings.otherNodes.toString())
-
   override def preStart(): Unit = {
     println("Starting the Starter!")
     bornKids()
