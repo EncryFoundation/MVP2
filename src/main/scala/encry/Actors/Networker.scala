@@ -1,8 +1,8 @@
-package Actors
+package encry.Actors
 
 class Networker extends CommonActor {
 
-  import Messages.InfoMessage
+  import encry.Messages.InfoMessage
 
   override def preStart(): Unit = {
     println("Starting the Networker!")

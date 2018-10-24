@@ -1,4 +1,4 @@
-package Actors
+package encry.Actors
 
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging

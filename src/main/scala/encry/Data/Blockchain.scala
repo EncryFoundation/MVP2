@@ -1,4 +1,4 @@
-package Data
+package encry.Data
 
 
 sealed trait Chain {

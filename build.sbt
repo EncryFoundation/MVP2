@@ -27,7 +27,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % logbackVersion,
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+  "io.circe" %% "circe-generic" % "0.9.3"
 )
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",

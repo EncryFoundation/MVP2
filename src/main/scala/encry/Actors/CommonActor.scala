@@ -1,8 +1,9 @@
-package Actors
+package encry.Actors
 
 import akka.actor.Actor
+import com.typesafe.scalalogging.StrictLogging
 
-trait CommonActor extends Actor {
+trait CommonActor extends Actor with StrictLogging {
 
   def specialBehavior: Receive
 
