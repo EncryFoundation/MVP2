@@ -1,9 +1,9 @@
 package Messages
 
 import java.net.InetSocketAddress
-
 import akka.actor.ActorRef
 import akka.util.ByteString
+
 
 sealed trait Message
 
@@ -21,10 +21,11 @@ case class Ping(remote: InetSocketAddress) extends NetworkMessage
 
 case class Pong(remote: InetSocketAddress) extends NetworkMessage
 
-case class KnownPeers(peers: List[InetSocketAddress]) extends NetworkMessage
+case class KnownPeers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
 
 case object BroadcastPeers extends NetworkMessage
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
+

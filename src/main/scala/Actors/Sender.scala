@@ -7,15 +7,16 @@ import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import akka.serialization._
 
 class Sender extends Actor with StrictLogging {
 
+  import context.system
+
   override def preStart(): Unit = {
     logger.info("Start sender")
-    context.system.scheduler.schedule(1.seconds, 1.seconds)(self ! Ping)
   }
 
   override def receive: Receive = {
@@ -30,6 +31,10 @@ class Sender extends Actor with StrictLogging {
     case Pong(remote: InetSocketAddress) =>
       connection ! Udp.Send(ByteString("Pong"), remote)
       logger.info(s"Send pong to remote: $connection")
-    case KnownPeers(peers) =>
+    case KnownPeers(peers, remote) =>
+      logger.info(s"Sending: $peers")
+      val serialization = SerializationExtension(system)
+      val serializer = serialization.findSerializerFor(peers)
+      connection ! Udp.Send(ByteString((2:Byte) +: serializer.toBinary(KnownPeers(peers, remote))), remote)
   }
 }

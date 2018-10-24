@@ -1,3 +1,5 @@
+package MVP
+
 import Actors.Starter
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer

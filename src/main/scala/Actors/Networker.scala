@@ -2,25 +2,35 @@ package Actors
 
 import java.net.InetSocketAddress
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import Data.Peer
 import Messages.{BroadcastPeers, KnownPeers, MessageFromRemote}
 import akka.actor.Props
+import com.typesafe.scalalogging.StrictLogging
 
-class Networker extends CommonActor {
+class Networker extends CommonActor with StrictLogging {
 
   import Messages.InfoMessage
 
-  val testPeer: Peer = Peer(
-    new InetSocketAddress("localhost", 5678),
+  val testPeer1: Peer = Peer(
+    new InetSocketAddress("127.0.0.1", 5678),
+    0L
+  )
+
+  val testPeer2: Peer = Peer(
+    new InetSocketAddress("127.0.0.1", 999),
     0L
   )
 
   var knownPeers: List[Peer] = List(
-    testPeer
+    testPeer1,
+    testPeer2
   )
 
   override def preStart(): Unit = {
     println("Starting the Networker!")
+    context.system.scheduler.schedule(1.seconds, 1.seconds)(self ! BroadcastPeers)
     bornKids()
   }
 
@@ -38,13 +48,18 @@ class Networker extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       addOrUpdatePeer(msgFromRemote.remote)
       msgFromRemote.message match {
-        case KnownPeers(peers) => peers.foreach(addOrUpdatePeer)
+        case KnownPeers(peers, remote) =>
+          logger.info(s"Get known peers: $peers")
+          peers.foreach(addOrUpdatePeer)
         case _ => //Another messages
       }
     case BroadcastPeers =>
-      knownPeers.foreach(peer =>
+      knownPeers.take(1).foreach(peer =>
         context.actorSelection("/user/starter/networker/sender") !
-          KnownPeers(knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress))
+          KnownPeers(
+            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
+            peer.remoteAddress
+          )
       )
   }
 
