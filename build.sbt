@@ -22,20 +22,13 @@ libraryDependencies ++= Seq(
   "de.heikoseeberger" %% "akka-http-circe" % "1.20.1",
   "org.influxdb" % "influxdb-java" % "2.10",
   "org.apache.commons" % "commons-io" % "1.3.2",
-  "commons-net" % "commons-net" % "3.6"
-)
-
-libraryDependencies ++= Seq(
+  "commons-net" % "commons-net" % "3.6",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
   "ch.qos.logback" % "logback-classic" % logbackVersion,
-  "ch.qos.logback" % "logback-core" % logbackVersion
+  "ch.qos.logback" % "logback-core" % logbackVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test
 )
-
-libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.17" % Test,
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
-)
-
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "SonaType" at "https://oss.sonatype.org/content/groups/public",
