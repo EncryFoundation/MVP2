@@ -13,16 +13,17 @@ class SenderTest extends TestKit(ActorSystem("SenderTestSystem")) with ImplicitS
 
   val probe = TestProbe()
   val sender = system.actorOf(Props[Sender], "Sender")
+  val addr: InetSocketAddress = new InetSocketAddress("localhost", 5678)
 
   it should "send ping message to udp.socket when receive case object Ping" in {
     sender ! UdpSocket(probe.ref)
-    sender ! Ping
-    probe.expectMsg(Udp.Send(ByteString("Ping"), new InetSocketAddress("localhost", 1234)))
+    sender ! Ping(addr)
+    probe.expectMsg(Udp.Send(ByteString("Ping"), addr))
   }
 
   it should "send pong message to udp.socket when receive case object Pong" in {
     sender ! UdpSocket(probe.ref)
-    sender ! Pong
-    probe.expectMsg(Udp.Send(ByteString("Pong"), new InetSocketAddress("localhost", 1234)))
+    sender ! Pong(addr)
+    probe.expectMsg(Udp.Send(ByteString("Pong"), addr))
   }
 }
