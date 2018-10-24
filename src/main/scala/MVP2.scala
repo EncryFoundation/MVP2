@@ -1,5 +1,3 @@
-package MVP2
-
 import Actors.{Receiver, Sender, TestActor}
 import Actors.TestActor.Message
 import akka.actor.{ActorSystem, Props}
