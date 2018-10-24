@@ -6,6 +6,14 @@ scalaVersion := "2.12.6"
 val akkaVersion = "2.5.13"
 val akkaHttpVersion = "10.0.9"
 
+val testingDependencies = Seq(
+  "com.typesafe.akka" %% "akka-testkit" % "2.4.+" % "test",
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
+  "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "org.mockito" % "mockito-core" % "2.19.1" % "test"
+)
+
 val loggingDependencies = Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.+",
   "ch.qos.logback" % "logback-classic" % "1.+",
@@ -28,7 +36,7 @@ libraryDependencies ++= Seq(
   "org.influxdb" % "influxdb-java" % "2.10",
   "org.apache.commons" % "commons-io" % "1.3.2",
   "commons-net" % "commons-net" % "3.6"
-) ++ loggingDependencies
+) ++ loggingDependencies ++ testingDependencies
 
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
