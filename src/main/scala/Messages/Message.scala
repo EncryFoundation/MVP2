@@ -4,8 +4,6 @@ import akka.util.ByteString
 
 sealed trait Message
 
-case object Start extends Message
-
 case object Get extends Message
 
 final case class InfoMessage(info: String) extends Message
