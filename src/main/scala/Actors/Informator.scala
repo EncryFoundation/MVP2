@@ -1,9 +1,8 @@
 package Actors
 
 import Messages.Get
-import akka.actor.Actor
 
-class Informator extends Actor {
+class Informator extends CommonActor {
 
   import Messages.CurrentBlockchainInfo
 
@@ -13,10 +12,9 @@ class Informator extends Actor {
     println("Starting the Informator!")
   }
 
-  override def receive: Receive = {
+  override def specialBehavior: Receive = {
     case Get => sender ! actualInfo
     case currentBlockchainInfo: CurrentBlockchainInfo =>
-    case smth: Any => println(s"Got smth strange: $smth.")
   }
 
 }
