@@ -2,8 +2,8 @@ package encry.Actors
 
 import akka.actor.{Actor, Props}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Starter extends Actor {
 

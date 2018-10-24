@@ -1,5 +1,7 @@
 package encry.Actors
 
+import akka.actor.Props
+
 class Networker extends CommonActor {
 
   import encry.Messages.InfoMessage
@@ -14,9 +16,8 @@ class Networker extends CommonActor {
   }
 
   def bornKids(): Unit = {
-    //context.actorOf(Props[UDPActor].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "udp")
-    //context.actorOf(Props[UdpReceiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
-    //context.actorOf(Props[UdpSender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
 
