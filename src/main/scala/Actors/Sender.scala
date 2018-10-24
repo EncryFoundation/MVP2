@@ -15,7 +15,6 @@ class Sender extends Actor with StrictLogging {
 
   override def preStart(): Unit = {
     logger.info("Start sender")
-    println("Start Sender!")
     context.system.scheduler.schedule(1.seconds, 1.seconds)(self ! Ping)
   }
 
@@ -27,9 +26,9 @@ class Sender extends Actor with StrictLogging {
   def sendingCycle(connection: ActorRef): Receive = {
     case Ping =>
       connection ! Udp.Send(ByteString("Ping"), remote)
-      println(s"Send ping to: $connection")
+      logger.info(s"Send ping to: $connection")
     case Pong =>
       connection ! Udp.Send(ByteString("Pong"), remote)
-      println(s"Send pong to remote: $connection")
+      logger.info(s"Send pong to remote: $connection")
   }
 }

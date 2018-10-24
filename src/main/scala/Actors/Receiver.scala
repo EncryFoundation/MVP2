@@ -13,7 +13,6 @@ class Receiver extends Actor with StrictLogging {
 
   override def preStart(): Unit = {
     logger.info("Start receiver")
-    println("Start Receiver!")
     IO(Udp) ! Udp.Bind(self, new InetSocketAddress("localhost", 1234))
   }
 
@@ -30,10 +29,10 @@ class Receiver extends Actor with StrictLogging {
       logger.info(s"Received ${data.utf8String} from $remote")
       data.utf8String match {
         case "Ping" =>
-          println(s"Get ping from: $remote send Pong")
+          logger.info(s"Get ping from: $remote send Pong")
           context.actorSelection("/user/starter/networker/sender") ! Pong
         case "Pong" =>
-          println(s"Get pong from: $remote send Pong")
+          logger.info(s"Get pong from: $remote send Pong")
       }
     case Udp.Unbind  =>
       socket ! Udp.Unbind
