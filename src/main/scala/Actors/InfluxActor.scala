@@ -1,6 +1,6 @@
 package Actors
 
-import Actors.InfluxActor.FirstMessage
+import Actors.InfluxActor.TestMessage
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import org.influxdb.{InfluxDB, InfluxDBFactory}
@@ -15,12 +15,13 @@ class InfluxActor extends Actor with StrictLogging {
     ""
   )
 
-  override def preStart(): Unit = influxDB.write(influxPort, s"""startMVP2 value=${}""")
+  override def preStart(): Unit = {
+    logger.info("Start Influx actor")
+    influxDB.write(influxPort, s"""startMvp value=1""")
+  }
 
   override def receive: Receive = {
-    case FirstMessage(message) =>
-      logger.info(s"Got first message: $message")
-      influxDB.write(influxPort, s"""firstMessage value=${}""")
+    case TestMessage => logger.info("Got test message")
     case _ =>
   }
 
@@ -28,6 +29,6 @@ class InfluxActor extends Actor with StrictLogging {
 
 object InfluxActor {
 
-  case class FirstMessage(message: String)
+  case object TestMessage
 
 }
