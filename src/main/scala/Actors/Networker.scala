@@ -4,14 +4,22 @@ import java.net.InetSocketAddress
 
 import Data.BlockchainCompareStatus.Unknown
 import Data.Peer
-import Messages.{KnownPeers, MessageFromRemote}
+import Messages.{BroadcastPeers, KnownPeers, MessageFromRemote}
 import akka.actor.Props
 
 class Networker extends CommonActor {
 
   import Messages.InfoMessage
 
-  var knownPeers: List[Peer] = List.empty
+  val testPeer: Peer = Peer(
+    new InetSocketAddress("localhost", 5678),
+    Unknown,
+    0L
+  )
+
+  var knownPeers: List[Peer] = List(
+    testPeer
+  )
 
   override def preStart(): Unit = {
     println("Starting the Networker!")
@@ -35,6 +43,11 @@ class Networker extends CommonActor {
         case KnownPeers(peers) => peers.foreach(addOrUpdatePeer)
         case _ => //Another messages
       }
+    case BroadcastPeers =>
+      knownPeers.foreach(peer =>
+        context.actorSelection("/user/starter/networker/sender") !
+          KnownPeers(knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress))
+      )
   }
 
   def bornKids(): Unit = {
