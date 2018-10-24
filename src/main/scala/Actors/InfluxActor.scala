@@ -15,7 +15,7 @@ class InfluxActor extends Actor with StrictLogging {
   )
 
   override def preStart(): Unit = {
-    println("Starting Influx actor")
+    logger.info("Starting Influx actor")
     influxDB.write(influxPort, s"""startMvp value=12""")
   }
 

@@ -11,7 +11,7 @@ class AppTest extends TestKit(ActorSystem("TestAkkaSystem")) with WordSpecLike w
 
   val StarterActorRef: ActorRef = system.actorOf(Props(classOf[Starter]), "starter")
 
-  "An starter" should {
+  "App" should {
     "works" in {
       StarterActorRef ! 1
       expectNoMessage
