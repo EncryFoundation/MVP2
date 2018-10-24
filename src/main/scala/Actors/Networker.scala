@@ -2,7 +2,6 @@ package Actors
 
 import java.net.InetSocketAddress
 
-import Data.BlockchainCompareStatus.Unknown
 import Data.Peer
 import Messages.{BroadcastPeers, KnownPeers, MessageFromRemote}
 import akka.actor.Props
@@ -13,7 +12,6 @@ class Networker extends CommonActor {
 
   val testPeer: Peer = Peer(
     new InetSocketAddress("localhost", 5678),
-    Unknown,
     0L
   )
 
@@ -29,10 +27,10 @@ class Networker extends CommonActor {
   def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit = {
     if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
       knownPeers.par.find(_.remoteAddress == peerAddr).foreach(prevPeer =>
-          knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastPollingTime = System.currentTimeMillis())
+          knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
       )
     } else
-      knownPeers = knownPeers :+ Peer(peerAddr, Unknown, System.currentTimeMillis())
+      knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
   }
 
   override def specialBehavior: Receive = {
