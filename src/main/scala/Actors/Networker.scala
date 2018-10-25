@@ -1,5 +1,7 @@
 package Actors
 
+import akka.actor.Props
+
 class Networker extends CommonActor {
 
   import Messages.InfoMessage
@@ -14,6 +16,8 @@ class Networker extends CommonActor {
   }
 
   def bornKids(): Unit = {
+    context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
 
