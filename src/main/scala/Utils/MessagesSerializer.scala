@@ -1,6 +1,6 @@
 package Utils
 
-import Messages.{KnownPeers, NetworkMessage, Ping, Pong}
+import Messages._
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.util.ByteString
@@ -14,6 +14,8 @@ object MessagesSerializer {
       case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
       case knownPeers: KnownPeers =>
         KnownPeers.typeId +: serialization.findSerializerFor(KnownPeers).toBinary(knownPeers)
+      case blocks: Blocks =>
+        Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
     })
   }
 
@@ -28,6 +30,9 @@ object MessagesSerializer {
       }
       case KnownPeers.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.tail)).map{
         case knownPeers: KnownPeers => knownPeers
+      }
+      case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.tail)).map{
+        case blocks: Blocks => blocks
       }
     }
   }

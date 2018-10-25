@@ -34,6 +34,13 @@ object KnownPeers {
   val typeId: Byte = 3: Byte
 }
 
+case class Blocks(blocks: Seq[Blocks]) extends NetworkMessage
+
+object Blocks {
+
+  val typeId: Byte = 4: Byte
+}
+
 case object BroadcastPeers extends Message
 
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
