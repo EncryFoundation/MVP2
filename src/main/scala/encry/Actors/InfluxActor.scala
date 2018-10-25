@@ -22,5 +22,4 @@ class InfluxActor extends Actor with StrictLogging {
   override def receive: Receive = {
     case _ =>
   }
-
 }
