@@ -1,7 +1,7 @@
-package encry.Actors
+package mvp2.Actors
 
 import akka.actor.{Actor, Props}
-import encry.Utils.Settings
+import mvp2.Utils.Settings
 import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class Starter extends Actor with StrictLogging {
 
-  import encry.Messages.InfoMessage
+  import mvp2.Messages.InfoMessage
 
   context.system.scheduler
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))

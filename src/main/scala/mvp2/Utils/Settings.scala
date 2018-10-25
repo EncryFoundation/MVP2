@@ -1,16 +1,17 @@
-package encry.Utils
+package mvp2.Utils
 
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 case class Settings(port: Int,
-                    httpHost: String,
-                    httpPort: Int,
                     otherNodes: List[Node],
-                    heartbeat: Int)
+                    heartbeat: Int,
+                    apiSettings: ApiSettings)
 
 case class Node(host: String, port: Int)
+
+case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 
 object Settings {
 

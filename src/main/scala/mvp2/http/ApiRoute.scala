@@ -1,7 +1,7 @@
-package encry.http
+package mvp2.http
 
 import akka.http.scaladsl.server.Directives.complete
-import encry.Messages.{CurrentBlockchainInfo, Get}
+import mvp2.Messages.{CurrentBlockchainInfo, Get}
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
@@ -13,12 +13,13 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import encry.Utils.EncodingUtils._
+import mvp2.Utils.EncodingUtils._
+import mvp2.Utils.Settings
 
 case class ApiRoute(implicit val context: ActorRefFactory) {
 
   implicit val ec: ExecutionContextExecutor = context.dispatcher
-  implicit val timeout: Timeout = Timeout(10.seconds)
+  implicit val timeout: Timeout = Timeout(Settings.settings.apiSettings.timeout.second)
 
   def apiInfoVal: Future[CurrentBlockchainInfo] =
     (context.actorSelection("/user/starter/informator") ? Get).mapTo[CurrentBlockchainInfo]

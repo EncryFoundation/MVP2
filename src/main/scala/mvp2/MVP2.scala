@@ -1,8 +1,8 @@
-package encry
+package mvp2
 
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
-import encry.Actors.Starter
+import mvp2.Actors.Starter
 
 object MVP2 extends App {
 
