@@ -11,4 +11,8 @@ trait CommonActor extends Actor {
   }
 
   override def receive: Receive = specialBehavior orElse smth
+
+  override def postStop(): Unit = {
+    println(s"Actor $self is stopped.")
+  }
 }
