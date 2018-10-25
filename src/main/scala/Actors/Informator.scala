@@ -1,8 +1,8 @@
-package encry.Actors
+package Actors
 
-import encry.Messages.Get
-import encry.http.HttpServer
-import encry.Messages.CurrentBlockchainInfo
+import Messages.Get
+import http.HttpServer
+import Messages.CurrentBlockchainInfo
 
 class Informator extends CommonActor {
 

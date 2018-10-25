@@ -1,4 +1,4 @@
-package encry.Data
+package Data
 
 import akka.util.ByteString
 

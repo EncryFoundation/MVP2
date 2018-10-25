@@ -1,10 +1,10 @@
-package encry.Actors
+package Actors
 
 import akka.actor.Props
 
 class Networker extends CommonActor {
 
-  import encry.Messages.InfoMessage
+  import Messages.InfoMessage
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")

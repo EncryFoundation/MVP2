@@ -2,12 +2,12 @@ package Actors
 
 import java.net.InetSocketAddress
 
-import encry.Messages.{Ping, Pong, UdpSocket}
+import Messages.{Ping, Pong, UdpSocket}
 import akka.actor.{ActorSystem, Props}
 import akka.io.Udp
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.ByteString
-import encry.Actors.Sender
+import Actors.Sender
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 class SenderTest extends TestKit(ActorSystem("SenderTestSystem")) with ImplicitSender

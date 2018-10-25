@@ -1,4 +1,4 @@
-package encry.Utils
+package Utils
 
 import akka.util.ByteString
 import scala.util.Try

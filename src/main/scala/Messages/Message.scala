@@ -1,4 +1,4 @@
-package encry.Messages
+package Messages
 
 import akka.actor.ActorRef
 import akka.util.ByteString

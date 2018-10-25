@@ -1,11 +1,11 @@
-package encry.Actors
+package Actors
 
 import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import encry.Messages.{Pong, UdpSocket}
+import Messages.{Pong, UdpSocket}
 
 class Receiver extends Actor with StrictLogging {
 

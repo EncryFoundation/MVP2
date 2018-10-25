@@ -1,4 +1,4 @@
-package encry.Actors
+package Actors
 
 import akka.actor.{Actor, DeadLetter, UnhandledMessage}
 import com.typesafe.scalalogging.StrictLogging
