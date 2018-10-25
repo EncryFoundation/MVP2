@@ -1,7 +1,6 @@
 package encry.Actors
 
 import java.net.InetSocketAddress
-
 import encry.Messages.{Ping, Pong, UdpSocket}
 import akka.actor.{ActorSystem, Props}
 import akka.io.Udp
