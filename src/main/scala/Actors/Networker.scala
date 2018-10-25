@@ -62,7 +62,7 @@ class Networker(settings: Settings) extends CommonActor with StrictLogging {
 
   def bornKids(): Unit = {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
-    context.actorOf(Props(new Receiver(settings)).withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
+    context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
 

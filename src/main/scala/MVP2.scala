@@ -1,4 +1,4 @@
-package MVP
+package encry
 
 import Actors.Starter
 import akka.actor.{ActorSystem, Props}
