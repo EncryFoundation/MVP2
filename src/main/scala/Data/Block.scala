@@ -6,9 +6,9 @@ sealed trait Block {
   def isValid: Boolean
 }
 
-final case class GeneralBlock(height: Int,
-                              previousGeneralBlock: ByteString,
-                              data: ByteString) extends Block {
+final case class KeyBlock(height: Int,
+                          previousGeneralBlock: ByteString,
+                          data: ByteString) extends Block {
   override def isValid: Boolean = ???
 }
 
