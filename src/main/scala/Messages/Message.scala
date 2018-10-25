@@ -1,5 +1,6 @@
 package Messages
 
+import Data.Block
 import akka.actor.ActorRef
 import akka.util.ByteString
 
@@ -20,3 +21,5 @@ case object Ping extends PingPong
 case object Pong extends PingPong
 
 case class UdpSocket(conection: ActorRef) extends Message
+
+case class SendBlockToState(block: Block) extends Message

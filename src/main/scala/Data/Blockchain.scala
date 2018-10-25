@@ -1,5 +1,7 @@
 package Data
 
+import akka.util.ByteString
+
 import scala.collection.immutable.HashMap
 
 sealed trait Chain {
@@ -9,21 +11,33 @@ sealed trait Chain {
 
   def lastBlock: Block = chain.last._2
 
-  def update(block: Block): HashMap[Int, Block] = {chain.updated(block.height,block)}
+  def update(block: Block): HashMap[Int, Block] = {
+    chain.updated(block.height, block)
+  }
 }
 
 case object Blockchain extends Chain {
 
   override var chain: HashMap[Int, Block] = HashMap.empty
+  var lastKeyBlockVar: KeyBlock = KeyBlock(-1, ByteString.empty, ByteString.empty)
+  var lastMicroBlockVar: MicroBlock =
+    MicroBlock(-1, ByteString.empty, ByteString.empty, List(), ByteString.empty)
 
-  def lastKeyBlock: KeyBlock = ???
+  def genesisBlock: KeyBlock = ???
 
-  def lastMicroBlock: MicroBlock = ???
+  override def update(block: Block): HashMap[Int, Block] = {
+    block match {
+      case keyBlock: KeyBlock => lastKeyBlockVar = keyBlock
+      case microBlock: MicroBlock => lastMicroBlockVar = microBlock
+    }
+    chain.updated(block.height, block)
+  }
 
-  def genesysBlock: KeyBlock = ???
-
-  override def update(block: Block): HashMap[Int, Block] = ???
-
+  def getLastEpoch: HashMap[Int, Block] = {
+    val a = chain.dropWhile(x => x._1 != lastKeyBlockVar.height)
+    a.foreach(x => println(x._1))
+    a
+  }
 }
 
 final case class Appendix(override var chain: HashMap[Int, Block]) extends Chain {
