@@ -1,4 +1,4 @@
-package Actors
+package encry.Actors
 
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
@@ -9,7 +9,7 @@ class InfluxActor extends Actor with StrictLogging {
   val influxPort: Int = 0
 
   val influxDB: InfluxDB = InfluxDBFactory.connect(
-    "http://99.99.99.99",
+    "encry.http://99.99.99.99",
     "admin",
     "admin"
   )

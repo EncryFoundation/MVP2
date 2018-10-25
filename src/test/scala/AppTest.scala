@@ -1,4 +1,4 @@
-import Actors.Starter
+import encry.Actors.Starter
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import org.scalatest.BeforeAndAfterAll

@@ -1,7 +1,7 @@
-package http
+package encry.http
 
 import akka.http.scaladsl.server.Directives.complete
-import Messages.{CurrentBlockchainInfo, Get}
+import encry.Messages.{CurrentBlockchainInfo, Get}
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
@@ -13,7 +13,7 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import Utils.EncodingUtils._
+import encry.Utils.EncodingUtils._
 
 case class ApiRoute(implicit val context: ActorRefFactory) {
 

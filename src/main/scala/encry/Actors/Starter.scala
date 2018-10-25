@@ -1,7 +1,7 @@
-package Actors
+package encry.Actors
 
 import akka.actor.{Actor, Props}
-import Utils.Settings
+import encry.Utils.Settings
 import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class Starter extends Actor with StrictLogging {
 
-  import Messages.InfoMessage
+  import encry.Messages.InfoMessage
 
   context.system.scheduler
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))

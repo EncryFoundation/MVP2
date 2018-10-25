@@ -1,7 +1,7 @@
-package Utils
+package encry.Utils
 
 import akka.util.ByteString
-import Utils.Base16.encode
+import encry.Utils.Base16.encode
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax._
 

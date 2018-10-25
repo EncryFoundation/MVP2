@@ -1,4 +1,4 @@
-package Utils
+package encry.Utils
 
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
