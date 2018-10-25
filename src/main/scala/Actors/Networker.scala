@@ -1,9 +1,9 @@
 package Actors
 
 import java.net.InetSocketAddress
+import Actors.Networker.Peer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import Data.Peer
 import Messages._
 import akka.actor.Props
 import com.typesafe.scalalogging.StrictLogging
@@ -74,5 +74,11 @@ class Networker extends CommonActor with StrictLogging {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
     context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
+}
+
+object Networker {
+
+  case class Peer(remoteAddress: InetSocketAddress,
+                  lastMessageTime: Long)
 }
 
