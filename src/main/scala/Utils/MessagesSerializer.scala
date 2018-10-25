@@ -1,20 +1,30 @@
 package Utils
 
-import java.net.InetSocketAddress
 import MVP.MVP2.system
-import Messages.KnownPeers
-import akka.serialization.{SerializationExtension, Serializer}
+import Messages.{KnownPeers, NetworkMessage, Ping, Pong}
+import akka.serialization.SerializationExtension
+import akka.util.ByteString
 
 object MessagesSerializer {
 
-  object KnownPeersSerializer {
+  val serialization = SerializationExtension(system)
 
-    val serialization = SerializationExtension(system)
-    val serializer: Serializer = serialization.findSerializerFor(List[InetSocketAddress]())
+  def toBytes(message: NetworkMessage): ByteString = ByteString(message match {
+    case ping: Ping.type => Ping.typeId +: serialization.findSerializerFor(Ping).toBinary(ping)
+    case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
+    case knownPeers: KnownPeers =>
+      KnownPeers.typeId +: serialization.findSerializerFor(KnownPeers).toBinary(knownPeers)
+  })
 
-    def toBytes(message: KnownPeers): Array[Byte] = serializer.toBinary(message)
-
-    def fromBytes(bytes: Array[Byte]): KnownPeers = serializer.fromBinary(bytes).asInstanceOf[KnownPeers]
+  def fromBytes(bytes: Array[Byte]): Option[NetworkMessage] = bytes.head match {
+    case Ping.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.tail)).map{
+        case ping: Ping.type => ping
+      }
+    case Pong.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.tail)).map{
+      case pong: Pong.type => pong
+    }
+    case KnownPeers.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.tail)).map{
+      case knownPeers: KnownPeers => knownPeers
+    }
   }
-
 }

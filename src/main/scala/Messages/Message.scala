@@ -17,13 +17,26 @@ case class CurrentBlockchainInfo(height: Int,
 
 sealed trait NetworkMessage extends Message
 
-case class Ping(remote: InetSocketAddress) extends NetworkMessage
+case object Ping extends NetworkMessage {
 
-case class Pong(remote: InetSocketAddress) extends NetworkMessage
+  val typeId: Byte = 1: Byte
+}
+
+case object Pong extends NetworkMessage {
+
+  val typeId: Byte = 2: Byte
+}
 
 case class KnownPeers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
 
-case object BroadcastPeers extends NetworkMessage
+object KnownPeers {
+
+  val typeId: Byte = 3: Byte
+}
+
+case object BroadcastPeers extends Message
+
+case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 

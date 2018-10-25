@@ -2,10 +2,10 @@ package Actors
 
 import java.net.InetSocketAddress
 import Messages.{Ping, Pong, UdpSocket}
+import Utils.MessagesSerializer
 import akka.actor.{ActorSystem, Props}
 import akka.io.Udp
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import akka.util.ByteString
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 class SenderTest extends TestKit(ActorSystem("SenderTestSystem")) with ImplicitSender
@@ -17,13 +17,13 @@ class SenderTest extends TestKit(ActorSystem("SenderTestSystem")) with ImplicitS
 
   it should "send ping message to udp.socket when receive case object Ping" in {
     sender ! UdpSocket(probe.ref)
-    sender ! Ping(addr)
-    probe.expectMsg(Udp.Send(ByteString("Ping"), addr))
+    sender ! Ping
+    probe.expectMsg(Udp.Send(MessagesSerializer.toBytes(Ping), addr))
   }
 
   it should "send pong message to udp.socket when receive case object Pong" in {
     sender ! UdpSocket(probe.ref)
-    sender ! Pong(addr)
-    probe.expectMsg(Udp.Send(ByteString("Pong"), addr))
+    sender ! Pong
+    probe.expectMsg(Udp.Send(MessagesSerializer.toBytes(Pong), addr))
   }
 }

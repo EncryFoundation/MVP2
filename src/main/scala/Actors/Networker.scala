@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import Data.Peer
-import Messages.{BroadcastPeers, KnownPeers, MessageFromRemote}
+import Messages._
 import akka.actor.Props
 import com.typesafe.scalalogging.StrictLogging
 
@@ -51,13 +51,21 @@ class Networker extends CommonActor with StrictLogging {
         case KnownPeers(peers, remote) =>
           logger.info(s"Get known peers: $peers")
           peers.foreach(addOrUpdatePeer)
+        case Ping =>
+          logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
+          context.actorSelection("/user/starter/networker/sender") ! Pong
+        case Pong =>
+          logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case _ => //Another messages
       }
     case BroadcastPeers =>
       knownPeers.take(1).foreach(peer =>
         context.actorSelection("/user/starter/networker/sender") !
-          KnownPeers(
-            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
+          SendToNetwork(
+            KnownPeers(
+              knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
+              peer.remoteAddress
+            ),
             peer.remoteAddress
           )
       )
