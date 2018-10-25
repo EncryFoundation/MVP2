@@ -1,7 +1,6 @@
 package Actors
 
 import java.net.InetSocketAddress
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import Data.Peer
@@ -19,7 +18,7 @@ class Networker extends CommonActor with StrictLogging {
   )
 
   val testPeer2: Peer = Peer(
-    new InetSocketAddress("127.0.0.1", 999),
+    new InetSocketAddress("127.2.0.1", 999),
     0L
   )
 

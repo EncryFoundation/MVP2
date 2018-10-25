@@ -8,6 +8,8 @@ import com.typesafe.scalalogging.StrictLogging
 
 class Sender extends Actor with StrictLogging {
 
+  import context.system
+
   override def preStart(): Unit = logger.info("Start sender")
 
   override def receive: Receive = {
