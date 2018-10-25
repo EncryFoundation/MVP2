@@ -1,9 +1,10 @@
 package Actors
 
 import akka.actor.{Actor, Props}
+import utils.Settings
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Starter extends Actor {
 
@@ -11,6 +12,8 @@ class Starter extends Actor {
 
   context.system.scheduler
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))
+
+  val settings: Settings = Settings.settings
 
   override def preStart(): Unit = {
     println("Starting the Starter!")
@@ -23,6 +26,7 @@ class Starter extends Actor {
 
   def bornKids(): Unit = {
     context.actorOf(Props[Networker].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "networker")
+    //context.actorOf(Props[InfluxActor], "influxActor")
     context.actorOf(Props[Informator])
     context.actorOf(Props[Zombie])
   }
