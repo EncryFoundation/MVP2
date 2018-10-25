@@ -3,18 +3,18 @@ package Data
 import scala.collection.immutable.HashMap
 
 sealed trait Chain {
-  val chain: HashMap[Int, Block]
+  var chain: HashMap[Int, Block]
 
   def size: Int = chain.size
 
   def lastBlock: Block = chain.last._2
 
-  def update(block: Block): HashMap[Int, Block]
+  def update(block: Block): HashMap[Int, Block] = {chain.updated(block.height,block)}
 }
 
 case object Blockchain extends Chain {
 
-  override val chain: HashMap[Int, Block] = HashMap.empty
+  override var chain: HashMap[Int, Block] = HashMap.empty
 
   def lastKeyBlock: KeyBlock = ???
 
@@ -22,8 +22,15 @@ case object Blockchain extends Chain {
 
   def genesysBlock: KeyBlock = ???
 
-  def update(block: Block): HashMap[Int, Block] = ???
+  override def update(block: Block): HashMap[Int, Block] = ???
 
 }
 
-final abstract case class Appendix(chain: HashMap[Int, Block]) extends Chain
+final case class Appendix(override var chain: HashMap[Int, Block]) extends Chain {
+
+  override def size: Int = chain.size
+
+  override def lastBlock: Block = chain.last._2
+
+  override def update(block: Block): HashMap[Int, Block] = ???
+}
