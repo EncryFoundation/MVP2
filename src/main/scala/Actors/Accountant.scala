@@ -2,7 +2,6 @@ package Actors
 
 import Data.{GeneralBlock, MicroBlock, Transaction}
 import akka.util.ByteString
-
 import scala.collection.immutable.HashSet
 
 class Accountant extends CommonActor {
