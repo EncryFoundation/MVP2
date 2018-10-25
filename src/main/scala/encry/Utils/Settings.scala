@@ -5,6 +5,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 case class Settings(port: Int,
+                    httpHost: String,
                     httpPort: Int,
                     otherNodes: List[Node],
                     heartbeat: Int)
