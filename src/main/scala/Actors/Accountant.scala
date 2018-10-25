@@ -2,11 +2,11 @@ package Actors
 
 import Data.{GeneralBlock, MicroBlock, Transaction}
 import akka.util.ByteString
-import scala.collection.immutable.HashSet
+import scala.collection.immutable.HashMap
 
 class Accountant extends CommonActor {
 
-  var currentState: State = GenesisState(HashSet.empty)
+  var currentState: State = GenesisState(HashMap.empty)
 
   override def specialBehavior: Receive = {
     case microBlock: MicroBlock =>
@@ -25,12 +25,12 @@ class Accountant extends CommonActor {
     }
   }
 
-  def updateState(pubKey: ByteString, accounts: HashSet[Account], transactions: List[Transaction]): Unit = {
-    var account: Account = accounts.filter(_.publicKey.equals(pubKey)).head
+  def updateState(pubKey: ByteString, accounts: HashMap[ByteString, Account], transactions: List[Transaction]): Unit = {
+    var account: Account = accounts.getOrElse(pubKey, Account(pubKey, List.empty,0))
     transactions.sortBy(_.nonce).foreach { tx =>
       if (account.nonce + 1 == tx.nonce)
         account = account.copy(data = account.data :+ tx.data.getOrElse(ByteString.empty), nonce = tx.nonce)
     }
-    currentState = FunctioningState(accounts.map(acc => if (acc.publicKey.equals(pubKey)) account else acc))
+    currentState = FunctioningState(accounts + (pubKey -> account))
   }
 }
