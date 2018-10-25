@@ -9,7 +9,7 @@ class InfluxActor extends Actor with StrictLogging {
   val influxPort: Int = 0
 
   val influxDB: InfluxDB = InfluxDBFactory.connect(
-    "encry.http://99.99.99.99",
+    "http://99.99.99.99",
     "admin",
     "admin"
   )
