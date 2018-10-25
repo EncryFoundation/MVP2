@@ -25,7 +25,7 @@ class Starter extends Actor {
   }
 
   def bornKids(): Unit = {
-    context.actorOf(Props[Networker].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "networker")
+    context.actorOf(Props(new Networker(settings)).withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "networker")
     //context.actorOf(Props[InfluxActor], "influxActor")
     context.actorOf(Props[Informator])
     context.actorOf(Props[Zombie])

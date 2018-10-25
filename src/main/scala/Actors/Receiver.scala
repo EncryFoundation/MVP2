@@ -7,14 +7,15 @@ import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
+import utils.Settings
 
-class Receiver extends Actor with StrictLogging {
+class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   import context.system
 
   override def preStart(): Unit = {
     logger.info("Start receiver")
-    IO(Udp) ! Udp.Bind(self, new InetSocketAddress("localhost", 5678))
+    IO(Udp) ! Udp.Bind(self, new InetSocketAddress("localhost", settings.port))
   }
 
   override def receive: Receive = {

@@ -7,24 +7,14 @@ import scala.concurrent.duration._
 import Messages._
 import akka.actor.Props
 import com.typesafe.scalalogging.StrictLogging
+import utils.Settings
 
-class Networker extends CommonActor with StrictLogging {
+class Networker(settings: Settings) extends CommonActor with StrictLogging {
 
   import Messages.InfoMessage
 
-  val testPeer1: Peer = Peer(
-    new InetSocketAddress("127.0.0.1", 5678),
-    0L
-  )
-
-  val testPeer2: Peer = Peer(
-    new InetSocketAddress("127.2.0.1", 999),
-    0L
-  )
-
-  var knownPeers: List[Peer] = List(
-    testPeer1,
-    testPeer2
+  var knownPeers: List[Peer] = settings.otherNodes.map(node =>
+    Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
   )
 
   override def preStart(): Unit = {
@@ -58,7 +48,7 @@ class Networker extends CommonActor with StrictLogging {
         case _ => //Another messages
       }
     case BroadcastPeers =>
-      knownPeers.take(1).foreach(peer =>
+      knownPeers.foreach(peer =>
         context.actorSelection("/user/starter/networker/sender") !
           SendToNetwork(
             KnownPeers(
@@ -72,7 +62,7 @@ class Networker extends CommonActor with StrictLogging {
 
   def bornKids(): Unit = {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
-    context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
+    context.actorOf(Props(new Receiver(settings)).withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
 
