@@ -12,7 +12,7 @@ class AppTest extends TestKit(ActorSystem("TestAkkaSystem")) with WordSpecLike w
   val StarterActorRef: ActorRef = system.actorOf(Props(classOf[Starter]), "starter")
 
   "App" should {
-    "works" in {
+    "work" in {
       StarterActorRef ! 1
       expectNoMessage
     }
