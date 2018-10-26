@@ -1,10 +1,13 @@
-package Actors
+package mvp2.Actors
 
-import Messages._
-import Utils.MessagesSerializer
+import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.Messages.{Ping, Pong, UdpSocket}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class Sender extends Actor with StrictLogging {
 

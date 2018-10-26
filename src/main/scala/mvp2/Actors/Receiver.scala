@@ -1,4 +1,4 @@
-package Actors
+package mvp2.Actors
 
 import java.net.InetSocketAddress
 import Messages.{MessageFromRemote, UdpSocket}

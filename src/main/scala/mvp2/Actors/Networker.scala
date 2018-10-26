@@ -1,4 +1,4 @@
-package Actors
+package mvp2.Actors
 
 import java.net.InetSocketAddress
 import Actors.Networker.Peer
@@ -11,7 +11,7 @@ import utils.Settings
 
 class Networker(settings: Settings) extends CommonActor with StrictLogging {
 
-  import Messages.InfoMessage
+  import mvp2.Messages.InfoMessage
 
   var knownPeers: List[Peer] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
