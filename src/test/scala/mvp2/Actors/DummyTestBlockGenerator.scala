@@ -1,11 +1,9 @@
 package mvp2.Actors
 
 import java.nio.charset.StandardCharsets
-
 import akka.util.ByteString
 import mvp2.Data.{Block, GeneralBlock, MicroBlock, Transaction}
 import mvp2.Utils.Sha256
-
 import scala.collection.mutable.ListBuffer
 
 object DummyTestBlockGenerator {
