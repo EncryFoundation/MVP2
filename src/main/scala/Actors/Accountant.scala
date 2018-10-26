@@ -13,7 +13,8 @@ class Accountant extends CommonActor {
 
   def updateState(transactions: List[Transaction]): Unit = {
     transactions.groupBy(_.publicKey).foreach {
-      singleParty => State.updateState(singleParty._1, singleParty._2)
+      singleParty =>
+        State.updateState(singleParty._1, singleParty._2)
     }
   }
 }
