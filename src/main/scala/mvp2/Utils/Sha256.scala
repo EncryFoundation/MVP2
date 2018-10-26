@@ -1,7 +1,8 @@
-package utils
+package mvp2.Utils
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+
 import akka.util.ByteString
 
 object Sha256 {
