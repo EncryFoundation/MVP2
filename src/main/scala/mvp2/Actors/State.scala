@@ -3,7 +3,6 @@ package mvp2.Actors
 import akka.util.ByteString
 import mvp2.Data.Transaction
 import utils.Sha256
-
 import scala.collection.immutable.HashMap
 
 object State {
