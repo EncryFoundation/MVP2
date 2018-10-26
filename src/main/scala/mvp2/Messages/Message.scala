@@ -1,4 +1,4 @@
-package Messages
+package mvp2.Messages
 
 import Data.Block
 import akka.actor.ActorRef

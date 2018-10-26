@@ -1,18 +1,18 @@
-package Actors
+package mvp2.Actors
 
 import akka.actor.Props
 
 class Networker extends CommonActor {
 
-  import Messages.InfoMessage
+  import mvp2.Messages.InfoMessage
 
   override def preStart(): Unit = {
-    println("Starting the Networker!")
+    logger.info("Starting the Networker!")
     bornKids()
   }
 
   override def specialBehavior: Receive = {
-    case message: InfoMessage => println(message.info)
+    case message: InfoMessage => logger.info(message.info)
   }
 
   def bornKids(): Unit = {
@@ -20,4 +20,3 @@ class Networker extends CommonActor {
     context.actorOf(Props[Receiver].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "receiver")
   }
 }
-

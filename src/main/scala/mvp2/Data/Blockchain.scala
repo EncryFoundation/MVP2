@@ -1,4 +1,4 @@
-package Data
+package mvp2.Data
 
 import scala.collection.immutable.HashMap
 
