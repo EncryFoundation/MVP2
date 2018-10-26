@@ -20,23 +20,25 @@ case object Blockchain extends Chain {
 
   override var chain: HashMap[Int, Block] = HashMap.empty
   var lastKeyBlockVar: KeyBlock = KeyBlock(-1, ByteString.empty, ByteString.empty)
-  var lastMicroBlockVar: MicroBlock =
-    MicroBlock(-1, ByteString.empty, ByteString.empty, List(), ByteString.empty)
+  var lastMicroBlockVar: MicroBlock = MicroBlock(-1, ByteString.empty, ByteString.empty, List(), ByteString.empty)
+  var prevLastKeyBlock: KeyBlock = KeyBlock(-1, ByteString.empty, ByteString.empty)
 
   def genesisBlock: KeyBlock = ???
 
   override def update(block: Block): HashMap[Int, Block] = {
     block match {
-      case keyBlock: KeyBlock => lastKeyBlockVar = keyBlock
+      case keyBlock: KeyBlock =>
+        prevLastKeyBlock = lastKeyBlockVar
+        lastKeyBlockVar = keyBlock
       case microBlock: MicroBlock => lastMicroBlockVar = microBlock
     }
     chain.updated(block.height, block)
   }
 
-  def getLastEpoch: HashMap[Int, Block] = {
-    val a = chain.dropWhile(x => x._1 != lastKeyBlockVar.height)
-    a.foreach(x => println(x._1))
-    a
+  def getLastEpoch: Map[Int, Block] = {
+    val lastEpoch: Map[Int, Block] = chain.filterKeys(x => x <= lastKeyBlockVar.height && x > prevLastKeyBlock.height)
+    lastEpoch.foreach(x => println(x._1))
+    lastEpoch
   }
 }
 

@@ -3,7 +3,6 @@ package Actors
 import Data.{Block, Blockchain, KeyBlock, MicroBlock}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
-import scala.collection.immutable.HashMap
 
 class Blockchainer extends PersistentActor with StrictLogging {
 
@@ -22,11 +21,10 @@ class Blockchainer extends PersistentActor with StrictLogging {
     if (validate(block)) {
       block match {
         case keyBlock: KeyBlock =>
-          val blockchainForWrite: HashMap[Int, Block] = Blockchain.getLastEpoch
-          persist(blockchainForWrite) { x =>
+          Blockchain.update(keyBlock)
+          persist(Blockchain.getLastEpoch) { x =>
             logger.info(s"Last epoch successfully saved! Size of map is: ${x.size}")
           }
-          Blockchain.update(keyBlock)
 
         case microBlock: MicroBlock => Blockchain.update(microBlock)
       }
@@ -34,8 +32,8 @@ class Blockchainer extends PersistentActor with StrictLogging {
   }
 
   def validate(block: Block): Boolean = block match {
-    case keyBlock: KeyBlock => true
-    case microBlock: MicroBlock => true
+    case keyBlock: KeyBlock => if (keyBlock.data.size <= 1000) true else false
+    case microBlock: MicroBlock => if (microBlock.data.size <= 1000) true else false
   }
 
 
