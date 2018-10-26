@@ -11,6 +11,10 @@ sealed trait Block {
 final case class KeyBlock(override val height: Int,
                           previousGeneralBlock: ByteString,
                           data: ByteString) extends Block {
+final case class GeneralBlock(height: Int,
+                              previousGeneralBlock: ByteString,
+                              transactions: List[Transaction],
+                              data: ByteString) extends Block {
   override def isValid: Boolean = ???
 }
 
