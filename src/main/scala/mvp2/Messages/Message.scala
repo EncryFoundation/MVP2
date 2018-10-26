@@ -1,4 +1,4 @@
-package Messages
+package mvp2.Messages
 
 import akka.actor.ActorRef
 import akka.util.ByteString
