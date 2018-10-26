@@ -1,10 +1,13 @@
 package Actors
 
-import Data.{Block, Blockchain, KeyBlock, MicroBlock}
+import Data._
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
+import scala.collection.immutable.HashMap
 
 class Blockchainer extends PersistentActor with StrictLogging {
+
+  var appendix: Appendix = Appendix(HashMap())
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => Blockchain.update(keyBlock)
@@ -13,29 +16,22 @@ class Blockchainer extends PersistentActor with StrictLogging {
   }
 
   override def receiveCommand: Receive = {
-    case block: Block => updateChain(block)
-    case _ => logger.info("Got something strange")
-  }
-
-  def updateChain(block: Block): Unit = {
-    if (validate(block)) {
-      block match {
-        case keyBlock: KeyBlock =>
-          Blockchain.update(keyBlock)
-          persist(Blockchain.getLastEpoch) { x =>
-            logger.info(s"Last epoch successfully saved! Size of map is: ${x.size}")
-          }
-
-        case microBlock: MicroBlock => Blockchain.update(microBlock)
+    case block: Block =>
+      if (block.isValid) {
+        block match {
+          case keyBlock: KeyBlock =>
+            val oldAppendix: HashMap[Int, Block] = appendix.chain
+            oldAppendix.foreach(block => persist(block) { x =>
+              logger.info(s"Successfully saved block with id: ${x._2} and height ${x._1}!")
+            })
+            Blockchain.upgrade(oldAppendix)
+            appendix = appendix.copy(HashMap(keyBlock.height -> keyBlock))
+          case microBlock: MicroBlock =>
+            appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
+        }
       }
-    }
+    case _ => logger.info("Got something strange in Blockchainer!")
   }
-
-  def validate(block: Block): Boolean = block match {
-    case keyBlock: KeyBlock => if (keyBlock.data.size <= 1000) true else false
-    case microBlock: MicroBlock => if (microBlock.data.size <= 1000) true else false
-  }
-
 
   override def persistenceId: String = "blockchainer"
 
