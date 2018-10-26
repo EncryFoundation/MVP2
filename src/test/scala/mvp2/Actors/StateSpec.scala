@@ -1,4 +1,4 @@
-package Actors
+package mvp2.Actors
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.TestKit

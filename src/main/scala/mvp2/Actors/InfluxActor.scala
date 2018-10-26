@@ -1,4 +1,4 @@
-package Actors
+package mvp2.Actors
 
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
@@ -22,5 +22,4 @@ class InfluxActor extends Actor with StrictLogging {
   override def receive: Receive = {
     case _ =>
   }
-
 }

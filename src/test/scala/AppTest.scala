@@ -1,4 +1,4 @@
-import Actors.Starter
+import mvp2.Actors.Starter
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import org.scalatest.BeforeAndAfterAll
@@ -12,7 +12,7 @@ class AppTest extends TestKit(ActorSystem("TestAkkaSystem")) with WordSpecLike w
   val StarterActorRef: ActorRef = system.actorOf(Props(classOf[Starter]), "starter")
 
   "App" should {
-    "works" in {
+    "work" in {
       StarterActorRef ! 1
       expectNoMessage
     }
