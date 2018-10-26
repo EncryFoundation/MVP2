@@ -1,8 +1,8 @@
 package mvp2.Messages
 
-import Data.Block
 import akka.actor.ActorRef
 import akka.util.ByteString
+import mvp2.Data.Block
 
 sealed trait Message
 

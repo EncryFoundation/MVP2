@@ -1,8 +1,8 @@
-package Actors
+package mvp2.Actors
 
-import Data._
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.Data._
 import scala.collection.immutable.HashMap
 
 class Blockchainer extends PersistentActor with StrictLogging {
