@@ -1,2 +1,2 @@
 # MVP2
-Small experimantal pos-application.
+Small experimental pos-application.
