@@ -40,7 +40,6 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/networker/sender") ! Pong
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
-        case _ => //Another messages
       }
   }
 
