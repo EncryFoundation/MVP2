@@ -8,12 +8,12 @@ trait CommonActor extends Actor with StrictLogging {
   def specialBehavior: Receive
 
   def smth: Receive = {
-    case smth: Any => println(s"Got smth strange: $smth.")
+    case smth: Any => logger.info(s"Got smth strange: $smth.")
   }
 
   override def receive: Receive = specialBehavior orElse smth
 
   override def postStop(): Unit = {
-    println(s"Actor $self is stopped.")
+    logger.info(s"Actor $self is stopped.")
   }
 }
