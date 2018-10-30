@@ -10,8 +10,6 @@ import mvp2.Utils.Settings
 
 class Networker(settings: Settings) extends CommonActor {
 
-  import mvp2.Messages.InfoMessage
-
   var knownPeers: List[Peer] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
   )
