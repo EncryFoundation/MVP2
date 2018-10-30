@@ -33,9 +33,9 @@ object KnownPeers {
   val typeId: Byte = 3: Byte
 }
 
-case class Blocks(blocks: Seq[Blocks]) extends NetworkMessage
+case class BlocksToNet(blocks: Seq[BlocksToNet]) extends NetworkMessage
 
-object Blocks {
+object BlocksToNet {
 
   val typeId: Byte = 4: Byte
 }
