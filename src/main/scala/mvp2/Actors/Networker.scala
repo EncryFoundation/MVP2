@@ -16,7 +16,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     println("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, 1.seconds)(sendPeers)
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
     bornKids()
   }
 
