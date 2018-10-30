@@ -20,14 +20,12 @@ class Networker(settings: Settings) extends CommonActor {
     bornKids()
   }
 
-  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit = {
+  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit =
     if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
       knownPeers.par.find(_.remoteAddress == peerAddr).foreach(prevPeer =>
           knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
       )
-    } else
-      knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
-  }
+    } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
 
   override def specialBehavior: Receive = {
     case message: InfoMessage => println(message.info)
