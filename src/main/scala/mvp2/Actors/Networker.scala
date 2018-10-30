@@ -19,7 +19,7 @@ class Networker(settings: Settings) extends CommonActor with StrictLogging {
 
   override def preStart(): Unit = {
     println("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, 1.seconds)(self ! BroadcastPeers)
+    context.system.scheduler.schedule(1.seconds, 1.seconds)(sendPeers)
     bornKids()
   }
 
@@ -47,18 +47,19 @@ class Networker(settings: Settings) extends CommonActor with StrictLogging {
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case _ => //Another messages
       }
-    case BroadcastPeers =>
-      knownPeers.foreach(peer =>
-        context.actorSelection("/user/starter/networker/sender") !
-          SendToNetwork(
-            KnownPeers(
-              knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
-              peer.remoteAddress
-            ),
-            peer.remoteAddress
-          )
-      )
   }
+
+  def sendPeers: Unit =
+    knownPeers.foreach(peer =>
+      context.actorSelection("/user/starter/networker/sender") !
+        SendToNetwork(
+          KnownPeers(
+            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
+            peer.remoteAddress
+          ),
+          peer.remoteAddress
+        )
+    )
 
   def bornKids(): Unit = {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")

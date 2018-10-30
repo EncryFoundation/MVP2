@@ -40,8 +40,6 @@ object Blocks {
   val typeId: Byte = 4: Byte
 }
 
-case object BroadcastPeers extends Message
-
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
