@@ -1,13 +1,13 @@
 package mvp2.Actors
 
 import java.net.InetSocketAddress
-import Actors.Networker.Peer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import Messages._
 import akka.actor.Props
 import com.typesafe.scalalogging.StrictLogging
-import utils.Settings
+import mvp2.Actors.Networker.Peer
+import mvp2.Messages._
+import mvp2.Utils.Settings
 
 class Networker(settings: Settings) extends CommonActor with StrictLogging {
 

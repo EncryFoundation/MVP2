@@ -1,12 +1,11 @@
 package mvp2.Actors
 
 import java.net.InetSocketAddress
-import mvp2.Messages.{Ping, Pong, UdpSocket}
-import akka.actor.{ActorSystem, Props}
+import Utils.MessagesSerializer
+import mvp2.Messages.{Ping, Pong, SendToNetwork, UdpSocket}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.io.Udp
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import akka.util.ByteString
-import mvp2.Actors.Sender
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 class SenderTest extends TestKit(ActorSystem("SenderTestSystem")) with ImplicitSender

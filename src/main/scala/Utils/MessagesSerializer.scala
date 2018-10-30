@@ -1,9 +1,9 @@
 package Utils
 
-import Messages._
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.util.ByteString
+import mvp2.Messages._
 
 object MessagesSerializer {
 

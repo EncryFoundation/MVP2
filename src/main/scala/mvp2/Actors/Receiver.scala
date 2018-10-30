@@ -1,13 +1,14 @@
 package mvp2.Actors
 
 import java.net.InetSocketAddress
-import Messages.{MessageFromRemote, UdpSocket}
+
 import Utils.MessagesSerializer
 import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import utils.Settings
+import mvp2.Messages.{MessageFromRemote, UdpSocket}
+import mvp2.Utils.Settings
 
 class Receiver(settings: Settings) extends Actor with StrictLogging {
 
