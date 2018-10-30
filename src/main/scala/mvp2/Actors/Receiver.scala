@@ -1,7 +1,6 @@
 package mvp2.Actors
 
 import java.net.InetSocketAddress
-
 import Utils.MessagesSerializer
 import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}

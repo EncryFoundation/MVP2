@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import akka.actor.ActorRef
 import akka.util.ByteString
 
-
 sealed trait Message
 
 case object Get extends Message
