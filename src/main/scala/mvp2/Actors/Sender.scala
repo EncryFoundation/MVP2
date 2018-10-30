@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 
 class Sender extends Actor with StrictLogging {
 
-  val remote: InetSocketAddress = new InetSocketAddress("localhost", 5678)
+  val remote: InetSocketAddress = new InetSocketAddress("localhost", 1234)
 
   override def preStart(): Unit = {
     logger.info("Start sender")

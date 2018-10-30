@@ -8,6 +8,7 @@ sealed trait Block {
 
 final case class GeneralBlock(height: Int,
                               previousGeneralBlock: ByteString,
+                              transactions: List[Transaction],
                               data: ByteString) extends Block {
   override def isValid: Boolean = ???
 }
