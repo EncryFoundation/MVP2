@@ -16,8 +16,8 @@ object MessagesSerializer {
       case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
       case knownPeers: KnownPeers =>
         KnownPeers.typeId +: serialization.findSerializerFor(KnownPeers).toBinary(knownPeers)
-      case blocks: BlocksToNet =>
-        BlocksToNet.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+      case blocks: Blocks =>
+        Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
     })
   }
 
@@ -32,8 +32,8 @@ object MessagesSerializer {
       case KnownPeers.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.tail)).map{
         case knownPeers: KnownPeers => knownPeers
       }
-      case BlocksToNet.typeId => Option(serialization.findSerializerFor(BlocksToNet).fromBinary(bytes.tail)).map{
-        case blocks: BlocksToNet => blocks
+      case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.tail)).map{
+        case blocks: Blocks => blocks
       }
     }
   }

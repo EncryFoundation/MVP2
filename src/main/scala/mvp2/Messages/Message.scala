@@ -3,6 +3,7 @@ package mvp2.Messages
 import java.net.InetSocketAddress
 import akka.actor.ActorRef
 import akka.util.ByteString
+import mvp2.Data.Block
 
 sealed trait Message
 
@@ -33,9 +34,9 @@ object KnownPeers {
   val typeId: Byte = 3: Byte
 }
 
-case class BlocksToNet(blocks: Seq[BlocksToNet]) extends NetworkMessage
+case class Blocks(blocks: Seq[Block]) extends NetworkMessage
 
-object BlocksToNet {
+object Blocks {
 
   val typeId: Byte = 4: Byte
 }
