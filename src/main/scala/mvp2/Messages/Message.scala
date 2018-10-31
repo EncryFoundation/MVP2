@@ -11,9 +11,9 @@ case object Get extends Message
 
 final case class InfoMessage(info: String) extends Message
 
-case class CurrentBlockchainInfo(height: Int,
-                                 lastGeneralBlock: Option[ByteString],
-                                 lastMicroBlock: Option[ByteString]) extends Message
+final case class CurrentBlockchainInfo(height: Int,
+                                       lastGeneralBlock: Option[ByteString],
+                                       lastMicroBlock: Option[ByteString]) extends Message
 
 sealed trait NetworkMessage extends Message
 
@@ -27,9 +27,9 @@ case object Pong extends NetworkMessage {
   val typeId: Byte = 2: Byte
 }
 
-case class KnownPeers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
+case class Peers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
 
-object KnownPeers {
+case object Peers {
 
   val typeId: Byte = 3: Byte
 }

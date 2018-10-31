@@ -20,6 +20,6 @@ class Sender extends Actor with StrictLogging {
   def sendingCycle(connection: ActorRef): Receive = {
     case SendToNetwork(message, remote) =>
       logger.info(s"Send $message to $remote")
-      connection ! Udp.Send(MessagesSerializer.toBytes(message), remote)
+      connection ! Udp.Send(MessagesSerializer.serialize(message), remote)
   }
 }

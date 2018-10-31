@@ -28,7 +28,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   def readCycle(socket: ActorRef): Receive = {
     case Udp.Received(data: ByteString, remote) =>
-      MessagesSerializer.fromBytes(data.toArray).foreach { message =>
+      MessagesSerializer.deserialize(data.toArray).foreach { message =>
         logger.info(s"Received $message from $remote")
         context.parent ! MessageFromRemote(message, remote)
       }

@@ -32,7 +32,7 @@ class Networker(settings: Settings) extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       addOrUpdatePeer(msgFromRemote.remote)
       msgFromRemote.message match {
-        case KnownPeers(peers, remote) =>
+        case Peers(peers, remote) =>
           logger.info(s"Get known peers: $peers")
           peers.foreach(addOrUpdatePeer)
         case Ping =>
@@ -47,7 +47,7 @@ class Networker(settings: Settings) extends CommonActor {
     knownPeers.foreach(peer =>
       context.actorSelection("/user/starter/networker/sender") !
         SendToNetwork(
-          KnownPeers(
+          Peers(
             knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
             peer.remoteAddress
           ),
