@@ -12,7 +12,7 @@ sealed trait Block {
   def isValid: Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${previousKeyBlockHash.utf8String}, " + s"currentBlockHash = ${currentBlockHash.utf8String}."
+    s"previousKeyBlockHash = ${previousKeyBlockHash.utf8String}, " + s"currentBlockHash = ${currentBlockHash.utf8String}."//TODO
 }
 
 final case class KeyBlock(height: Long,
@@ -21,7 +21,9 @@ final case class KeyBlock(height: Long,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
                           data: ByteString) extends Block {
-  override def isValid: Boolean = ???
+  override def isValid: Boolean = {//TODO
+    height > 0 && timestamp > System.currentTimeMillis() - 15000
+  }
 }
 
 object KeyBlock {
@@ -30,7 +32,7 @@ object KeyBlock {
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
             data: ByteString = ByteString.empty): KeyBlock = {
-    val currentBlockHash = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
+    val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
     new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data)
   }
 }
