@@ -2,6 +2,7 @@ package mvp2.data
 
 import akka.util.ByteString
 import mvp2.utils.Sha256
+import mvp2.utils.EncodingUtils._
 
 sealed trait Block {
   val height: Long
@@ -12,7 +13,7 @@ sealed trait Block {
   def isValid: Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${previousKeyBlockHash.utf8String}, " + s"currentBlockHash = ${currentBlockHash.utf8String}."//TODO
+    s"previousKeyBlockHash = ${encode2Base64(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base64(currentBlockHash)}."//TODO
 }
 
 final case class KeyBlock(height: Long,
