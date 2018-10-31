@@ -12,9 +12,3 @@ case class Settings(port: Int,
 case class Node(host: String, port: Int)
 
 case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
-
-object Settings {
-
-  val settings: Settings =
-    ConfigFactory.load("local.conf").withFallback(ConfigFactory.load).as[Settings]("mvp")
-}
