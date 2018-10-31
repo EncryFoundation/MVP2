@@ -28,7 +28,7 @@ class Networker(settings: Settings) extends CommonActor {
     } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
 
   override def specialBehavior: Receive = {
-    case message: InfoMessage => println(message.info)
+    case message: InfoMessage =>
     case msgFromRemote: MessageFromRemote =>
       addOrUpdatePeer(msgFromRemote.remote)
       msgFromRemote.message match {
