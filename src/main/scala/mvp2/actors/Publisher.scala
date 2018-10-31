@@ -13,6 +13,7 @@ class Publisher extends CommonActor {
   context.system.scheduler.schedule(1 second, 5 seconds)(createKeyBlock)
 
   override def preStart(): Unit = {
+    logger.info("Starting the Publisher!")
     println(lastKeyBlock)
   }
 
