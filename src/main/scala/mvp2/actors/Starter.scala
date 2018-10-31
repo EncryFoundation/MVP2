@@ -1,4 +1,4 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.actor.{Actor, Props}
 import mvp2.Utils.Settings
@@ -12,10 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 class Starter extends Actor with StrictLogging {
 
-  import mvp2.Messages.InfoMessage
-
-  context.system.scheduler
-    .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))
+  import mvp2.messages.InfoMessage
 
   val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
     .as[Settings]("mvp")

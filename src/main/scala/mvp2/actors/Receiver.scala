@@ -1,4 +1,4 @@
-package mvp2.Actors
+package mvp2.actors
 
 import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorRef}
@@ -7,7 +7,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
-import mvp2.Messages._
+import mvp2.messages._
 import mvp2.Utils.Settings
 
 class Receiver(settings: Settings) extends Actor with StrictLogging {

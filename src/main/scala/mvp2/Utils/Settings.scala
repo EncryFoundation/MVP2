@@ -1,9 +1,5 @@
 package mvp2.Utils
 
-import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 case class Settings(port: Int,
                     otherNodes: List[Node],
                     heartbeat: Int,
