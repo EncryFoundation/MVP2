@@ -42,7 +42,7 @@ final case class MicroBlock(height: Long,
                             previousKeyBlockHash: ByteString = ByteString.empty,
                             previousMicroBlock: ByteString,
                             currentBlockHash: ByteString,
-                            transactions: List[Transaction],
-                            data: ByteString) extends Block {
+                            transactions: List[Transaction] = List.empty,
+                            data: ByteString = ByteString.empty) extends Block {
   override def isValid: Boolean = ???
 }
