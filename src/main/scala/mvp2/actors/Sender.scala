@@ -1,11 +1,11 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.Messages._
+import mvp2.messages._
 
 class Sender extends Actor with StrictLogging {
 

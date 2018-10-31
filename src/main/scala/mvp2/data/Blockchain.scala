@@ -1,4 +1,4 @@
-package mvp2.Data
+package mvp2.data
 
 sealed trait Chain {
   val chain: List[Block]
@@ -6,7 +6,7 @@ sealed trait Chain {
   def lastBlock: Block = chain.last
 }
 final case class Blockchain () {
-  def lastGeneralBlock: GeneralBlock = ???
+  def lastGeneralBlock: KeyBlock = ???
 }
 final case class Appendix(chain: List[Block]){
 }
