@@ -12,10 +12,10 @@ object DummyTestBlockGenerator {
     .map(_ => (generateByteString, 0))
 
   def generateKeyBlock(prevHash: ByteString, prevHeight: Int): KeyBlock =
-    KeyBlock(prevHeight + 1, prevHash, generateTenTransactions, ByteString.empty)
+    KeyBlock(prevHeight + 1, System.currentTimeMillis, prevHash, generateTenTransactions, ByteString.empty)
 
   def generateMicroBlock(prevHash: ByteString, prevMicroHash: ByteString, prevHeight: Int): MicroBlock =
-    MicroBlock(prevHeight + 1, prevHash, prevMicroHash, generateTenTransactions, ByteString.empty)
+    MicroBlock(prevHeight + 1, System.currentTimeMillis, prevHash, prevMicroHash, generateTenTransactions, ByteString.empty)
 
   def generateTenTransactions: List[Transaction] = List.range(0, 10).map(e => generateTransaction(e))
 
