@@ -1,25 +1,33 @@
 package mvp2.Actors
 
-import Utils.MessagesSerializer
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
+import akka.serialization.{Serialization, SerializationExtension}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.Messages.{SendToNetwork, UdpSocket}
+import mvp2.Messages._
 
 class Sender extends Actor with StrictLogging {
 
-  import context.system
+  val serialization: Serialization = SerializationExtension(context.system)
 
-  override def preStart(): Unit = logger.info("Start sender")
+  override def preStart(): Unit = logger.info("Starting the Sender!")
 
   override def receive: Receive = {
     case UdpSocket(connection) => context.become(sendingCycle(connection))
-    case msg => logger.info(s"Smth strange: $msg")
+    case smth: Any => logger.info(s"Got smth strange: $smth.")
   }
 
   def sendingCycle(connection: ActorRef): Receive = {
     case SendToNetwork(message, remote) =>
       logger.info(s"Send $message to $remote")
-      connection ! Udp.Send(MessagesSerializer.serialize(message), remote)
+      connection ! Udp.Send(serialize(message), remote)
   }
+
+  def serialize(message: NetworkMessage): ByteString = ByteString(message match {
+    case ping: Ping.type => Ping.typeId +: serialization.findSerializerFor(Ping).toBinary(ping)
+    case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
+    case knownPeers: Peers => Peers.typeId +: serialization.findSerializerFor(Peers).toBinary(knownPeers)
+    case blocks: Blocks => Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+  })
 }

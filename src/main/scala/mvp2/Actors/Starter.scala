@@ -6,6 +6,9 @@ import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
+import com.typesafe.config.ConfigFactory
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 class Starter extends Actor with StrictLogging {
 
@@ -14,7 +17,8 @@ class Starter extends Actor with StrictLogging {
   context.system.scheduler
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))
 
-  val settings: Settings = Settings.settings
+  val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
+    .as[Settings]("mvp")
 
   override def preStart(): Unit = {
     logger.info("Starting the Starter!")
@@ -26,9 +30,9 @@ class Starter extends Actor with StrictLogging {
   }
 
   def bornKids(): Unit = {
-    context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "networker")
-    //context.actorOf(Props[InfluxActor], "influxActor")
-    context.actorOf(Props[Informator], "informator")
+    context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "networker")
+    //context.actorOf(Props[Informator], settings, "informator")
     context.actorOf(Props[Zombie])
   }
 
