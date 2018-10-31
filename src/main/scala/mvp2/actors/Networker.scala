@@ -20,15 +20,7 @@ class Networker(settings: Settings) extends CommonActor {
     bornKids()
   }
 
-  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit =
-    if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
-      knownPeers.par.find(_.remoteAddress == peerAddr).foreach(prevPeer =>
-          knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
-      )
-    } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
-
   override def specialBehavior: Receive = {
-    case message: InfoMessage => println(message.info)
     case msgFromRemote: MessageFromRemote =>
       addOrUpdatePeer(msgFromRemote.remote)
       msgFromRemote.message match {
@@ -42,6 +34,14 @@ class Networker(settings: Settings) extends CommonActor {
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
   }
+
+  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit =
+    if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
+      knownPeers.par.find(_.remoteAddress == peerAddr).foreach(prevPeer =>
+        knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
+      )
+    } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
+
 
   def sendPeers: Unit =
     knownPeers.foreach(peer =>
@@ -66,5 +66,6 @@ object Networker {
 
   case class Peer(remoteAddress: InetSocketAddress,
                   lastMessageTime: Long)
+
 }
 
