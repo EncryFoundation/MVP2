@@ -1,11 +1,15 @@
 package mvp2.utils
 
 import java.security._
+import java.security.Security
 import org.bouncycastle.jce.ECNamedCurveTable
 import akka.util.ByteString
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 
 object ECDSA {
+
+  Security.addProvider(new BouncyCastleProvider)
 
   def createKeyPair: KeyPair = {
     val ecSpec: ECNamedCurveParameterSpec = ECNamedCurveTable.getParameterSpec("prime192v1")

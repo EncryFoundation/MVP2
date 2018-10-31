@@ -33,7 +33,7 @@ class Publisher extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case transaction: Transaction if transaction.isValid => transaction :: mempool
+    case transaction: Transaction => mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
   }
 
