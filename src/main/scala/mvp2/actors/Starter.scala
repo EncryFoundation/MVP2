@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import akka.actor.{Actor, Props}
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps

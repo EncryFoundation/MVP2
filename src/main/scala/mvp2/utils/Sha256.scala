@@ -1,4 +1,4 @@
-package mvp2.Utils
+package mvp2.utils
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest

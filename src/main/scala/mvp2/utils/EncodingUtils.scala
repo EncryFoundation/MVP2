@@ -1,4 +1,4 @@
-package mvp2.Utils
+package mvp2.utils
 
 import akka.util.ByteString
 import io.circe.{Decoder, Encoder}

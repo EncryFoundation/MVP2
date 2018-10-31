@@ -12,9 +12,9 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import mvp2.Utils.EncodingUtils._
+import mvp2.utils.EncodingUtils._
 import mvp2.messages.{CurrentBlockchainInfo, Get}
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 
 case class ApiRoute(settings: Settings, implicit val context: ActorRefFactory) {
 

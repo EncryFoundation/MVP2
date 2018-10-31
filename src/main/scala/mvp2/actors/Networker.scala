@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 import akka.actor.Props
 import mvp2.actors.Networker.Peer
 import mvp2.messages._
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 
 class Networker(settings: Settings) extends CommonActor {
 

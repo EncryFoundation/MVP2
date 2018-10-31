@@ -3,7 +3,7 @@ package mvp2.actors
 import java.nio.charset.StandardCharsets
 import akka.util.ByteString
 import mvp2.data.{Block, KeyBlock, MicroBlock, Transaction}
-import mvp2.Utils.Sha256
+import mvp2.utils.Sha256
 import scala.collection.mutable.ListBuffer
 
 object DummyTestBlockGenerator {

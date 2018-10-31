@@ -8,7 +8,7 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
 import mvp2.messages._
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 
 class Receiver(settings: Settings) extends Actor with StrictLogging {
 

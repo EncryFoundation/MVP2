@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import akka.util.ByteString
-import mvp2.Utils.Sha256
+import mvp2.utils.Sha256
 import mvp2.data.{KeyBlock, MicroBlock, Transaction}
 import scala.collection.immutable.HashMap
 
