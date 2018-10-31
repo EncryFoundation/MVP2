@@ -1,34 +1,33 @@
 package mvp2.Actors
 
-import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
+import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.Messages.{Ping, Pong, UdpSocket}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import mvp2.Messages._
 
 class Sender extends Actor with StrictLogging {
 
-  val remote: InetSocketAddress = new InetSocketAddress("localhost", 1234)
+  val serialization: Serialization = SerializationExtension(context.system)
 
-  override def preStart(): Unit = {
-    logger.info("Start sender")
-    context.system.scheduler.schedule(1.seconds, 1.seconds)(self ! Ping)
-  }
+  override def preStart(): Unit = logger.info("Starting the Sender!")
 
   override def receive: Receive = {
     case UdpSocket(connection) => context.become(sendingCycle(connection))
-    case msg => logger.info(s"Smth strange: $msg")
+    case smth: Any => logger.info(s"Got smth strange: $smth.")
   }
 
   def sendingCycle(connection: ActorRef): Receive = {
-    case Ping =>
-      connection ! Udp.Send(ByteString("Ping"), remote)
-      logger.info(s"Send ping to: $connection")
-    case Pong =>
-      connection ! Udp.Send(ByteString("Pong"), remote)
-      logger.info(s"Send pong to remote: $connection")
+    case SendToNetwork(message, remote) =>
+      logger.info(s"Send $message to $remote")
+      connection ! Udp.Send(serialize(message), remote)
   }
+
+  def serialize(message: NetworkMessage): ByteString = ByteString(message match {
+    case ping: Ping.type => Ping.typeId +: serialization.findSerializerFor(Ping).toBinary(ping)
+    case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
+    case knownPeers: Peers => Peers.typeId +: serialization.findSerializerFor(Peers).toBinary(knownPeers)
+    case blocks: Blocks => Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+  })
 }

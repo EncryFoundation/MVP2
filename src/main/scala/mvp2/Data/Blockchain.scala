@@ -1,6 +1,5 @@
 package mvp2.Data
 
-
 sealed trait Chain {
   val chain: List[Block]
   def size: Int = chain.length
