@@ -23,3 +23,5 @@ case object Pong extends PingPong
 case class UdpSocket(conection: ActorRef) extends Message
 
 case class SendBlockToState(block: Block) extends Message
+
+case object GetCurrentInfoFromBlockchainer extends Message

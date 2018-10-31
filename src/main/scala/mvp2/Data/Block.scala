@@ -10,12 +10,9 @@ sealed trait Block {
 
 final case class KeyBlock(override val height: Int,
                           previousGeneralBlock: ByteString,
+                          transactions: List[Transaction],
                           data: ByteString) extends Block {
-final case class GeneralBlock(height: Int,
-                              previousGeneralBlock: ByteString,
-                              transactions: List[Transaction],
-                              data: ByteString) extends Block {
-  override def isValid: Boolean = ???
+  override def isValid: Boolean = true
 }
 
 final case class MicroBlock(override val height: Int,
@@ -23,5 +20,5 @@ final case class MicroBlock(override val height: Int,
                             previousMiniBlock: ByteString,
                             transactions: List[Transaction],
                             data: ByteString) extends Block {
-  override def isValid: Boolean = ???
+  override def isValid: Boolean = true
 }

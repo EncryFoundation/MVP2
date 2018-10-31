@@ -1,13 +1,13 @@
 package mvp2.Actors
 
-import mvp2.Data.{GeneralBlock, MicroBlock, Transaction}
+import mvp2.Data.{KeyBlock, MicroBlock, Transaction}
 
 class Accountant extends CommonActor {
 
   override def specialBehavior: Receive = {
     case microBlock: MicroBlock =>
       if (microBlock.transactions.forall(_.isValid)) updateState(microBlock.transactions)
-    case keyBlock: GeneralBlock =>
+    case keyBlock: KeyBlock =>
       if (keyBlock.transactions.forall(_.isValid)) updateState(keyBlock.transactions)
   }
 
@@ -18,4 +18,3 @@ class Accountant extends CommonActor {
     }
   }
 }
-
