@@ -2,6 +2,7 @@ package mvp2.actors
 
 import akka.actor.{ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages.Get
@@ -10,15 +11,19 @@ import scala.collection.immutable.HashMap
 class Blockchainer extends PersistentActor with StrictLogging {
 
   var appendix: Appendix = Appendix(HashMap())
-  val accountRef: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/account")
+  val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
 
-  context.actorOf(Props(classOf[Accountant]), "account")
-  context.actorOf(Props[Publisher])
+  context.actorOf(Props(classOf[Accountant]), "accountant")
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => Blockchain.update(keyBlock)
     case microBlock: MicroBlock => Blockchain.update(microBlock)
     case RecoveryCompleted =>
+      context.actorOf(Props[Publisher], "publisher")
+      val lastBlock: Block = Blockchain.chain.toSeq.sortBy(_._1).lastOption.map(_._2).getOrElse(
+        KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
+      )
+      context.actorSelection("/user/starter/blockchainer/publisher") ! lastBlock
   }
 
   override def receiveCommand: Receive = {
@@ -32,18 +37,17 @@ class Blockchainer extends PersistentActor with StrictLogging {
       block match {
         case keyBlock: KeyBlock =>
           logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
-          val oldAppendix: HashMap[Long, Block] = appendix.chain
-          oldAppendix.foreach(block =>
+          appendix.chain.foreach(block =>
             persist(block._2) { x =>
               logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
             })
-          Blockchain.update(oldAppendix)
+          Blockchain.update(appendix.chain)
           appendix = appendix.copy(HashMap(keyBlock.height -> keyBlock))
-          accountRef ! keyBlock
+          accountant ! keyBlock
         case microBlock: MicroBlock =>
           logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
           appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
-          accountRef ! microBlock
+          accountant ! microBlock
       }
     }
   }

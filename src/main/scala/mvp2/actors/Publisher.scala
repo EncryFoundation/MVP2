@@ -11,12 +11,12 @@ import scala.util.Random
 
 class Publisher extends CommonActor {
 
-  val blockchainerRef: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
+  val blockchainer: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
 
-  context.system.scheduler.schedule(1 second, 5 seconds)(createKeyBlock)
+  context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
 
   context.system.scheduler.schedule(1 second, 3 seconds) {
     val randomData: ByteString = ByteString(randomizer.nextString(100))
@@ -47,8 +47,7 @@ class Publisher extends CommonActor {
     val keyBlock: KeyBlock =
       KeyBlock(thisBlocksHeight, currentTime, lastKeyBlock.currentBlockHash, mempool)
     mempool = List.empty
-    println(keyBlock)
-    blockchainerRef ! keyBlock
+    blockchainer ! keyBlock
     self ! keyBlock
     keyBlock
   }

@@ -9,9 +9,7 @@ sealed trait Chain {
 
   def lastBlock: Block = chain.last._2
 
-  def update(block: Block): HashMap[Long, Block] = {
-    chain.updated(block.height, block)
-  }
+  def update(block: Block): Unit = chain = chain.updated(block.height, block)
 }
 
 case object Blockchain extends Chain {
@@ -34,6 +32,6 @@ final case class Appendix(override var chain: HashMap[Long, Block]) extends Chai
 
   override def lastBlock: Block = chain.last._2
 
-  override def update(block: Block): HashMap[Long, Block] = chain.updated(block.height, block)
+  override def update(block: Block): Unit = chain = chain.updated(block.height, block)
 
 }
