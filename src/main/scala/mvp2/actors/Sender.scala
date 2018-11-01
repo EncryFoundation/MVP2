@@ -22,6 +22,7 @@ class Sender extends Actor with StrictLogging {
     case SendToNetwork(message, remote) =>
       logger.info(s"Send $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
+      context.actorSelection("/user/starter/influxActor") ! SendToNetwork(message, remote)
   }
 
   def serialize(message: NetworkMessage): ByteString = ByteString(message match {
