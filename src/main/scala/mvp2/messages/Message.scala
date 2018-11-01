@@ -3,7 +3,6 @@ package mvp2.messages
 import java.net.InetSocketAddress
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.Block
 import mvp2.data.Chain
 
 sealed trait Message

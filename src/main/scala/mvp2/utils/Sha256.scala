@@ -11,4 +11,3 @@ object Sha256 {
     ByteString(digest.digest(string.getBytes(StandardCharsets.UTF_8)))
   }
 }
-
