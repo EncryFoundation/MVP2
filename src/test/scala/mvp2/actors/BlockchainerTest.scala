@@ -31,11 +31,11 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
 
     val blockchainer: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     Thread.sleep(1000)
-    val chain: HashMap[Int, Block] = generateValidChain
+    val chain: HashMap[Long, Block] = generateValidChain
     val sortedChain = chain.toSeq.sortBy(_._1)
     sortedChain.foreach {
-      case x@(k: Int, v: MicroBlock) => blockchainer ! v
-      case x@(k: Int, v: KeyBlock) => blockchainer ! v
+      case x@(k: Long, v: MicroBlock) => blockchainer ! v
+      case x@(k: Long, v: KeyBlock) => blockchainer ! v
     }
     Thread.sleep(2000)
     blockchainer ! PoisonPill
@@ -46,7 +46,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
     implicit val timeout: Timeout = Timeout(10.seconds)
     implicit val ec: ExecutionContextExecutor = system.dispatcher
 
-    val getRestoredChain = (blockchainerNew ? Get).mapTo[HashMap[Int, Block]]
+    val getRestoredChain = (blockchainerNew ? Get).mapTo[HashMap[Long, Block]]
     getRestoredChain.map(x =>
       x.toSeq.sortBy(_._1) shouldEqual sortedChain.takeRight(6)
     )

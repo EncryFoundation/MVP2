@@ -37,7 +37,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       block match {
         case keyBlock: KeyBlock =>
           logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
-          val oldAppendix: HashMap[Int, Block] = appendix.chain
+          val oldAppendix: HashMap[Long, Block] = appendix.chain
           oldAppendix.foreach(block =>
             persist(block) { x =>
               logger.info(s"Successfully saved block with id: ${x._2} and height ${x._1}!")
