@@ -66,5 +66,4 @@ object Networker {
 
   case class Peer(remoteAddress: InetSocketAddress,
                   lastMessageTime: Long)
-
 }
