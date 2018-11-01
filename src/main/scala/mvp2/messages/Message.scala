@@ -1,4 +1,4 @@
-package mvp2.Messages
+package mvp2.messages
 
 import java.net.InetSocketAddress
 import akka.actor.ActorRef

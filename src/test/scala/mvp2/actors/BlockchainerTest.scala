@@ -5,7 +5,7 @@ import akka.testkit.TestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
 import mvp2.actors.DummyTestBlockGenerator._
 import mvp2.data.{Block, KeyBlock, MicroBlock}
-import mvp2.Messages.Get
+import mvp2.messages.Get
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory

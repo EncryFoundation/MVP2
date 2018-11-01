@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
-import mvp2.Messages._
+import mvp2.messages._
 import mvp2.utils.Settings
 import mvp2.actors.Networker.Peer
 

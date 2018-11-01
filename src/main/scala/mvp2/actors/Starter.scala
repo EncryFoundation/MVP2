@@ -13,7 +13,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 class Starter extends Actor with StrictLogging {
 
-  import mvp2.Messages.InfoMessage
+  import mvp2.messages.InfoMessage
 
   context.system.scheduler
     .schedule(0 seconds, 3 seconds, self, InfoMessage("Self ping by sheduler."))
