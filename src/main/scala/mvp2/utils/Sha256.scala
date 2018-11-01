@@ -10,4 +10,3 @@ object Sha256 {
   def toSha256(string: String): ByteString = ByteString(digest.digest(string.getBytes(StandardCharsets.UTF_8)))
 
 }
-

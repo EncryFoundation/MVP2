@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import akka.util.ByteString
 import mvp2.data.{Block, KeyBlock, MicroBlock, Transaction}
 import mvp2.utils.Sha256
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable.ListBuffer
 
 object DummyTestBlockGenerator {
@@ -30,9 +31,49 @@ object DummyTestBlockGenerator {
   def generateChain(length: Int): List[Block] = List.range(1, length + 1)
     .map(e => generateKeyBlock(generateByteString, e))
 
-
   def generateByteString: ByteString = ByteString(java.util.UUID.randomUUID()
     .toString.getBytes(StandardCharsets.UTF_8))
 
   def generateHash: ByteString = Sha256.toSha256(java.util.UUID.randomUUID().toString)
+
+  def generateValidChain: TreeMap[Long, Block] = {
+    val firstKeyBlock: KeyBlock =
+      KeyBlock(0L, System.currentTimeMillis(), ByteString.empty, List(), generateByteString)
+    val firstMicroBlock: MicroBlock =
+      MicroBlock(
+        1,
+        System.currentTimeMillis(),
+        firstKeyBlock.data,
+        ByteString.empty,
+        generateHash,
+        List(),
+        generateByteString
+      )
+    val listFiveMicroBlocks: List[MicroBlock] = List.range(1, 5).foldLeft(List(firstMicroBlock)) { case (cur, prev) =>
+      val nextMicro =
+        MicroBlock(
+          cur.last.height + 1,
+          System.currentTimeMillis(),
+          firstKeyBlock.data,
+          cur.last.data,
+          generateHash,
+          List(),
+          generateByteString
+        )
+      cur :+ nextMicro
+    }
+    val newKeyBlock: KeyBlock =
+      KeyBlock(
+        listFiveMicroBlocks.last.height + 1,
+        System.currentTimeMillis(),
+        firstKeyBlock.data, List(),
+        generateByteString
+      )
+    val notCompletedChain: TreeMap[Long, Block] = listFiveMicroBlocks.foldLeft(TreeMap[Long, Block]()) {
+      case (next, prev) => next + (prev.height -> prev)
+    }
+    val completedChain: TreeMap[Long, Block] =
+      notCompletedChain + (newKeyBlock.height -> newKeyBlock) + (firstKeyBlock.height -> firstKeyBlock)
+    completedChain
+  }
 }

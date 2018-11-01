@@ -39,4 +39,3 @@ object Accountant {
   case class Account(publicKey: ByteString, data: List[ByteString], nonce: Long)
 
 }
-
