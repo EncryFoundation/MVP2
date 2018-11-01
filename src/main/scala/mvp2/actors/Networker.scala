@@ -17,6 +17,8 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
+      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers)
     bornKids()
   }
 
@@ -42,6 +44,10 @@ class Networker(settings: Settings) extends CommonActor {
       )
     } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
 
+  def pingAllPeers: Unit =
+    knownPeers.foreach(peer =>
+      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
+    )
 
   def sendPeers: Unit =
     knownPeers.foreach(peer =>
