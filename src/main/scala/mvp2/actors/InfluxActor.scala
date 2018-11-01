@@ -28,12 +28,10 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       val msg: String = message match {
         case Ping => "ping"
         case Pong =>
-          pingPongResponsePequestTime.get(remote).foreach(pingSendTime =>
+          pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
             influxDB.write(settings.port,
-              s"""pingPongResponseTime,
-                 |node="$myNodeAddress",
-                 |remote="${remote.getAddress}" value=${System.currentTimeMillis() - pingSendTime}""".stripMargin)
-          )
+              s"""pingPongResponseTime,remote="$myNodeAddress" value=${System.currentTimeMillis() - pingSendTime},node="${remote.getAddress}"""".stripMargin)
+          }
           pingPongResponsePequestTime = pingPongResponsePequestTime - remote
           "pong"
         case Peers(_, _) => "peers"
