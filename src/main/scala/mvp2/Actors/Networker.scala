@@ -58,7 +58,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   def sendInformation: Unit =
       context.actorSelection("/user/starter/informator") !
-        CurrentNetworkerInfo(knownPeers.map(peer => peer.remoteAddress))
+        CurrentNetworkerInfo(knownPeers.map(_.remoteAddress))
 
   def bornKids(): Unit = {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")

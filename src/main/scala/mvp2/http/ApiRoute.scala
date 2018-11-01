@@ -12,7 +12,6 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import mvp2.Utils.EncodingUtils._
 import mvp2.Messages.{CurrentBlockchainInfo, Get}
 import mvp2.Utils.Settings
 

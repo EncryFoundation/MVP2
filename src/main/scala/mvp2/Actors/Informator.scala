@@ -3,7 +3,7 @@ package mvp2.Actors
 import java.net.InetSocketAddress
 
 import akka.util.ByteString
-import mvp2.Messages.{CurrentAccountantInfo, CurrentBlockchainInfo, CurrentNetworkerInfo, Get}
+import mvp2.Messages._
 
 class Informator extends CommonActor {
 
@@ -17,6 +17,8 @@ class Informator extends CommonActor {
 
   override def specialBehavior: Receive = {
     case Get => sender ! actualBlockchainInfo
+    case GetNetworkerInfo => sender ! actualNetworkerInfo
+    case GetAccountantInfo => sender ! actualAccountantInfo
 
     case currentBlockchainInfo: CurrentBlockchainInfo => actualBlockchainInfo = currentBlockchainInfo
     case currentNetworkerInfo: CurrentNetworkerInfo => actualNetworkerInfo = currentNetworkerInfo
