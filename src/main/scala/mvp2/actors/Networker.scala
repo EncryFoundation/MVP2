@@ -31,7 +31,7 @@ class Networker(settings: Settings) extends CommonActor {
           peers.foreach(addOrUpdatePeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          context.actorSelection("/user/starter/networker/sender") ! Pong
+          context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
