@@ -30,7 +30,7 @@ class Networker(settings: Settings) extends CommonActor {
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peers, remote) =>
-          peers.foreach(addPeer)
+          (peers :+ msgFromRemote.remote).foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
@@ -39,13 +39,9 @@ class Networker(settings: Settings) extends CommonActor {
       }
   }
 
-  def addPeer(peerAddr: InetSocketAddress): Unit = {
-    logger.info(s"!knownPeers.map(_.remoteAddress).contains($peerAddr) = ${!knownPeers.map(_.remoteAddress).contains(peerAddr)}")
-    if (!knownPeers.map(_.remoteAddress).contains(peerAddr)) {
-      logger.info(s"Add new peer: $peerAddr to knownPeers")
+  def addPeer(peerAddr: InetSocketAddress): Unit =
+    if (!knownPeers.map(_.remoteAddress).contains(peerAddr))
       knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
-    }
-  }
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
     if (knownPeers.par.exists(_.remoteAddress == peer))
