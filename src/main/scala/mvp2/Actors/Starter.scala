@@ -32,6 +32,7 @@ class Starter extends Actor with StrictLogging {
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "networker")
+    context.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     //context.actorOf(Props[Informator], settings, "informator")
     context.actorOf(Props[Zombie])
   }

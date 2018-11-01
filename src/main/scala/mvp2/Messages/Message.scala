@@ -47,7 +47,3 @@ case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) ext
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
-
-case class SendBlockToState(block: Block) extends Message
-
-case object GetCurrentInfoFromBlockchainer extends Message

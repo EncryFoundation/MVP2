@@ -24,7 +24,7 @@ case object Blockchain extends Chain {
 
   def genesisBlock: KeyBlock = ???
 
-  def upgrade(newChainPart: HashMap[Int, Block]): Unit = chain ++= newChainPart
+  def update(newChainPart: HashMap[Int, Block]): Unit = chain ++= newChainPart
 
 }
 
