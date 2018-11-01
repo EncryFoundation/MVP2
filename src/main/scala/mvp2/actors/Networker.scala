@@ -39,12 +39,20 @@ class Networker(settings: Settings) extends CommonActor {
       }
   }
 
-  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit =
+  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit = {
+    logger.info(s"knownPeers.par.exists(_.remoteAddress == $peerAddr) = ${knownPeers.par.exists(_.remoteAddress == peerAddr)}")
     if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
-      knownPeers.par.find(_.remoteAddress == peerAddr).foreach(prevPeer =>
-        knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
-      )
-    } else knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
+      knownPeers.find(_.remoteAddress == peerAddr).foreach { prevPeer =>
+        logger.info(s"prevPeer is: $prevPeer")
+        logger.info(s"After filter known peers: ${knownPeers.filter(_ != prevPeer).mkString(",")}")
+        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
+        logger.info(s"After update: ${knownPeers.mkString(",")}")
+      }
+    } else {
+      logger.info(s"Add new peer: $peerAddr to knownPeers")
+      knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
+    }
+  }
 
   def pingAllPeers: Unit =
     knownPeers.foreach(peer =>
