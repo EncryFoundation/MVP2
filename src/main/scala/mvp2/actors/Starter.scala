@@ -28,6 +28,7 @@ class Starter extends Actor with StrictLogging {
     settings.influx.foreach(influxSettings =>
       context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
     )
+    context.actorOf(Props(classOf[TimeProvider], settings.ntp), "timeProvider")
     context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "networker")
     context.actorOf(Props(classOf[Blockchainer]), "blockchainer")

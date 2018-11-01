@@ -1,24 +1,34 @@
 package mvp2.actors
 
 import java.net.InetAddress
+import akka.actor.ActorSelection
 import mvp2.actors.NetworkTime.Time
 import mvp2.utils.NetworkTimeProviderSettings
 import org.apache.commons.net.ntp.{NTPUDPClient, TimeInfo}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.Left
 import scala.util.control.NonFatal
 
 class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor {
 
+  private var state: State = Right(NetworkTime(0L, 0L))
+  private var delta: Time = 0L
+  val actors: Seq[ActorSelection] = Seq(
+    context.actorSelection("/user/starter/blockchainer"),
+    context.actorSelection("/user/starter/blockchainer/publisher")
+  )
+
+  private type State = Either[(NetworkTime, Future[NetworkTime]), NetworkTime]
+
+  override def preStart(): Unit =
+    context.system.scheduler.schedule(1 seconds, ntpSettings.updateEvery)(sendTimeToActors)
+
+
   override def specialBehavior: Receive = {
     case _ =>
   }
-
-  private var state: State = Right(NetworkTime(0L, 0L))
-  private var delta: Time = 0L
-
-  private type State = Either[(NetworkTime, Future[NetworkTime]), NetworkTime]
 
   private def updateOffSet(): Option[NetworkTime.Offset] = {
     val client: NTPUDPClient = new NTPUDPClient()
@@ -72,6 +82,12 @@ class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor
         timeFutureResult
       }
 
+  def sendTimeToActors: Unit =
+    for {
+      _ <- time()
+    } yield {
+      actors.foreach(ref => ref ! delta)
+    }
 }
 
 object NetworkTime {

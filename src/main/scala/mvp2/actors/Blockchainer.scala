@@ -12,6 +12,7 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
 
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
+  var currentDelta: NetworkTime.Time = 0L
 
   context.actorOf(Props(classOf[Accountant]), "accountant")
 
@@ -28,6 +29,9 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
   override def receiveCommand: Receive = {
     case block: Block => saveModifier(block)
     case Get => chain
+    case delta: NetworkTime.Time =>
+      logger.info(s"Update delta to $delta")
+      currentDelta = delta
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
@@ -50,6 +54,8 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
       }
     }
   }
+
+  def time: Long = System.currentTimeMillis() + currentDelta
 
   override def persistenceId: String = "blockchainer"
 

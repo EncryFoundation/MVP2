@@ -15,6 +15,7 @@ class Publisher extends CommonActor {
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
+  var currentDelta: NetworkTime.Time = 0L
 
   context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
 
@@ -37,7 +38,12 @@ class Publisher extends CommonActor {
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case delta: NetworkTime.Time =>
+      logger.info(s"Update delta to: $delta")
+      currentDelta = delta
   }
+
+  def time: Long = System.currentTimeMillis() + currentDelta
 
   def createGenesysBlock(): KeyBlock = ???
 
