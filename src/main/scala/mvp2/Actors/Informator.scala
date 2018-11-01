@@ -1,18 +1,27 @@
 package mvp2.Actors
 
-import mvp2.Messages.Get
-import mvp2.Messages.CurrentBlockchainInfo
+import java.net.InetSocketAddress
+
+import akka.util.ByteString
+import mvp2.Messages.{CurrentAccountantInfo, CurrentBlockchainInfo, CurrentNetworkerInfo, Get}
 
 class Informator extends CommonActor {
 
-  var actualInfo: CurrentBlockchainInfo = CurrentBlockchainInfo(0, None, None)
+  var actualBlockchainInfo: CurrentBlockchainInfo = CurrentBlockchainInfo(0, None, None)
+  var actualNetworkerInfo: CurrentNetworkerInfo = CurrentNetworkerInfo(List.empty[InetSocketAddress])
+  var actualAccountantInfo: CurrentAccountantInfo = CurrentAccountantInfo(Map.empty[ByteString,Account])
 
   override def preStart(): Unit = {
     logger.info("Starting the Informator!")
   }
 
   override def specialBehavior: Receive = {
-    case Get => sender ! actualInfo
-    case currentBlockchainInfo: CurrentBlockchainInfo => actualInfo = currentBlockchainInfo
+    case Get => sender ! actualBlockchainInfo
+
+    case currentBlockchainInfo: CurrentBlockchainInfo => actualBlockchainInfo = currentBlockchainInfo
+    case currentNetworkerInfo: CurrentNetworkerInfo => actualNetworkerInfo = currentNetworkerInfo
+    case currentAccountantInfo: CurrentAccountantInfo => actualAccountantInfo = currentAccountantInfo
+
+
   }
 }

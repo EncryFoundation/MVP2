@@ -17,6 +17,7 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    context.system.scheduler.schedule(1.seconds, settings.apiSettings.timeout.seconds)(sendInformation)
     bornKids()
   }
 
@@ -54,6 +55,10 @@ class Networker(settings: Settings) extends CommonActor {
           peer.remoteAddress
         )
     )
+
+  def sendInformation: Unit =
+      context.actorSelection("/user/starter/informator") !
+        CurrentNetworkerInfo(knownPeers.map(peer => peer.remoteAddress))
 
   def bornKids(): Unit = {
     context.actorOf(Props[Sender].withDispatcher("net-dispatcher").withMailbox("net-mailbox"), "sender")
