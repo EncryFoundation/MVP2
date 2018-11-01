@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}
 import akka.serialization.{Serialization, SerializationExtension}
@@ -16,7 +16,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   override def preStart(): Unit = {
     logger.info("Starting the Receiver!")
-    IO(Udp) ! Udp.Bind(self, new InetSocketAddress("localhost", settings.port))
+    IO(Udp) ! Udp.Bind(self, new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port))
   }
 
   override def receive: Receive = {
@@ -32,6 +32,8 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
         context.parent ! MessageFromRemote(message, remote)
+        if (settings.influx.isDefined)
+          context.actorSelection("/user/starter/influxActor") ! MessageFromRemote(message, remote)
       }
     case Udp.Unbind =>
       socket ! Udp.Unbind
