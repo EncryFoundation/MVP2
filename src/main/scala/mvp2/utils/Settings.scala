@@ -1,4 +1,4 @@
-package mvp2.Utils
+package mvp2.utils
 
 case class Settings(port: Int,
                     otherNodes: List[Node],

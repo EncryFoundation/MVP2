@@ -1,12 +1,13 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.actor.{Actor, Props}
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.config.ConfigFactory
+import mvp2.Actors.Zombie
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 

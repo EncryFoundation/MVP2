@@ -1,8 +1,8 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.util.ByteString
-import mvp2.Data.Transaction
-import mvp2.Utils.Sha256
+import mvp2.data.Transaction
+import mvp2.utils.Sha256
 import scala.collection.immutable.HashMap
 
 object State {

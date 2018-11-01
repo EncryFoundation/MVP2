@@ -1,4 +1,4 @@
-import mvp2.Actors.Starter
+import mvp2.actors.Starter
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import org.scalatest.BeforeAndAfterAll

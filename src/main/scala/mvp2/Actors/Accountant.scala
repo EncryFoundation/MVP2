@@ -1,6 +1,6 @@
-package mvp2.Actors
+package mvp2.actors
 
-import mvp2.Data.{KeyBlock, MicroBlock, Transaction}
+import mvp2.data.{KeyBlock, MicroBlock, Transaction}
 
 class Accountant extends CommonActor {
 

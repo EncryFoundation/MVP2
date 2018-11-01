@@ -1,12 +1,12 @@
-package mvp2.Actors
+package mvp2.actors
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
-import mvp2.Actors.Networker.Peer
 import mvp2.Messages._
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
+import mvp2.actors.Networker.Peer
 
 class Networker(settings: Settings) extends CommonActor {
 

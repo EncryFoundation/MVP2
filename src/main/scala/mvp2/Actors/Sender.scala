@@ -1,4 +1,4 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.actor.{Actor, ActorRef}
 import akka.io.Udp

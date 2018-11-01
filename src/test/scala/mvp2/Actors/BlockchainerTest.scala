@@ -1,16 +1,16 @@
-package mvp2.Actors
+package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.TestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
-import mvp2.Actors.DummyTestBlockGenerator._
-import mvp2.Data.{Block, KeyBlock, MicroBlock}
+import mvp2.actors.DummyTestBlockGenerator._
+import mvp2.data.{Block, KeyBlock, MicroBlock}
 import mvp2.Messages.Get
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.Utils.Settings
+import mvp2.utils.Settings
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._

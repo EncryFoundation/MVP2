@@ -1,4 +1,4 @@
-package mvp2.Actors
+package mvp2.actors
 
 import mvp2.Messages.Get
 import mvp2.Messages.CurrentBlockchainInfo

@@ -1,9 +1,9 @@
-package mvp2.Actors
+package mvp2.actors
 
 import java.nio.charset.StandardCharsets
 import akka.util.ByteString
-import mvp2.Data.{Block, KeyBlock, MicroBlock, Transaction}
-import mvp2.Utils.Sha256
+import mvp2.data.{Block, KeyBlock, MicroBlock, Transaction}
+import mvp2.utils.Sha256
 import scala.collection.immutable.HashMap
 import scala.collection.mutable.ListBuffer
 
