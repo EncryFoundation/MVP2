@@ -45,7 +45,7 @@ class Networker(settings: Settings) extends CommonActor {
       knownPeers.find(_.remoteAddress == peerAddr).foreach { prevPeer =>
         logger.info(s"prevPeer is: $prevPeer")
         logger.info(s"After filter known peers: ${knownPeers.filter(_ != prevPeer).mkString(",")}")
-        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
+        knownPeers = knownPeers.filter(_ == prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
         logger.info(s"After update: ${knownPeers.mkString(",")}")
       }
     } else {
