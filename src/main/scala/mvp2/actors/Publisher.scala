@@ -1,6 +1,7 @@
 package mvp2.actors
 
 import java.security.KeyPair
+import akka.actor.ActorSelection
 import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,6 +11,7 @@ import scala.util.Random
 
 class Publisher extends CommonActor {
 
+  val blockchainerRef: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
@@ -46,6 +48,7 @@ class Publisher extends CommonActor {
       KeyBlock(thisBlocksHeight, currentTime, lastKeyBlock.currentBlockHash, mempool)
     mempool = List.empty
     println(keyBlock)
+    blockchainerRef ! keyBlock
     self ! keyBlock
     keyBlock
   }

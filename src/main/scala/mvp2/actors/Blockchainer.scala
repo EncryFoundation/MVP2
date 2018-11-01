@@ -1,29 +1,24 @@
 package mvp2.actors
 
-import akka.actor.ActorSelection
+import akka.actor.{ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages.Get
-import mvp2.utils.Settings
 import scala.collection.immutable.HashMap
 
-class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
+class Blockchainer extends PersistentActor with StrictLogging {
 
   var appendix: Appendix = Appendix(HashMap())
-  val accountRef: ActorSelection = context.system.actorSelection("/user/starter/account")
+  val accountRef: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/account")
 
-  override def receiveRecover: Receive =
-    if (settings.levelDBSettings.enableRestore) receiveRecoveryEnable else receiveRecoveryDisable
+  context.actorOf(Props(classOf[Accountant]), "account")
+  context.actorOf(Props[Publisher])
 
-  def receiveRecoveryEnable: Receive = {
+  override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => Blockchain.update(keyBlock)
     case microBlock: MicroBlock => Blockchain.update(microBlock)
     case RecoveryCompleted =>
-  }
-
-  def receiveRecoveryDisable: Receive = {
-    case _ => logger.info("Recovery is disabled.")
   }
 
   override def receiveCommand: Receive = {
@@ -39,8 +34,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
           val oldAppendix: HashMap[Long, Block] = appendix.chain
           oldAppendix.foreach(block =>
-            persist(block) { x =>
-              logger.info(s"Successfully saved block with id: ${x._2} and height ${x._1}!")
+            persist(block._2) { x =>
+              logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
             })
           Blockchain.update(oldAppendix)
           appendix = appendix.copy(HashMap(keyBlock.height -> keyBlock))
