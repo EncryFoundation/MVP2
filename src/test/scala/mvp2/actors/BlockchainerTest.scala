@@ -10,7 +10,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import scala.concurrent.duration._
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
 
 class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
@@ -23,7 +23,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
 
     val blockchainer: ActorRef = system.actorOf(Props(classOf[Blockchainer]), "blockchainer")
     Thread.sleep(1000)
-    val chain: HashMap[Long, Block] = generateValidChain
+    val chain: TreeMap[Long, Block] = generateValidChain
     val sortedChain = chain.toSeq.sortBy(_._1)
     sortedChain.foreach {
       case x@(k: Long, v: MicroBlock) => blockchainer ! v
@@ -38,7 +38,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
     implicit val timeout: Timeout = Timeout(10.seconds)
     implicit val ec: ExecutionContextExecutor = system.dispatcher
 
-    val getRestoredChain = (blockchainerNew ? Get).mapTo[HashMap[Long, Block]]
+    val getRestoredChain = (blockchainerNew ? Get).mapTo[TreeMap[Long, Block]]
     getRestoredChain.map(x =>
       x.toSeq.sortBy(_._1) shouldEqual sortedChain.takeRight(6)
     )

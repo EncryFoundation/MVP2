@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import akka.util.ByteString
 import mvp2.data.{Block, KeyBlock, MicroBlock, Transaction}
 import mvp2.utils.Sha256
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable.ListBuffer
 
 object DummyTestBlockGenerator {
@@ -36,7 +36,7 @@ object DummyTestBlockGenerator {
 
   def generateHash: ByteString = Sha256.toSha256(java.util.UUID.randomUUID().toString)
 
-  def generateValidChain: HashMap[Long, Block] = {
+  def generateValidChain: TreeMap[Long, Block] = {
     val firstKeyBlock: KeyBlock =
       KeyBlock(0L, System.currentTimeMillis(), ByteString.empty, List(), generateByteString)
     val firstMicroBlock: MicroBlock =
@@ -69,10 +69,10 @@ object DummyTestBlockGenerator {
         firstKeyBlock.data, List(),
         generateByteString
       )
-    val notCompletedChain: HashMap[Long, Block] = listFiveMicroBlocks.foldLeft(HashMap[Long, Block]()) {
+    val notCompletedChain: TreeMap[Long, Block] = listFiveMicroBlocks.foldLeft(TreeMap[Long, Block]()) {
       case (next, prev) => next + (prev.height -> prev)
     }
-    val completedChain: HashMap[Long, Block] =
+    val completedChain: TreeMap[Long, Block] =
       notCompletedChain + (newKeyBlock.height -> newKeyBlock) + (firstKeyBlock.height -> firstKeyBlock)
     completedChain
   }
