@@ -27,10 +27,10 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case msgFromRemote: MessageFromRemote =>
-      addOrUpdatePeer(msgFromRemote.remote)
+      updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peers, remote) =>
-          peers.foreach(addOrUpdatePeer)
+          peers.foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
@@ -39,20 +39,17 @@ class Networker(settings: Settings) extends CommonActor {
       }
   }
 
-  def addOrUpdatePeer(peerAddr: InetSocketAddress): Unit = {
-    logger.info(s"knownPeers.par.exists(_.remoteAddress == $peerAddr) = ${knownPeers.par.exists(_.remoteAddress == peerAddr)}")
-    if (knownPeers.par.exists(_.remoteAddress == peerAddr)) {
-      knownPeers.find(_.remoteAddress == peerAddr).foreach { prevPeer =>
-        logger.info(s"prevPeer is: $prevPeer")
-        logger.info(s"After filter known peers: ${knownPeers.filter(_ != prevPeer).mkString(",")}")
-        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
-        logger.info(s"After update: ${knownPeers.mkString(",")}")
-      }
-    } else {
+  def addPeer(peerAddr: InetSocketAddress): Unit =
+    if (knownPeers.par.exists(_.remoteAddress != peerAddr)) {
       logger.info(s"Add new peer: $peerAddr to knownPeers")
       knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
     }
-  }
+
+  def updatePeerTime(peer: InetSocketAddress): Unit =
+    if (knownPeers.par.exists(_.remoteAddress == peer))
+      knownPeers.find(_.remoteAddress == peer).foreach ( prevPeer =>
+        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
+      )
 
   def pingAllPeers: Unit =
     knownPeers.foreach(peer =>
