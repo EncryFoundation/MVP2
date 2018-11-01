@@ -32,7 +32,8 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
         context.parent ! MessageFromRemote(message, remote)
-        context.actorSelection("/user/starter/influxActor") ! MessageFromRemote(message, remote)
+        if (settings.influx.isDefined)
+          context.actorSelection("/user/starter/influxActor") ! MessageFromRemote(message, remote)
       }
     case Udp.Unbind =>
       socket ! Udp.Unbind
