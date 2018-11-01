@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.net.InetAddress
+import java.net.{InetAddress, InetSocketAddress}
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
@@ -11,6 +11,8 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
+  var pingPongResponsePequestTime: Map[InetSocketAddress, Long] = Map.empty
+
   val influxDB: InfluxDB = InfluxDBFactory.connect(
     settings.host,
     settings.login,
@@ -18,7 +20,6 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
   )
 
   override def preStart(): Unit = {
-    logger.info("Starting Influx actor")
     influxDB.write(settings.port, s"""startMvp value=12""")
   }
 
@@ -26,14 +27,24 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
     case MessageFromRemote(message, remote) =>
       val msg: String = message match {
         case Ping => "ping"
-        case Pong => "pong"
+        case Pong =>
+          pingPongResponsePequestTime.get(remote).foreach(pingSendTime =>
+            influxDB.write(settings.port,
+              s"""pingPongResponseTime,
+                 |node="$myNodeAddress",
+                 |remote="${remote.getAddress}" value=${System.currentTimeMillis() - pingSendTime}""".stripMargin)
+          )
+          pingPongResponsePequestTime = pingPongResponsePequestTime - remote
+          "pong"
         case Peers(_, _) => "peers"
       }
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
     case SendToNetwork(message, remote) =>
       val msg: String = message match {
-        case Ping => "ping"
+        case Ping =>
+          pingPongResponsePequestTime = pingPongResponsePequestTime + ((remote, System.currentTimeMillis()))
+          "ping"
         case Pong => "pong"
         case Peers(_, _) => "peers"
       }
