@@ -30,16 +30,15 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
       }
       influxDB.write(settings.port,
-        s"msgFromRemote,node=$myNodeAddress msg=$msg,remote=${remote.getAddress}")
+        s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
     case SendToNetwork(message, remote) =>
       val msg: String = message match {
         case Ping => "ping"
         case Pong => "pong"
         case Peers(_, _) => "peers"
       }
-      println("Send to remote")
       influxDB.write(settings.port,
-        s"msgToRemote,node=$myNodeAddress msg=$msg,remote=${remote.getAddress}")
+        s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
     case _ =>
   }
 }
