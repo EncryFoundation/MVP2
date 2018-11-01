@@ -39,11 +39,13 @@ class Networker(settings: Settings) extends CommonActor {
       }
   }
 
-  def addPeer(peerAddr: InetSocketAddress): Unit =
+  def addPeer(peerAddr: InetSocketAddress): Unit = {
+    logger.info(s"knownPeers.par.exists(_.remoteAddress != $peerAddr) = ${knownPeers.par.exists(_.remoteAddress != peerAddr)}")
     if (knownPeers.par.exists(_.remoteAddress != peerAddr)) {
       logger.info(s"Add new peer: $peerAddr to knownPeers")
       knownPeers = knownPeers :+ Peer(peerAddr, System.currentTimeMillis())
     }
+  }
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
     if (knownPeers.par.exists(_.remoteAddress == peer))
