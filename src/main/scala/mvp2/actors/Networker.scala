@@ -17,6 +17,9 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    context.system.scheduler.schedule(1.seconds, 3.seconds){
+      logger.info(s"KnownPeers: ${knownPeers.mkString(",")}")
+    }
     if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
       context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers)
     bornKids()
@@ -27,7 +30,6 @@ class Networker(settings: Settings) extends CommonActor {
       addOrUpdatePeer(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peers, remote) =>
-          logger.info(s"Get known peers: $peers")
           peers.foreach(addOrUpdatePeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
