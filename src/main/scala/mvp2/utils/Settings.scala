@@ -5,7 +5,7 @@ case class Settings(port: Int,
                     heartbeat: Int,
                     apiSettings: ApiSettings,
                     blockchain: Blockchain,
-                    privateKey: String,
+                    privateKey: Option[String],
                     influx: Option[InfluxSettings],
                     testingSettings: Option[TestingSettings]
                    )

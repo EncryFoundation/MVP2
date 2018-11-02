@@ -18,7 +18,8 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: Option[KeyBlock] = None
   val randomizer: Random.type = scala.util.Random
   var schedule: List[InetSocketAddress] = List.empty
-  val privateKey: PrivateKey = ECDSA.restorePrivateKeyFromBase64Str(settings.privateKey)
+  val privateKey: PrivateKey = settings.privateKey.map(ECDSA.restorePrivateKeyFromBase64Str)
+    .getOrElse(ECDSA.createKeyPair.getPrivate)
 
   context.system.scheduler.schedule(1 second, 3 seconds) {
     val randomData: ByteString = ByteString(randomizer.nextString(100))
