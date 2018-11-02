@@ -16,9 +16,9 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
     if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
-      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers)
+      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
 

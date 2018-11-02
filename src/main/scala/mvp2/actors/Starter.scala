@@ -25,12 +25,11 @@ class Starter extends Actor with StrictLogging {
   }
 
   def bornKids(): Unit = {
+    context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
     settings.influx.foreach(influxSettings =>
       context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
     )
-    context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "networker")
-    context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
+    context.actorOf(Props[Informator])
     context.actorOf(Props[Zombie])
   }
 }

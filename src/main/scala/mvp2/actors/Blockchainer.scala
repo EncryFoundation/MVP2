@@ -1,19 +1,20 @@
 package mvp2.actors
 
-import akka.actor.{ActorSelection, Props}
+import akka.actor.{ActorRef, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages.Get
+import mvp2.utils.Settings
 import scala.collection.immutable.TreeMap
 
-class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
+class Blockchainer (settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
-  val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
-
-  context.actorOf(Props(classOf[Accountant]), "accountant")
+  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
+  val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
+    .withMailbox("net-mailbox"), "networker")
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => update(keyBlock)
@@ -31,25 +32,22 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
-  def saveModifier(block: Block): Unit = {
-    if (block.isValid) {
-      block match {
-        case keyBlock: KeyBlock =>
-          logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
-          appendix.chain.foreach(block =>
-            persist(block._2) { x =>
-              logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
-            })
-          update(appendix.chain)
-          appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
-          accountant ! keyBlock
-        case microBlock: MicroBlock =>
-          logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
-          appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
-          accountant ! microBlock
-      }
-    }
+  def saveModifier(block: Block): Unit = if (block.isValid) block match {
+    case keyBlock: KeyBlock =>
+      logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
+      appendix.chain.foreach(block =>
+        persist(block._2) { x =>
+          logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
+        })
+      update(appendix.chain)
+      appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
+      accountant ! keyBlock
+    case microBlock: MicroBlock =>
+      logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
+      appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
+      accountant ! microBlock
   }
+
 
   override def persistenceId: String = "blockchainer"
 
