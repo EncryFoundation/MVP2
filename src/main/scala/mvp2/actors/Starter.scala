@@ -33,6 +33,6 @@ class Starter extends Actor with StrictLogging {
     context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
     context.actorOf(Props[Zombie])
     context.actorOf(Props(classOf[CliActor], settings), "cliActor")
-    context.actorOf(Props(classOf[Informator]), "informator")
+    context.actorOf(Props(classOf[Informator], settings), "informator")
   }
 }
