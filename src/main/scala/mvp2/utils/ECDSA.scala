@@ -7,6 +7,7 @@ import java.security.Security
 import java.security.spec.{ECGenParameterSpec, ECPublicKeySpec}
 import java.util
 import java.security.interfaces.{ECPublicKey => JSPublicKey}
+
 import org.bouncycastle.jce.{ECNamedCurveTable, ECPointUtil}
 import akka.util.ByteString
 import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Integer, DEROutputStream, DERSequence}
@@ -30,10 +31,11 @@ object ECDSA {
     val ecdsaSign: Signature = Signature.getInstance("SHA256withECDSA", "BC")
     ecdsaSign.initSign(privateKey)
     ecdsaSign.update(messageToSign.toArray)
-    ByteString(ecdsaSign.sign)
+    ECDSA.compressSignature(ByteString(ecdsaSign.sign))
   }
 
-  def verify(signature: ByteString, message: ByteString, publicKey: PublicKey): Boolean = {
+  def verify(compressedSignature: ByteString, message: ByteString, publicKey: PublicKey): Boolean = {
+    val signature = ECDSA.uncompressSignature(compressedSignature)
     val ecdsaVerify: Signature = Signature.getInstance("SHA256withECDSA", "BC")
     ecdsaVerify.initVerify(publicKey)
     ecdsaVerify.update(message.toArray)

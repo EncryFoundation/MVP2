@@ -34,7 +34,7 @@ object DummyTestBlockGenerator {
   def generateByteString: ByteString = ByteString(java.util.UUID.randomUUID()
     .toString.getBytes(StandardCharsets.UTF_8))
 
-  def generateHash: ByteString = Sha256.toSha256(java.util.UUID.randomUUID().toString)
+  def generateHash: ByteString = Sha256.toSha256(ByteString(java.util.UUID.randomUUID().toString.getBytes))
 
   def generateValidChain: TreeMap[Long, Block] = {
     val firstKeyBlock: KeyBlock =

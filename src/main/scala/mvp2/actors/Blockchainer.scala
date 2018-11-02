@@ -85,7 +85,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
           appendix.chain.foreach(block =>
             persist(block._2) { x =>
-              logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
+              logger.info(s"Successfully saved block with id: ${x.hash} and height ${x.height}!")
             })
           update(appendix.chain)
           appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))

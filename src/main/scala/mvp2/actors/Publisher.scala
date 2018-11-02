@@ -15,7 +15,7 @@ class Publisher extends CommonActor {
 
   val blockchainer: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
   var mempool: List[Transaction] = List.empty
-  var lastKeyBlock: KeyBlock = KeyBlock()
+  var lastKeyBlock: Option[KeyBlock] = None
   val randomizer: Random.type = scala.util.Random
   var schedule: List[InetSocketAddress] = List.empty
 
@@ -37,19 +37,24 @@ class Publisher extends CommonActor {
 
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
-    case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case keyBlock: KeyBlock => lastKeyBlock = Some(keyBlock)
     case PublishBlock =>
       logger.info("Should create block!")
       createKeyBlock
   }
 
-  def createGenesisBlock(): KeyBlock = ???
+  lazy val genesisBlock: KeyBlock = KeyBlock(0L, 0L, ByteString.empty, List.empty)
 
   def createKeyBlock: Unit = {
-    val thisBlocksHeight: Long = lastKeyBlock.height + 1
+    val thisBlocksHeight: Long = lastKeyBlock.map(_.height).getOrElse(0L) + 1
     val currentTime: Long = System.currentTimeMillis
     val keyBlock: KeyBlock =
-      KeyBlock(thisBlocksHeight, currentTime, lastKeyBlock.currentBlockHash, mempool)
+      KeyBlock(
+        thisBlocksHeight,
+        currentTime,
+        lastKeyBlock.getOrElse(genesisBlock).hash,
+        mempool
+      )
     mempool = List.empty
     blockchainer ! keyBlock
     self ! keyBlock

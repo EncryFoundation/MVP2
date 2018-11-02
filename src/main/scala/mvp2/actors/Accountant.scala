@@ -10,7 +10,7 @@ class Accountant extends CommonActor {
   import Accountant.Account
 
   var accountsInfo: HashMap[ByteString, Account] = HashMap.empty
-  var stateRoot: ByteString = Sha256.toSha256(accountsInfo.toString)
+  var stateRoot: ByteString = Sha256.toSha256(ByteString(accountsInfo.toString.getBytes))
 
   override def specialBehavior: Receive = {
     case microBlock: MicroBlock =>
@@ -28,14 +28,12 @@ class Accountant extends CommonActor {
             account = account.copy(data = account.data :+ tx.data, nonce = tx.nonce)
         }
         accountsInfo = accountsInfo + (singleParty._1 -> account)
-        stateRoot = Sha256.toSha256(accountsInfo.toString)
+        stateRoot = Sha256.toSha256(ByteString(accountsInfo.toString.getBytes))
     }
   }
-
 }
 
 object Accountant {
 
   case class Account(publicKey: ByteString, data: List[ByteString], nonce: Long)
-
 }
