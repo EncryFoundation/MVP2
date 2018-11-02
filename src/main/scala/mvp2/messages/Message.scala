@@ -41,8 +41,17 @@ object Blocks {
   val typeId: Byte = 4: Byte
 }
 
+case object Bye extends NetworkMessage {
+
+  val typeId: Byte = 5: Byte
+}
+
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
+
+case object GetPeersForSchedule extends Message
+
+case class PeersForSchedule(peers: List[InetSocketAddress]) extends Message

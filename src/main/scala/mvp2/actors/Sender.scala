@@ -32,5 +32,6 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
     case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
     case knownPeers: Peers => Peers.typeId +: serialization.findSerializerFor(Peers).toBinary(knownPeers)
     case blocks: Blocks => Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+    case bye: Bye.type => Bye.typeId +: serialization.findSerializerFor(Pong).toBinary(bye)
   })
 }

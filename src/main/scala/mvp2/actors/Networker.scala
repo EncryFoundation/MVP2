@@ -1,6 +1,7 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
@@ -33,7 +34,13 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
+        case Bye =>
+          logger.info(s"Remove ${msgFromRemote.remote} from peers")
+          knownPeers = knownPeers.filter(_ == msgFromRemote.remote)
       }
+    case GetPeersForSchedule => sender() ! PeersForSchedule(
+      knownPeers.map(_.remoteAddress) :+ new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
+    )
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =

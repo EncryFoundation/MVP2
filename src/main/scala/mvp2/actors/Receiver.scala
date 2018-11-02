@@ -57,5 +57,8 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail)).map {
       case blocks: Blocks => blocks
     }
+    case Bye.typeId => Option(serialization.findSerializerFor(Bye).fromBinary(bytes.toArray.tail)).map {
+      case bye: Bye.type => bye
+    }
   }
 }
