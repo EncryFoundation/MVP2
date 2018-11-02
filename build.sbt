@@ -37,3 +37,4 @@ resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repos
   "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/")
 
 fork in Test := true
+fork in run := true
