@@ -26,12 +26,12 @@ class Publisher extends CommonActor {
   }
 
   context.system.scheduler.schedule(1 second, 10 seconds) {
-    println(s"There are ${mempool.size} transactions in the mempool.")
+    logger.info(s"There are ${mempool.size} transactions in the mempool.")
   }
 
   override def preStart(): Unit = {
     logger.info("Starting the Publisher!")
-    println(lastKeyBlock)
+    logger.info(lastKeyBlock.toString)
   }
 
   override def specialBehavior: Receive = {

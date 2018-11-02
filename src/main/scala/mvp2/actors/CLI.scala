@@ -1,23 +1,30 @@
 package mvp2.actors
 
 import akka.actor.Actor
-import scala.concurrent.duration._
-import scala.concurrent.Await
 
 class CLI extends Actor {
 
+  val promt: String = "$> "
+
   override def preStart(): Unit = {
-    scala.io.Source.stdin.getLines().map(cliCommands).foreach(println)
-    println("Started CLI")
+    scala.io.Source.stdin.getLines().foreach {
+      print(promt)
+      cliCommands
+    }
   }
 
   val cliCommands: PartialFunction[String, Unit] = {
-    case "node shutdown" =>
-      context.system.ch
-    case _ => println(s"Wrong command!")
+    case "node shutdown" => System.exit(0)
+    case "help" => println(
+       """node shutdown   -   Turn off the application.
+         |help            -   Show info about commands.
+       """.stripMargin
+    )
+      print(promt)
+    case _ => print(s"Wrong command!\n$promt")
   }
 
   override def receive: Receive = {
-    case _ => println(s"Got something wrong!")
+    case _ =>
   }
 }
