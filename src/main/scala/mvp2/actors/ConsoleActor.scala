@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CliActor(settings: Settings) extends Actor {
+class ConsoleActor(settings: Settings) extends Actor {
 
   val promt: String = "$> "
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
@@ -33,8 +33,7 @@ class CliActor(settings: Settings) extends Actor {
       print(promt)
     case "info" =>
       val currentInfo: Future[CurrentBlockchainInfo] = (informator ? Get).mapTo[CurrentBlockchainInfo]
-      currentInfo.map(info => print(s"Height: ${info.height}. LastKeyBlock: ${info.lastKeyBlock}. " +
-        s"LastMicroBlock: ${info.lastMicroBlock}.\n$promt"))
+      currentInfo.map(info => print(s"${info.toString}\n$promt"))
     case _ => print(s"Wrong command!\n$promt")
   }
 
