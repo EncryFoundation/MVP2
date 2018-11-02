@@ -2,7 +2,6 @@ package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.security.PublicKey
-
 import akka.actor.{ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
@@ -10,11 +9,9 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages._
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
-
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext.Implicits.global
-
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging with Blockchain {
 
@@ -47,7 +44,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       if (schedule.size == 1) networker ! GetPeersForSchedule
     }
     context.system.scheduler.schedule(10.seconds, settings.blockchain.blockInterval.seconds) {
-      if (System.currentTimeMillis - settings.blockchain.blockDelta > lastBlockTime && schedule.head == myAddr) {
+      if (System.currentTimeMillis - settings.blockchain.blockDelta > lastBlockTime && schedule.headOption.contains(myAddr)) {
         logger.info("Looks like it is my tern to publish block")
         context.actorSelection("/user/starter/blockchainer/publisher") ! PublishBlock
       }
@@ -63,7 +60,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case keyBlock: KeyBlock => update(keyBlock)
     case microBlock: MicroBlock => update(microBlock)
     case RecoveryCompleted =>
-      context.actorOf(Props[Publisher], "publisher")
+      context.actorOf(Props(classOf[Publisher], settings), "publisher")
       context.actorSelection("/user/starter/blockchainer/publisher") ! lastKeyBlock.getOrElse(
         KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
       )

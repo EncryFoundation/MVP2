@@ -1,23 +1,24 @@
 package mvp2.actors
 
 import java.net.InetSocketAddress
-import java.security.KeyPair
+import java.security.{KeyPair, PrivateKey}
 import akka.actor.ActorSelection
 import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
 import mvp2.messages.PublishBlock
-import mvp2.utils.ECDSA
+import mvp2.utils.{ECDSA, Settings}
 import scala.util.Random
 
-class Publisher extends CommonActor {
+class Publisher(settings: Settings) extends CommonActor {
 
   val blockchainer: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: Option[KeyBlock] = None
   val randomizer: Random.type = scala.util.Random
   var schedule: List[InetSocketAddress] = List.empty
+  val privateKey: PrivateKey = ECDSA.restorePrivateKeyFromBase64Str(settings.privateKey)
 
   context.system.scheduler.schedule(1 second, 3 seconds) {
     val randomData: ByteString = ByteString(randomizer.nextString(100))
@@ -30,10 +31,7 @@ class Publisher extends CommonActor {
     println(s"There are ${mempool.size} transactions in the mempool.")
   }
 
-  override def preStart(): Unit = {
-    logger.info("Starting the Publisher!")
-    println(lastKeyBlock)
-  }
+  override def preStart(): Unit = logger.info("Starting the Publisher!")
 
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
@@ -46,15 +44,14 @@ class Publisher extends CommonActor {
   lazy val genesisBlock: KeyBlock = KeyBlock(0L, 0L, ByteString.empty, List.empty)
 
   def createKeyBlock: Unit = {
-    val thisBlocksHeight: Long = lastKeyBlock.map(_.height).getOrElse(0L) + 1
-    val currentTime: Long = System.currentTimeMillis
-    val keyBlock: KeyBlock =
+    val keyBlock: KeyBlock = lastKeyBlock.map(lastBlock =>
       KeyBlock(
-        thisBlocksHeight,
-        currentTime,
-        lastKeyBlock.getOrElse(genesisBlock).hash,
+        lastBlock.height + 1,
+        System.currentTimeMillis,
+        lastBlock.hash,
         mempool
-      )
+      ).sign(privateKey)
+    ).getOrElse(genesisBlock)
     mempool = List.empty
     blockchainer ! keyBlock
     self ! keyBlock

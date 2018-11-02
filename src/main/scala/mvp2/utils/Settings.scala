@@ -5,11 +5,12 @@ case class Settings(port: Int,
                     heartbeat: Int,
                     apiSettings: ApiSettings,
                     blockchain: Blockchain,
+                    privateKey: String,
                     influx: Option[InfluxSettings],
                     testingSettings: Option[TestingSettings]
                    )
 
-case class Node(host: String, port: Int, privateKey: Option[String])
+case class Node(host: String, port: Int)
 
 case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 

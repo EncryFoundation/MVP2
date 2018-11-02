@@ -7,7 +7,7 @@ import java.security.Security
 import java.security.spec.{ECGenParameterSpec, ECPublicKeySpec}
 import java.util
 import java.security.interfaces.{ECPublicKey => JSPublicKey}
-
+import java.security.spec.PKCS8EncodedKeySpec
 import org.bouncycastle.jce.{ECNamedCurveTable, ECPointUtil}
 import akka.util.ByteString
 import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Integer, DEROutputStream, DERSequence}
@@ -40,6 +40,12 @@ object ECDSA {
     ecdsaVerify.initVerify(publicKey)
     ecdsaVerify.update(message.toArray)
     ecdsaVerify.verify(signature.toArray)
+  }
+
+  def restorePrivateKeyFromBase64Str(str: String): PrivateKey = {
+    val kf: KeyFactory = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider)
+    val privateKeySpec = new PKCS8EncodedKeySpec(EncodingUtils.decodeFromBase64(str).toArray)
+    kf.generatePrivate(privateKeySpec)
   }
 
   def compressSignature(signatureToCompress: ByteString): ByteString = {
