@@ -17,9 +17,9 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    context.system.scheduler.schedule(5.seconds, settings.heartbeat.seconds)(sendPeers)
     if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
-      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers)
+      context.system.scheduler.schedule(5.seconds, settings.heartbeat.seconds)(pingAllPeers)
     bornKids()
   }
 
@@ -34,11 +34,16 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
+        case blocks: Blocks =>
+          context.actorSelection("/user/starter/blockchainer") ! blocks.chain.chain.values.toList
+          context.actorSelection("/user/starter/blockchainer/publisher") ! blocks.chain.chain.last._2
         case Bye =>
           logger.info(s"Remove ${msgFromRemote.remote} from peers")
           knownPeers = knownPeers.filter(_ == msgFromRemote.remote)
       }
-    case GetPeersForSchedule => sender() ! PeersForSchedule(
+    case GetPeersForSchedule =>
+      logger.info("Send peers")
+      sender() ! PeersForSchedule(
       knownPeers.map(_.remoteAddress) :+ new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
     )
   }

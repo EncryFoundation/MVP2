@@ -1,11 +1,13 @@
 package mvp2.actors
 
+import java.net.InetSocketAddress
 import java.security.KeyPair
 import akka.actor.ActorSelection
 import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
+import mvp2.messages.PublishBlock
 import mvp2.utils.ECDSA
 import scala.util.Random
 
@@ -15,8 +17,7 @@ class Publisher extends CommonActor {
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
-
-  context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
+  var schedule: List[InetSocketAddress] = List.empty
 
   context.system.scheduler.schedule(1 second, 3 seconds) {
     val randomData: ByteString = ByteString(randomizer.nextString(100))
@@ -37,11 +38,14 @@ class Publisher extends CommonActor {
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case PublishBlock =>
+      logger.info("Should create block!")
+      createKeyBlock
   }
 
-  def createGenesysBlock(): KeyBlock = ???
+  def createGenesisBlock(): KeyBlock = ???
 
-  def createKeyBlock: KeyBlock = {
+  def createKeyBlock: Unit = {
     val thisBlocksHeight: Long = lastKeyBlock.height + 1
     val currentTime: Long = System.currentTimeMillis
     val keyBlock: KeyBlock =
@@ -49,7 +53,6 @@ class Publisher extends CommonActor {
     mempool = List.empty
     blockchainer ! keyBlock
     self ! keyBlock
-    keyBlock
   }
 
 }

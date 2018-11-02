@@ -1,12 +1,13 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
+
 import akka.actor.{ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
-import mvp2.messages.{Get, GetPeersForSchedule, PeersForSchedule}
+import mvp2.messages._
 import mvp2.utils.Settings
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
@@ -17,7 +18,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
   val networker: ActorSelection = context.system.actorSelection("/user/starter/networker")
-
+  val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
   var schedule: List[InetSocketAddress] = List.empty
 
   var lastBlockTime: Long = 0
@@ -25,13 +26,24 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   context.actorOf(Props(classOf[Accountant]), "accountant")
 
   override def preStart(): Unit = {
-    context.system.scheduler.schedule(10.seconds, settings.blockchain.blockDelta.seconds) {
+    networker ! GetPeersForSchedule
+    context.system.scheduler.schedule(10.seconds, 5.seconds) {
+      logger.info(s"Current schedule: ${schedule.mkString(",")}")
+    }
+    context.system.scheduler.schedule(10.seconds, settings.blockchain.blockInterval.seconds) {
       if (lastBlockTime > System.currentTimeMillis + settings.blockchain.blockDelta + settings.blockchain.blockDelta) {
         schedule = schedule.tail
         lastBlockTime = System.currentTimeMillis
       }
+      else if (schedule.isEmpty) {
+        logger.info("Try to update modifier")
+        networker ! GetPeersForSchedule
+      }
+      else if (System.currentTimeMillis - settings.blockchain.blockDelta > lastBlockTime && schedule.head == myAddr) {
+        logger.info("Looks like it is my tern to publish block")
+        context.actorSelection("/user/starter/blockchainer/publisher") ! PublishBlock
+      }
     }
-    networker ! GetPeersForSchedule
   }
 
   override def receiveRecover: Receive = {
@@ -46,7 +58,9 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def receiveCommand: Receive = {
     case block: Block => saveModifier(block)
-    case PeersForSchedule(peers) => prepareSchedule(peers)
+    case blocks: List[Block] => blocks.foreach(saveModifier)
+    case PeersForSchedule(peers) =>
+      prepareSchedule(peers)
     case Get => chain
     case _ => logger.info("Got something strange at Blockchainer!")
   }
@@ -78,7 +92,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   override def snapshotPluginId: String = "akka.persistence.snapshot-store.local"
 
   def prepareSchedule(peers: List[InetSocketAddress]): Unit = {
-    val sortedList = peers.sortBy(_.hashCode())
+    logger.info("Update scheduler")
+    val sortedList = peers.sortBy(_.getHostName)
     schedule = schedule ++ (0 until settings.blockchain.epochMultiplier).foldLeft(List[InetSocketAddress]()){
       case (nextSchedule, _) => nextSchedule ++ sortedList
     }

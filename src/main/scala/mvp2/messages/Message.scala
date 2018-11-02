@@ -55,3 +55,5 @@ case class UdpSocket(conection: ActorRef) extends Message
 case object GetPeersForSchedule extends Message
 
 case class PeersForSchedule(peers: List[InetSocketAddress]) extends Message
+
+case object PublishBlock extends Message
