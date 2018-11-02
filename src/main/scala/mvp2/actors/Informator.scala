@@ -12,7 +12,7 @@ class Informator(settings: Settings) extends CommonActor {
 
   Informator.start(settings, context)
 
-  var actualInfo: CurrentBlockchainInfo = CurrentBlockchainInfo(0, None, None)
+  var actualInfo: CurrentBlockchainInfo = CurrentBlockchainInfo()
 
   override def preStart(): Unit = {
     logger.info("Starting the Informator!")
