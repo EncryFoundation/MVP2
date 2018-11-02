@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.security._
 import java.security.Security
-import java.security.spec.ECPublicKeySpec
+import java.security.spec.{ECGenParameterSpec, ECPublicKeySpec}
 import java.util
 import java.security.interfaces.{ECPublicKey => JSPublicKey}
 import org.bouncycastle.jce.{ECNamedCurveTable, ECPointUtil}
@@ -20,9 +20,9 @@ object ECDSA {
   Security.addProvider(new BouncyCastleProvider)
 
   def createKeyPair: KeyPair = {
-    val ecSpec: ECNamedCurveParameterSpec = ECNamedCurveTable.getParameterSpec("prime192v1")
-    val keyPairGenerator: KeyPairGenerator = KeyPairGenerator.getInstance("ECDSA", "BC")
-    keyPairGenerator.initialize(ecSpec, new SecureRandom())
+    val keyPairGenerator = KeyPairGenerator.getInstance("ECDSA", "BC")
+    val params: ECGenParameterSpec = new ECGenParameterSpec("secp256k1")
+    keyPairGenerator.initialize(params, new SecureRandom())
     keyPairGenerator.generateKeyPair
   }
 

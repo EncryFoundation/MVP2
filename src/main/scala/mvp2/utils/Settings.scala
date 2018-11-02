@@ -9,7 +9,7 @@ case class Settings(port: Int,
                     testingSettings: Option[TestingSettings]
                    )
 
-case class Node(host: String, port: Int)
+case class Node(host: String, port: Int, privateKey: Option[String])
 
 case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 

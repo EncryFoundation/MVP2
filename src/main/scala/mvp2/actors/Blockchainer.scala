@@ -1,6 +1,7 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+import java.security.PublicKey
 
 import akka.actor.{ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -8,10 +9,12 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages._
-import mvp2.utils.Settings
+import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext.Implicits.global
+
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging with Blockchain {
 
@@ -20,6 +23,18 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val networker: ActorSelection = context.system.actorSelection("/user/starter/networker")
   val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
   var schedule: List[InetSocketAddress] = List.empty
+  val publicKeys: Map[InetSocketAddress, PublicKey] = Map(
+    new InetSocketAddress("172.16.10.56", 9003) ->
+      ECDSA.uncompressPublicKey(
+        EncodingUtils.decodeFromBase64("A+WiAs/0/4xL8K1LfDA5i+is5QUlmHs9JT3nHacu9UQ/")
+      ),
+    new InetSocketAddress("172.16.10.57", 9003) ->
+      ECDSA.uncompressPublicKey(
+        EncodingUtils.decodeFromBase64("Ah+fDMBeY8efVxnCHwam3KK01n8FNF1vKw9S7PJ1k1WM")
+      ),
+    new InetSocketAddress("172.16.10.58", 9003) ->
+    ECDSA.uncompressPublicKey(EncodingUtils.decodeFromBase64("AwiInhz8RfxaqgJ7jmRuhVOJGbe9dK7VUr1SvWGwsUaV"))
+  )
 
   var lastBlockTime: Long = 0
 
@@ -27,21 +42,19 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def preStart(): Unit = {
     networker ! GetPeersForSchedule
-    context.system.scheduler.schedule(10.seconds, 5.seconds) {
+    context.system.scheduler.schedule(10.seconds, settings.blockchain.blockInterval.seconds) {
       logger.info(s"Current schedule: ${schedule.mkString(",")}")
+      if (schedule.size == 1) networker ! GetPeersForSchedule
     }
     context.system.scheduler.schedule(10.seconds, settings.blockchain.blockInterval.seconds) {
-      if (lastBlockTime > System.currentTimeMillis + settings.blockchain.blockDelta + settings.blockchain.blockDelta) {
-        schedule = schedule.tail
-        lastBlockTime = System.currentTimeMillis
-      }
-      else if (schedule.isEmpty) {
-        logger.info("Try to update modifier")
-        networker ! GetPeersForSchedule
-      }
-      else if (System.currentTimeMillis - settings.blockchain.blockDelta > lastBlockTime && schedule.head == myAddr) {
+      if (System.currentTimeMillis - settings.blockchain.blockDelta > lastBlockTime && schedule.head == myAddr) {
         logger.info("Looks like it is my tern to publish block")
         context.actorSelection("/user/starter/blockchainer/publisher") ! PublishBlock
+      }
+      else if (System.currentTimeMillis - lastBlockTime > settings.blockchain.blockDelta + settings.blockchain.blockDelta) {
+        schedule = schedule.tail
+        logger.info("Looks like no one produce block set next guy")
+        lastBlockTime = System.currentTimeMillis
       }
     }
   }
@@ -77,6 +90,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           update(appendix.chain)
           appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
           accountant ! keyBlock
+          lastBlockTime = System.currentTimeMillis()
+          schedule = schedule.tail
         case microBlock: MicroBlock =>
           logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
           appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
