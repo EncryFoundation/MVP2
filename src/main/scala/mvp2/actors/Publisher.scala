@@ -8,7 +8,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
 import mvp2.messages.TimeDelta
 import mvp2.utils.ECDSA
-
 import scala.util.Random
 
 class Publisher extends CommonActor {
