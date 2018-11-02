@@ -13,6 +13,7 @@ class ConsoleActor(settings: Settings) extends Actor {
 
   val promt: String = "$> "
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
+
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
 
   override def preStart(): Unit = {
