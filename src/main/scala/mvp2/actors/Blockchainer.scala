@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages.Get
 import mvp2.utils.EncodingUtils.encode2Base64
-
 import scala.collection.immutable.TreeMap
 
 class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
