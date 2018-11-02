@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import java.security.KeyPair
-import akka.actor.ActorSelection
+import akka.actor.ActorRef
 import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +11,7 @@ import scala.util.Random
 
 class Publisher extends CommonActor {
 
-  val blockchainer: ActorSelection = context.system.actorSelection("/user/starter/blockchainer")
+  val blockchainer: ActorRef = context.parent
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
@@ -23,10 +23,6 @@ class Publisher extends CommonActor {
     val pairOfKeys: KeyPair = ECDSA.createKeyPair
     val signature: ByteString = ECDSA.sign(pairOfKeys.getPrivate, randomData)
     self ! Transaction(ByteString(pairOfKeys.getPublic.toString), randomizer.nextLong(), signature, randomData)
-  }
-
-  context.system.scheduler.schedule(1 second, 10 seconds) {
-    println(s"There are ${mempool.size} transactions in the mempool.")
   }
 
   override def preStart(): Unit = {
@@ -42,10 +38,8 @@ class Publisher extends CommonActor {
   def createGenesysBlock(): KeyBlock = ???
 
   def createKeyBlock: KeyBlock = {
-    val thisBlocksHeight: Long = lastKeyBlock.height + 1
-    val currentTime: Long = System.currentTimeMillis
     val keyBlock: KeyBlock =
-      KeyBlock(thisBlocksHeight, currentTime, lastKeyBlock.currentBlockHash, mempool)
+      KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
     mempool = List.empty
     blockchainer ! keyBlock
     self ! keyBlock

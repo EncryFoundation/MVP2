@@ -19,8 +19,7 @@ class Accountant extends CommonActor {
       if (keyBlock.transactions.forall(_.isValid)) updateState(keyBlock.transactions)
   }
 
-  def updateState(transactions: List[Transaction]): Unit = {
-    transactions.groupBy(_.publicKey).foreach {
+  def updateState(transactions: List[Transaction]): Unit = transactions.groupBy(_.publicKey).foreach {
       singleParty =>
         var account: Account = accountsInfo.getOrElse(singleParty._1, Account(singleParty._1, List.empty, 0))
         singleParty._2.sortBy(_.nonce).foreach { tx =>
@@ -30,8 +29,6 @@ class Accountant extends CommonActor {
         accountsInfo = accountsInfo + (singleParty._1 -> account)
         stateRoot = Sha256.toSha256(accountsInfo.toString)
     }
-  }
-
 }
 
 object Accountant {

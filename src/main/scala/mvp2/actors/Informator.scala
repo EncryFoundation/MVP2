@@ -2,8 +2,9 @@ package mvp2.actors
 
 import mvp2.messages.Get
 import mvp2.messages.CurrentBlockchainInfo
+import mvp2.utils.Settings
 
-class Informator extends CommonActor {
+class Informator(settings: Settings) extends CommonActor {
 
   var actualInfo: CurrentBlockchainInfo = CurrentBlockchainInfo(0, None, None)
 

@@ -9,19 +9,19 @@ import mvp2.messages.Get
 import mvp2.utils.Settings
 import scala.collection.immutable.TreeMap
 
-class Blockchainer (settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
+class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
+  val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => update(keyBlock)
     case microBlock: MicroBlock => update(microBlock)
     case RecoveryCompleted =>
-      context.actorOf(Props[Publisher], "publisher")
-      context.actorSelection("/user/starter/blockchainer/publisher") ! lastKeyBlock.getOrElse(
+      publisher ! lastKeyBlock.getOrElse(
         KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
       )
   }
