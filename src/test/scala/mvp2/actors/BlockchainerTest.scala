@@ -8,7 +8,11 @@ import mvp2.data.{Block, KeyBlock, MicroBlock}
 import mvp2.messages.Get
 import akka.pattern.ask
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.utils.Settings
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
@@ -21,7 +25,9 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
 
   property("Blockchain before and after save should be equals") {
 
-    val blockchainer: ActorRef = system.actorOf(Props(classOf[Blockchainer]), "blockchainer")
+    val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
+      .as[Settings]("mvp")
+    val blockchainer: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     Thread.sleep(1000)
     val chain: TreeMap[Long, Block] = generateValidChain
     val sortedChain = chain.toSeq.sortBy(_._1)
@@ -32,7 +38,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
     Thread.sleep(2000)
     blockchainer ! PoisonPill
     Thread.sleep(1000)
-    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer]), "blockchainer")
+    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     Thread.sleep(2000)
 
     implicit val timeout: Timeout = Timeout(10.seconds)
