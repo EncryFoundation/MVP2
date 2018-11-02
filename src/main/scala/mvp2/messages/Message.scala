@@ -11,9 +11,12 @@ case object Get extends Message
 
 final case class InfoMessage(info: String) extends Message
 
-final case class CurrentBlockchainInfo(height: Int,
-                                       lastGeneralBlock: Option[ByteString],
-                                       lastMicroBlock: Option[ByteString]) extends Message
+final case class CurrentBlockchainInfo(height: Long = 0,
+                                       lastKeyBlock: Option[ByteString] = None,
+                                       lastMicroBlock: Option[ByteString] = None) extends Message {
+
+  override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."
+}
 
 sealed trait NetworkMessage extends Message
 
