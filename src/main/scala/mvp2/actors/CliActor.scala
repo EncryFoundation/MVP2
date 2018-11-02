@@ -33,7 +33,7 @@ class CliActor(settings: Settings) extends Actor {
       print(promt)
     case "info" =>
       val currentInfo: Future[CurrentBlockchainInfo] = (informator ? Get).mapTo[CurrentBlockchainInfo]
-      currentInfo.map(info => print(s"Height: ${info.height}. LastKeyBlock: ${info.lastGeneralBlock}. " +
+      currentInfo.map(info => print(s"Height: ${info.height}. LastKeyBlock: ${info.lastKeyBlock}. " +
         s"LastMicroBlock: ${info.lastMicroBlock}.\n$promt"))
     case _ => print(s"Wrong command!\n$promt")
   }

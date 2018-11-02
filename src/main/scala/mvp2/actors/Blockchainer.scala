@@ -5,16 +5,27 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
-import mvp2.messages.Get
+import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.EncodingUtils.encode2Base64
 import scala.collection.immutable.TreeMap
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
 
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
+  val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
 
   context.actorOf(Props(classOf[Accountant]), "accountant")
+
+  context.system.scheduler.schedule(1.seconds, 1.seconds) {
+    informator ! CurrentBlockchainInfo(
+      chain.lastOption.map(_._1).getOrElse(0),
+      None,
+      None
+    )
+  }
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => update(keyBlock)
