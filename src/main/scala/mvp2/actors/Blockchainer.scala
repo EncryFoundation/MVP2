@@ -21,7 +21,7 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
 
   context.system.scheduler.schedule(1.seconds, 1.seconds) {
     informator ! CurrentBlockchainInfo(
-      chain.lastOption.map(_._1).getOrElse(0),
+      appendix.chain.lastOption.map(_._1).getOrElse(0),
       None,
       None
     )
