@@ -32,5 +32,6 @@ class Starter extends Actor with StrictLogging {
       .withMailbox("net-mailbox"), "networker")
     context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
     context.actorOf(Props[Zombie])
+    context.actorOf(Props[CLI])
   }
 }
