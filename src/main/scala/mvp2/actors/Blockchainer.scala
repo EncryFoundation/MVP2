@@ -6,6 +6,8 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
 import mvp2.messages.Get
+import mvp2.utils.EncodingUtils.encode2Base64
+
 import scala.collection.immutable.TreeMap
 
 class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
@@ -37,8 +39,8 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
         case keyBlock: KeyBlock =>
           logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
           appendix.chain.foreach(block =>
-            persist(block._2) { x =>
-              logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
+            persist(block._2) { block =>
+              logger.info(s"Successfully saved block with id: ${encode2Base64(block.currentBlockHash)} and height ${block.height}!")
             })
           update(appendix.chain)
           appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
