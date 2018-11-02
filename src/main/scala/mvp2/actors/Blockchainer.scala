@@ -1,14 +1,12 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
-import mvp2.messages.Get
 import mvp2.utils.Settings
 import mvp2.messages.{CurrentBlockchainInfo, Get}
-import mvp2.utils.EncodingUtils.encode2Base64
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -16,10 +14,8 @@ import scala.concurrent.duration._
 class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
-  val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
 
-  context.actorOf(Props(classOf[Accountant]), "accountant")
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")

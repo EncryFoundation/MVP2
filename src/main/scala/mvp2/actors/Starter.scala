@@ -30,11 +30,6 @@ class Starter extends CommonActor {
     )
     context.actorOf(Props(classOf[Informator], settings), "informator")
     context.actorOf(Props(classOf[Zombie]), "zombie")
-    context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "networker")
-    context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
-    context.actorOf(Props[Zombie])
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
-    context.actorOf(Props(classOf[Informator], settings), "informator")
   }
 }
