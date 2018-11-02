@@ -1,17 +1,16 @@
 package mvp2.actors
 
 import java.security.KeyPair
-import akka.actor.ActorRef
 import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
 import mvp2.utils.ECDSA
+import scala.language.postfixOps
 import scala.util.Random
 
 class Publisher extends CommonActor {
 
-  val blockchainer: ActorRef = context.parent
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
@@ -25,23 +24,17 @@ class Publisher extends CommonActor {
     self ! Transaction(ByteString(pairOfKeys.getPublic.toString), randomizer.nextLong(), signature, randomData)
   }
 
-  override def preStart(): Unit = {
-    logger.info("Starting the Publisher!")
-    println(lastKeyBlock)
-  }
-
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
   }
 
-  def createGenesysBlock(): KeyBlock = ???
-
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
+    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher.")
     mempool = List.empty
-    blockchainer ! keyBlock
+    context.parent ! keyBlock
     self ! keyBlock
     keyBlock
   }

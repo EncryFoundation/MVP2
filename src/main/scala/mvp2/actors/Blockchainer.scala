@@ -34,7 +34,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
 
   def saveModifier(block: Block): Unit = if (block.isValid) block match {
     case keyBlock: KeyBlock =>
-      logger.info(s"KeyBlock is valid with height ${keyBlock.height}.")
+      logger.info(s"New keyBlock with height ${keyBlock.height} is received on blockchainer.")
       appendix.chain.foreach(block =>
         persist(block._2) { x =>
           logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
