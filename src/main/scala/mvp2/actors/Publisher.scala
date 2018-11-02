@@ -6,7 +6,9 @@ import akka.util.ByteString
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
+import mvp2.messages.TimeDelta
 import mvp2.utils.ECDSA
+
 import scala.util.Random
 
 class Publisher extends CommonActor {
@@ -15,7 +17,7 @@ class Publisher extends CommonActor {
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
-  var currentDelta: NetworkTime.Time = 0L
+  var currentDelta: Long = 0L
 
   context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
 
@@ -38,9 +40,7 @@ class Publisher extends CommonActor {
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
-    case delta: NetworkTime.Time =>
-      logger.info(s"Update delta to: $delta")
-      currentDelta = delta
+    case TimeDelta(delta: Long) => currentDelta = delta
   }
 
   def time: Long = System.currentTimeMillis() + currentDelta

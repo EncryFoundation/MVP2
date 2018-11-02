@@ -5,14 +5,15 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
-import mvp2.messages.Get
+import mvp2.messages.{Get, TimeDelta}
+
 import scala.collection.immutable.TreeMap
 
 class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
 
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
-  var currentDelta: NetworkTime.Time = 0L
+  var currentDelta: Long = 0L
 
   context.actorOf(Props(classOf[Accountant]), "accountant")
 
@@ -29,9 +30,7 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
   override def receiveCommand: Receive = {
     case block: Block => saveModifier(block)
     case Get => chain
-    case delta: NetworkTime.Time =>
-      logger.info(s"Update delta to $delta")
-      currentDelta = delta
+    case TimeDelta(delta: Long) => currentDelta = delta
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
