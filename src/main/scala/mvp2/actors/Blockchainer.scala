@@ -19,6 +19,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
+
   val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
 
   context.system.scheduler.schedule(1.seconds, 1.seconds) {
