@@ -6,6 +6,14 @@ scalaVersion := "2.12.6"
 val akkaVersion = "2.5.13"
 val akkaHttpVersion = "10.0.9"
 val logbackVersion = "1.2.3"
+val doobieVersion = "0.5.2"
+
+val databaseDependencies = Seq(
+  "org.tpolecat" %% "doobie-core" % doobieVersion,
+  "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+  "org.tpolecat" %% "doobie-specs2" % doobieVersion,
+  "org.tpolecat" %% "doobie-hikari" % doobieVersion
+)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
@@ -29,7 +37,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
   "org.scalatest" %% "scalatest" % "3.0.5" % Test
-)
+) ++ databaseDependencies
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "SonaType" at "https://oss.sonatype.org/content/groups/public",

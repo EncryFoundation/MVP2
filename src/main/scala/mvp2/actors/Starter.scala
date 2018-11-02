@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import akka.actor.{Actor, Props}
-import mvp2.utils.Settings
+import mvp2.utils.{DbService, Settings}
 import com.typesafe.scalalogging.StrictLogging
 import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory
@@ -30,7 +30,13 @@ class Starter extends Actor with StrictLogging {
     )
     context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "networker")
-    context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
+    context.actorOf(Props(classOf[Blockchainer], settings.postgres.exists(_.write)), "blockchainer")
     context.actorOf(Props[Zombie])
+    settings.postgres.foreach { pgSettings =>
+      if (pgSettings.read || pgSettings.write) {
+        val dbService = new DbService(pgSettings)
+        if (pgSettings.write) context.actorOf(Props(classOf[PgWriter], dbService), "pgWriter")
+      }
+    }
   }
 }

@@ -8,12 +8,12 @@ import mvp2.data._
 import mvp2.messages.Get
 import scala.collection.immutable.TreeMap
 
-class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
+class Blockchainer(saveToPostgres: Boolean) extends PersistentActor with StrictLogging with Blockchain {
 
   var appendix: Appendix = Appendix(TreeMap())
   val accountant: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/accountant")
 
-  context.actorOf(Props(classOf[Accountant]), "accountant")
+  context.actorOf(Props(classOf[Accountant], saveToPostgres), "accountant")
 
   override def receiveRecover: Receive = {
     case keyBlock: KeyBlock => update(keyBlock)
@@ -48,6 +48,7 @@ class Blockchainer extends PersistentActor with StrictLogging with Blockchain {
           appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
           accountant ! microBlock
       }
+      if (saveToPostgres) context.actorSelection("/user/starter/pgWriter") ! block
     }
   }
 

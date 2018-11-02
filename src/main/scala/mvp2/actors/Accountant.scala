@@ -5,7 +5,7 @@ import mvp2.utils.Sha256
 import mvp2.data.{KeyBlock, MicroBlock, Transaction}
 import scala.collection.immutable.HashMap
 
-class Accountant extends CommonActor {
+class Accountant(saveToPostgres: Boolean) extends CommonActor {
 
   import Accountant.Account
 
@@ -29,6 +29,7 @@ class Accountant extends CommonActor {
         }
         accountsInfo = accountsInfo + (singleParty._1 -> account)
         stateRoot = Sha256.toSha256(accountsInfo.toString)
+        if (saveToPostgres) context.actorSelection("/user/starter/pgWriter") ! account
     }
   }
 
