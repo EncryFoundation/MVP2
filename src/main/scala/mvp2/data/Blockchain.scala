@@ -18,10 +18,6 @@ trait Blockchain extends Chain {
 
   def lastKeyBlock: Option[Block] = chain.lastOption.map(_._2)
 
-  def lastMicroBlock: MicroBlock = ???
-
-  def genesisBlock: KeyBlock = ???
-
   def update(newChainPart: TreeMap[Long, Block]): Unit = chain ++= newChainPart
 
 }
