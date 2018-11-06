@@ -35,6 +35,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
           pingPongResponsePequestTime = pingPongResponsePequestTime - remote
           "pong"
         case Peers(_, _) => "peers"
+        case Blocks(_) => "blocks"
       }
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
@@ -47,6 +48,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
           "ping"
         case Pong => "pong"
         case Peers(_, _) => "peers"
+        case Blocks(_) => "blocks"
       }
       influxDB.write(settings.port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
