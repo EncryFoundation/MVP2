@@ -30,6 +30,7 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
             Sha256.toSha256(EncodingUtils.encode2Base16(serialize(message)) ++ remote.getAddress.toString),
             remote
           )
+      }
   }
 
   def serialize(message: NetworkMessage): ByteString = ByteString(message match {
