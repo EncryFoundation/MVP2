@@ -35,6 +35,8 @@ class Starter extends CommonActor {
       if (pgSettings.read || pgSettings.write) {
         val dbService = new DbService(pgSettings)
         if (pgSettings.write) context.actorOf(Props(classOf[PgWriter], dbService), "pgWriter")
+        if (pgSettings.read)
+          context.actorOf(Props(classOf[PgReader], dbService, settings.postgres.flatMap(_.batchSize).getOrElse(5)), "pgReader")
       }
     }
   }

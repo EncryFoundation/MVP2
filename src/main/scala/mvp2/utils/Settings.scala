@@ -17,4 +17,4 @@ case class InfluxSettings(host: String, port: Int, login: String, password: Stri
 
 case class TestingSettings(pingPong: Boolean)
 
-case class PostgresSettings(host: String, pass: String, user: String, read: Boolean, write: Boolean)
+case class PostgresSettings(host: String, pass: String, user: String, read: Boolean, write: Boolean, batchSize: Option[Int])

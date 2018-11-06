@@ -5,6 +5,7 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
+import mvp2.utils.EncodingUtils._
 import mvp2.utils.Settings
 import mvp2.messages.{CurrentBlockchainInfo, Get}
 import scala.collection.immutable.TreeMap
@@ -40,6 +41,9 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
   }
 
   override def receiveCommand: Receive = {
+    case RecoveryCompleted if settings.postgres.exists(_.read) => publisher ! lastKeyBlock.getOrElse(
+      KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
+    )
     case block: Block => saveModifier(block)
     case Get => chain
     case _ => logger.info("Got something strange at Blockchainer!")
@@ -51,13 +55,14 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
         logger.info(s"New keyBlock with height ${keyBlock.height} is received on blockchainer.")
         appendix.chain.foreach(block =>
           persist(block._2) { x =>
-            logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
+            logger.info(s"Successfully saved block with id: ${encode2Base64(x.currentBlockHash)} and height ${x.height}!")
           })
         update(appendix.chain)
         appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
         accountant ! keyBlock
       case microBlock: MicroBlock =>
         logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
+        logger.info(s"Successfully saved microBlock with id: ${encode2Base64(microBlock.currentBlockHash)}!")
         appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
         accountant ! microBlock
     }
