@@ -6,5 +6,5 @@ case class Transaction(publicKey: ByteString,
                        nonce: Long,
                        signature: ByteString,
                        data: ByteString) {
-  def isValid: Boolean = true //FIXME change in later version
+  def isValid: Boolean = true
 }
