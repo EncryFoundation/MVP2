@@ -18,6 +18,8 @@ final case class CurrentBlockchainInfo(height: Long = 0,
   override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."
 }
 
+final case class NewPublisher(publicKey: ByteString) extends Message
+
 sealed trait NetworkMessage extends Message
 
 case object Ping extends NetworkMessage {

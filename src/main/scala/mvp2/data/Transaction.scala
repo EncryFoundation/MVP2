@@ -4,7 +4,7 @@ import akka.util.ByteString
 import mvp2.utils.EncodingUtils.encode2Base64
 
 case class Transaction(publicKey: ByteString,
-                       timestamp: Long,
+                       timestamp: Long = System.currentTimeMillis,
                        nonce: Long,
                        signature: ByteString,
                        data: ByteString) {

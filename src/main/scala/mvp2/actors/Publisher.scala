@@ -1,9 +1,10 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorRef, ActorSelection, Props}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
+import mvp2.messages.Get
 import scala.language.postfixOps
 
 class Publisher extends CommonActor {
@@ -11,6 +12,7 @@ class Publisher extends CommonActor {
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
 
@@ -19,16 +21,21 @@ class Publisher extends CommonActor {
       logger.info(s"Publisher received tx: $transaction and put it to the mempool.")
       mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case Get =>
+      val newBlock: KeyBlock = createKeyBlock
+      lastKeyBlock = newBlock
+      context.parent ! newBlock
+      networker ! newBlock
   }
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
-    logger.info(s"There are ${mempool.size} transactions in the mempool.")
-    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher.")
+    logger.info(s"${mempool.size} transactions in the mempool.")
+    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
+      s"${keyBlock.transactions.size} transactions inside.")
     mempool = List.empty
-    logger.info(s"There are ${mempool.size} transactions in the mempool.")
-    context.parent ! keyBlock
+    logger.info(s"${mempool.size} transactions in the mempool.")
     keyBlock
   }
 
