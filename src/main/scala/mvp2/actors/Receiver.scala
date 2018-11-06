@@ -8,15 +8,17 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
 import mvp2.messages._
-import mvp2.utils.Settings
+import mvp2.utils.{Settings, Sha256}
 
 class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
+  val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
+
   override def preStart(): Unit = {
     logger.info("Starting the Receiver!")
-    IO(Udp) ! Udp.Bind(self, new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port))
+    IO(Udp) ! Udp.Bind(self, myAddr)
   }
 
   override def receive: Receive = {
@@ -33,7 +35,12 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
         logger.info(s"Received $message from $remote")
         context.parent ! MessageFromRemote(message, remote)
         if (settings.influx.isDefined)
-          context.actorSelection("/user/starter/influxActor") ! MessageFromRemote(message, remote)
+          context.actorSelection("/user/starter/influxActor") !
+            MsgFromNetwork(
+              message,
+              Sha256.toSha256(data.toString ++ myAddr.getAddress.toString),
+              remote
+            )
       }
     case Udp.Unbind =>
       socket ! Udp.Unbind

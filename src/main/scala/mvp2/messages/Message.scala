@@ -46,6 +46,10 @@ object Blocks {
 
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
+case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
+case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
