@@ -10,7 +10,7 @@ class Publisher extends CommonActor {
 
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
 
   context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
 
@@ -27,7 +27,6 @@ class Publisher extends CommonActor {
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher.")
     mempool = List.empty
     context.parent ! keyBlock
-    self ! keyBlock
     keyBlock
   }
 

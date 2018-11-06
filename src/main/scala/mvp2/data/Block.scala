@@ -23,7 +23,7 @@ final case class KeyBlock(height: Long,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
                           data: ByteString) extends Block {
-  override def isValid(previo): Boolean = height >= 0 && timestamp > System.currentTimeMillis() - 15000
+  override def isValid: Boolean = height >= 0 && timestamp > System.currentTimeMillis() - 15000
 
 }
 

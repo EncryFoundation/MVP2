@@ -11,6 +11,7 @@ import mvp2.utils.Settings
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import mvp2.utils.EncodingUtils._
 
 class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
@@ -48,8 +49,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
     case keyBlock: KeyBlock =>
       logger.info(s"New keyBlock with height ${keyBlock.height} is received on blockchainer.")
       appendix.chain.foreach(block =>
-        persist(block._2) { x =>
-          logger.info(s"Successfully saved block with id: ${x.currentBlockHash} and height ${x.height}!")
+        persist(block._2) { block =>
+          logger.info(s"Block with id: ${encode2Base64(block.currentBlockHash)} and height ${block.height} is persisted.")
         })
       update(appendix.chain)
       appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))

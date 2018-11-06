@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
 import mvp2.actors.Networker.Peer
+import mvp2.data.KeyBlock
 import mvp2.messages._
 import mvp2.utils.Settings
 
@@ -34,6 +35,9 @@ class Networker(settings: Settings) extends CommonActor {
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
+    case myPublishedBlock: KeyBlock =>
+      logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
+        s"But broadcasting yet implemented not.")
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =
