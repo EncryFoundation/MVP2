@@ -30,7 +30,8 @@ class Networker(settings: Settings) extends CommonActor {
           (peers :+ msgFromRemote.remote).foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
+          context.actorSelection("/user/starter/blockchainer/networker/sender") !
+            SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
@@ -48,12 +49,12 @@ class Networker(settings: Settings) extends CommonActor {
 
   def pingAllPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
+      context.actorSelection("/user/starter/blockchainer/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
     )
 
   def sendPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") !
+      context.actorSelection("/user/starter/blockchainer/networker/sender") !
         SendToNetwork(
           Peers(
             knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),

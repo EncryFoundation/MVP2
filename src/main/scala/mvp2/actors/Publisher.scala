@@ -38,5 +38,4 @@ class Publisher extends CommonActor {
     self ! keyBlock
     keyBlock
   }
-
 }
