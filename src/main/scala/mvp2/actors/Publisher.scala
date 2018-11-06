@@ -16,7 +16,7 @@ class Publisher extends CommonActor {
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      logger.info(s"Publisher received tx: $transaction.")
+      logger.info(s"Publisher received tx: $transaction and put it to the mempool.")
       mempool = transaction :: mempool
     case keyBlock: KeyBlock => lastKeyBlock = keyBlock
   }
@@ -24,8 +24,10 @@ class Publisher extends CommonActor {
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
+    logger.info(s"There are ${mempool.size} transactions in the mempool.")
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher.")
     mempool = List.empty
+    logger.info(s"There are ${mempool.size} transactions in the mempool.")
     context.parent ! keyBlock
     keyBlock
   }
