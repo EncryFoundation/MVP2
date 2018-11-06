@@ -3,6 +3,7 @@ package mvp2.actors
 import java.net.{InetAddress, InetSocketAddress}
 
 import akka.actor.Actor
+import com.google.common.io.BaseEncoding
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
 import mvp2.utils.{EncodingUtils, InfluxSettings}
@@ -41,7 +42,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id)} value=${System.currentTimeMillis()}""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id)},msg=$msg value=${System.currentTimeMillis()}""")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
         case Ping =>
@@ -54,7 +55,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       influxDB.write(settings.port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id)} value=${System.currentTimeMillis()}""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id)},msg=$msg value=${System.currentTimeMillis()}""")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)}")
     case _ =>
   }
