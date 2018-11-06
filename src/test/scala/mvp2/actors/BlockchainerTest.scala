@@ -60,7 +60,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockChainSystemTest"))
     Thread.sleep(500)
 
     val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockChainActorNew")
-    Thread.sleep(500)
+    Thread.sleep(2000)
 
     val getRestoredChain: Future[TreeMap[Long, Block]] = (blockchainerNew ? Get).mapTo[TreeMap[Long, Block]]
 
@@ -68,7 +68,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockChainSystemTest"))
       (system.actorSelection("/user/blockChainActorNew/accountant") ? Get)
         .mapTo[(HashMap[ByteString, Account], ByteString)]
 
-    Thread.sleep(1000)
+    Thread.sleep(2000)
 
     assert(getRestoredChain.futureValue == chain.take(10))
     assert(accountBeforeRestore.futureValue._1 == accountAfterRestore.futureValue._1)
