@@ -3,9 +3,8 @@ package mvp2.actors
 import akka.util.ByteString
 import mvp2.utils.Sha256
 import mvp2.data.{KeyBlock, MicroBlock, Transaction}
-import mvp2.messages.{CurrentState, Get}
-
-import scala.collection.immutable.{HashMap, TreeMap}
+import mvp2.messages.Get
+import scala.collection.immutable.HashMap
 
 class Accountant extends CommonActor {
 
@@ -18,11 +17,8 @@ class Accountant extends CommonActor {
     case microBlock: MicroBlock =>
       if (microBlock.transactions.forall(_.isValid)) updateState(microBlock.transactions)
     case keyBlock: KeyBlock =>
-      println(s"Got new keyBlock ${keyBlock.height}")
       if (keyBlock.transactions.forall(_.isValid)) updateState(keyBlock.transactions)
-    case Get =>
-      println("got request")
-      sender() ! CurrentState(TreeMap(), accountsInfo, stateRoot)
+    case Get => sender() ! (accountsInfo, stateRoot)
   }
 
   def updateState(transactions: List[Transaction]): Unit = transactions.groupBy(_.publicKey).foreach {

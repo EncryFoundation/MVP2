@@ -1,13 +1,9 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
-
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.actors.Accountant.Account
-import mvp2.data.{Block, Chain}
-
-import scala.collection.immutable.{HashMap, TreeMap}
+import mvp2.data.Chain
 
 sealed trait Message
 
@@ -53,5 +49,3 @@ case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) ext
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
-
-case class CurrentState(chain: TreeMap[Long, Block], accInfo: HashMap[ByteString, Account], stateRoot: ByteString)
