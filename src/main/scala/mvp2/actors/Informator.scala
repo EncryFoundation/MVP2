@@ -4,7 +4,6 @@ import akka.actor.ActorRefFactory
 import mvp2.messages.Get
 import mvp2.http.ApiRoute
 import mvp2.messages.CurrentBlockchainInfo
-import mvp2.utils.Settings
 import akka.http.scaladsl.Http
 import mvp2.MVP2._
 import mvp2.utils.Settings

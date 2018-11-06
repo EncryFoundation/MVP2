@@ -1,13 +1,11 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, Props}
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
-import mvp2.utils.Settings
-import mvp2.messages.{CurrentBlockchainInfo, Get}
+import mvp2.messages.CurrentBlockchainInfo
 import mvp2.messages.Get
 import mvp2.utils.Settings
 import scala.collection.immutable.TreeMap
@@ -22,12 +20,6 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
     .withMailbox("net-mailbox"), "networker")
   val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
-
-  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
-  val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
-    .withMailbox("net-mailbox"), "networker")
-
-  val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
 
   context.system.scheduler.schedule(1.seconds, 1.seconds) {
     informator ! CurrentBlockchainInfo(
