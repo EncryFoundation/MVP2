@@ -40,7 +40,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msg=$msg value=${System.currentTimeMillis()},remote="${remote.getAddress.getHostAddress},msgId=${id.toString}"""")
+        s"""networkMsg,node=$myNodeAddress,msg=$msg value=${System.currentTimeMillis()},remote="${remote.getAddress.getHostAddress},msgId=${id.utf8String}"""")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
         case Ping =>
@@ -53,7 +53,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       influxDB.write(settings.port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msg=$msg value=${System.currentTimeMillis()},remote="${remote.getAddress.getHostAddress},msgId=${id.toString}"""")
+        s"""networkMsg,node=$myNodeAddress,msg=$msg value=${System.currentTimeMillis()},remote="${remote.getAddress.getHostAddress},msgId=${id.utf8String}"""")
     case _ =>
   }
 }
