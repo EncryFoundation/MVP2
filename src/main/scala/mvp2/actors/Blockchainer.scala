@@ -28,7 +28,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
 
   override def receiveCommand: Receive = {
     case block: Block => saveModifier(block)
-    case Get => chain
+    case Get => sender ! chain
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
