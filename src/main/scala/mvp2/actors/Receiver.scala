@@ -1,6 +1,7 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+
 import akka.actor.{Actor, ActorRef}
 import akka.io.{IO, Udp}
 import akka.serialization.{Serialization, SerializationExtension}

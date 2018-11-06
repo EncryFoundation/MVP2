@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
 import mvp2.actors.Networker.Peer
+import mvp2.data.{Blockchain, KeyBlock}
 import mvp2.messages._
 import mvp2.utils.Settings
 
@@ -35,6 +36,11 @@ class Networker(settings: Settings) extends CommonActor {
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
+    case keyBlock: KeyBlock =>
+      knownPeers.foreach(peer =>
+        context.actorSelection("/user/starter/blockchainer/networker/sender") !
+          SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
+      )
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =

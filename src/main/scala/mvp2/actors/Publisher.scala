@@ -1,11 +1,16 @@
 package mvp2.actors
 
 import java.security.KeyPair
+
 import akka.util.ByteString
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import mvp2.data.{KeyBlock, Transaction}
+import mvp2.data.{Blockchain, KeyBlock, Transaction}
+import mvp2.messages.Blocks
 import mvp2.utils.ECDSA
+
+import scala.collection.immutable.TreeMap
 import scala.language.postfixOps
 import scala.util.Random
 
@@ -26,7 +31,9 @@ class Publisher extends CommonActor {
 
   override def specialBehavior: Receive = {
     case transaction: Transaction => mempool = transaction :: mempool
-    case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case keyBlock: KeyBlock =>
+      context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
+      lastKeyBlock = keyBlock
   }
 
   def createKeyBlock: KeyBlock = {
