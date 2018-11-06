@@ -5,9 +5,10 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data._
+import mvp2.messages.CurrentBlockchainInfo
+import mvp2.messages.Get
 import mvp2.utils.EncodingUtils._
 import mvp2.utils.Settings
-import mvp2.messages.{CurrentBlockchainInfo, Get}
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -15,13 +16,11 @@ import scala.concurrent.duration._
 class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
-  val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
-
-  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant], settings.postgres.exists(_.write)), "accountant")
+  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
-
   val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
+  val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
 
   context.system.scheduler.schedule(1.seconds, 1.seconds) {
     informator ! CurrentBlockchainInfo(
@@ -45,7 +44,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
       KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
     )
     case block: Block => saveModifier(block)
-    case Get => chain
+    case Get => sender ! chain
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
@@ -68,6 +67,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with Blockchain w
     }
     if (settings.postgres.exists(_.write)) context.actorSelection("/user/starter/pgWriter") ! block
   }
+
 
   override def persistenceId: String = "blockchainer"
 
