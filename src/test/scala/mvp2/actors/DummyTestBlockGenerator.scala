@@ -36,6 +36,24 @@ object DummyTestBlockGenerator {
 
   def generateHash: ByteString = Sha256.toSha256(java.util.UUID.randomUUID().toString)
 
+  def generateChainOnlyKeyBlock: TreeMap[Long, Block] =
+    (0 to 10).foldLeft(TreeMap(1L -> KeyBlock())) { case (cur, num) =>
+      val lastKeyBlock: KeyBlock = cur.last._2
+      val newKeyBlock: KeyBlock = KeyBlock(
+        lastKeyBlock.height + 1,
+        System.currentTimeMillis(),
+        lastKeyBlock.currentBlockHash,
+        Sha256.toSha256(
+          (lastKeyBlock.height + 1).toString +
+            System.currentTimeMillis().toString +
+            lastKeyBlock.currentBlockHash.toString
+        ),
+        List(),
+        ByteString.empty
+      )
+        cur + (newKeyBlock.height -> newKeyBlock)
+    }
+
   def generateValidChain: TreeMap[Long, Block] = {
     val firstKeyBlock: KeyBlock =
       KeyBlock(0L, System.currentTimeMillis(), ByteString.empty, List(), generateByteString)
