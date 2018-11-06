@@ -6,7 +6,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
-import mvp2.utils.{Settings, Sha256}
+import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
 class Sender(settings: Settings) extends Actor with StrictLogging {
 
@@ -23,11 +23,11 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
     case SendToNetwork(message, remote) =>
       logger.info(s"Send $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
-      if (settings.influx.isDefined)
+      if (settings.influx.isDefined) {
         context.actorSelection("/user/starter/influxActor") !
           MsgToNetwork(
             message,
-            Sha256.toSha256(serialize(message).toString ++ remote.getAddress.toString),
+            Sha256.toSha256(EncodingUtils.encode2Base16(serialize(message)) ++ remote.getAddress.toString),
             remote
           )
   }

@@ -55,6 +55,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(settings.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id)} value=${System.currentTimeMillis()}""")
+      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)}")
     case _ =>
   }
 }
