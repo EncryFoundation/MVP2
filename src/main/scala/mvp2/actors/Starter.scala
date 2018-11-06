@@ -31,7 +31,6 @@ class Starter extends CommonActor {
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
     context.actorOf(Props(classOf[Informator], settings), "informator")
     context.actorOf(Props(classOf[Zombie]), "zombie")
-    context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
     settings.postgres.foreach { pgSettings =>
       if (pgSettings.read || pgSettings.write) {
         val dbService = new DbService(pgSettings)

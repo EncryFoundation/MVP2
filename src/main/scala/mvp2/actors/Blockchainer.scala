@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
-  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
+  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant], settings.postgres.exists(_.write)), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
   val publisher: ActorRef = context.actorOf(Props[Publisher], "publisher")
