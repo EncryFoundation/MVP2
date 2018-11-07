@@ -1,6 +1,8 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
+import java.security.PublicKey
+
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.Chain
@@ -17,6 +19,8 @@ final case class CurrentBlockchainInfo(height: Long = 0,
 
   override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."
 }
+
+final case class NewPublisher(publicKey: ByteString) extends Message
 
 sealed trait NetworkMessage extends Message
 
