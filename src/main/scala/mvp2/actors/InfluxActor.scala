@@ -19,13 +19,15 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
     settings.influx.map(infl => infl.password).getOrElse(""),
   )
 
-  val nodeName: String = settings.influx.map(infl => infl.nodeName match {
+  val nodeName: String = settings.influx.flatMap(infl => infl.nodeName) match {
     case Some(value) => value
     case None => InetAddress.getLocalHost.getHostAddress + ":" + settings.port
-  }).getOrElse("")
+  }
+
+  val port: Int = settings.influx.map(infl => infl.port).getOrElse(0)
 
   override def preStart(): Unit = {
-    influxDB.write(settings.port, s"""startMvp value=12""")
+    influxDB.write(port, s"""startMvp value="$nodeName"""")
   }
 
   override def receive: Receive = {
@@ -34,14 +36,14 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Ping => "ping"
         case Pong =>
           pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
-            influxDB.write(settings.port,
+            influxDB.write(port,
               s"""pingPongResponseTime,remote="$myNodeAddress" value=${System.currentTimeMillis() - pingSendTime},node="${remote.getAddress}"""".stripMargin)
           }
           pingPongResponsePequestTime = pingPongResponsePequestTime - remote
           "pong"
         case Peers(_, _) => "peers"
       }
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
     case SendToNetwork(message, remote) =>
       val msg: String = message match {
@@ -51,7 +53,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Pong => "pong"
         case Peers(_, _) => "peers"
       }
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
     case _ =>
   }
