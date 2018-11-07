@@ -6,6 +6,7 @@ case class Settings(port: Int,
                     plannerHeartbeat: Int,
                     blockPeriod: Long,
                     biasForBlockPeriod: Long,
+                    newBlockchain: Boolean,
                     apiSettings: ApiSettings,
                     influx: Option[InfluxSettings],
                     testingSettings: Option[TestingSettings]
