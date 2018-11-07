@@ -73,7 +73,6 @@ class Networker(settings: Settings) extends CommonActor {
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "sender")
   }
-
 }
 
 object Networker {
