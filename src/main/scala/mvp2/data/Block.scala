@@ -28,7 +28,7 @@ final case class KeyBlock(height: Long,
 }
 
 object KeyBlock {
-  def apply(height: Long = 0,
+  def apply(height: Long = -1,
             timestamp: Long = System.currentTimeMillis,
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
