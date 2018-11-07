@@ -2,17 +2,11 @@ package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data._
-import mvp2.messages.CurrentBlockchainInfo
 import mvp2.messages.Get
 import mvp2.utils.Settings
-import scala.collection.immutable.TreeMap
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import mvp2.utils.EncodingUtils._
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -26,10 +20,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
 
   override def receiveRecover: Receive = {
-    //case keyBlock: KeyBlock => update(keyBlock)
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")
-    //publisher ! lastKeyBlock.getOrElse(
-    //  KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
   }
 
   override def receiveCommand: Receive = {
@@ -39,7 +30,6 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         s"Blockchain's height is ${blockchain.chain.size}.")
       planner ! keyBlock
       publisher ! keyBlock
-      //saveModifier(block)
     case Get => sender ! blockchain
     case period: Period =>
       logger.info(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")

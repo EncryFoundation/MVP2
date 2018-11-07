@@ -15,7 +15,7 @@ class Planner(settings: Settings) extends CommonActor {
   import Planner.{Period, Tick}
 
   val heartBeat: Cancellable =
-    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat seconds, self, Tick)
+    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   var nextTurn: Period = Period(KeyBlock(), settings)
   var publishersPubKeys: Set[ByteString] = Set.empty
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
@@ -31,22 +31,26 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Planner knows about new poblisher in the network (${newPublisher.publicKey}) " +
         s"and adds him into next schedule.")
       publishersPubKeys += newPublisher.publicKey
-    case Tick if timeToPublish(nextTurn) =>
+    case Tick if nextTurn.timeToPublish =>
       publisher ! Get
-      ("Planner send publisher request: time to publish!")
+      println("Planner send publisher request: time to publish!")
     case Tick =>
-  }
-
-  def timeToPublish(nextTurn: Period): Boolean = {
-    val currentTime: Long = System.currentTimeMillis()
-    println(s"Publisher: ${(nextTurn.exactTime - currentTime) / 1000} seconds till next Block.")
-    System.currentTimeMillis() >= nextTurn.exactTime
   }
 }
 
 object Planner {
 
-  case class Period(begin: Long, exactTime: Long, end: Long)
+  case class Period(begin: Long, exactTime: Long, end: Long) {
+    def timeToPublish: Boolean = {
+      val now: Long = System.currentTimeMillis
+      now >= this.begin && now <= this.end
+    }
+
+    def noBlocksInTime: Boolean = {
+      val now: Long = System.currentTimeMillis
+      now > this.end
+    }
+  }
 
   object Period {
 

@@ -1,9 +1,6 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
-import akka.util.ByteString
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.data.{KeyBlock, Transaction}
 import mvp2.messages.Get
 import mvp2.utils.Settings
@@ -13,7 +10,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
-  //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   override def specialBehavior: Receive = {
