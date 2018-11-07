@@ -16,7 +16,6 @@ class Planner(settings: Settings) extends CommonActor {
 
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat seconds, self, Tick)
-  var lastKeyBlock: Option[KeyBlock] = None
   var nextTurn: Period = Period(KeyBlock(), settings)
   var publishersPubKeys: Set[ByteString] = Set.empty
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
@@ -26,7 +25,6 @@ class Planner(settings: Settings) extends CommonActor {
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
       println(s"Planner received new keyBlock with height: ${keyBlock.height}.")
-      lastKeyBlock = Option(keyBlock)
       nextTurn = Period(keyBlock, settings)
       context.parent ! nextTurn
     case newPublisher: NewPublisher =>
@@ -34,14 +32,15 @@ class Planner(settings: Settings) extends CommonActor {
         s"and adds him into next schedule.")
       publishersPubKeys += newPublisher.publicKey
     case Tick if timeToPublish(nextTurn) =>
-      println("Planner is working: time to publish!")
       publisher ! Get
-    case Tick => println(s"Planner is working in vain. nexTurn: ${(System.currentTimeMillis - nextTurn.exactTime) / 1000}.")
+      ("Planner send publisher request: time to publish!")
+    case Tick =>
   }
 
   def timeToPublish(nextTurn: Period): Boolean = {
-    println(nextTurn)
-    true
+    val currentTime: Long = System.currentTimeMillis()
+    println(s"Publisher: ${(nextTurn.exactTime - currentTime) / 1000} seconds till next Block.")
+    System.currentTimeMillis() >= nextTurn.exactTime
   }
 }
 
@@ -51,8 +50,8 @@ object Planner {
 
   object Period {
 
-    def apply(keyBlock: KeyBlock, settings: Settings): Period = {
-      val exactTimestamp: Long = keyBlock.timestamp + settings.blockPeriod
+    def apply(lastKeyBlock: KeyBlock, settings: Settings): Period = {
+      val exactTimestamp: Long = lastKeyBlock.timestamp + settings.blockPeriod
       Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
     }
   }
