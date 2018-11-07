@@ -35,7 +35,7 @@ class Publisher extends CommonActor {
 
   def time: Long = System.currentTimeMillis() + currentDelta
 
-  def createGenesysBlock(): KeyBlock = ???
+  def createGenesisBlock(): KeyBlock = ???
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =

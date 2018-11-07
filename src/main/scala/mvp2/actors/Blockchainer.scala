@@ -14,7 +14,6 @@ import scala.concurrent.duration._
 import mvp2.utils.EncodingUtils._
 import mvp2.messages.{Get, TimeDelta}
 
-
 class Blockchainer(settings: Settings) extends PersistentActor with Blockchain with StrictLogging {
 
   var appendix: Appendix = Appendix(TreeMap())
