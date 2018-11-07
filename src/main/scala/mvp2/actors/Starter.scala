@@ -24,6 +24,7 @@ class Starter extends CommonActor {
   }
 
   def bornKids(): Unit = {
+
     context.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     settings.influx.foreach(influxSettings =>
       context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
