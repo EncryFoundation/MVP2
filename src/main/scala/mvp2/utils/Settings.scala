@@ -7,6 +7,7 @@ case class Settings(port: Int,
                     blockPeriod: Long,
                     biasForBlockPeriod: Long,
                     apiSettings: ApiSettings,
+                    ethereumSettings: EthereumSettings,
                     influx: Option[InfluxSettings],
                     testingSettings: Option[TestingSettings]
                    )
@@ -16,5 +17,8 @@ case class Node(host: String, port: Int)
 case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 
 case class InfluxSettings(host: String, port: Int, login: String, password: String)
+
+case class EthereumSettings(userAccount: String, userPassword: String, receiverAccount:String,
+                            peerRPCAddress: String, gasPrice: Int)
 
 case class TestingSettings(pingPong: Boolean)
