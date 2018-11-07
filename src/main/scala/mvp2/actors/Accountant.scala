@@ -29,7 +29,6 @@ class Accountant extends CommonActor {
           account = account.copy(data = account.data :+ tx.data, nonce = tx.nonce)
       }
       accountsInfo = accountsInfo + (singleParty._1 -> account)
-      accountsInfo.foreach(x => logger.info(s"${x._1} -> ${stateRoot}"))
       stateRoot = Sha256.toSha256(accountsInfo.toString)
   }
 }
