@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.security.{KeyPair, PublicKey}
+import java.security.KeyPair
 import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
 import akka.util.ByteString
 import mvp2.data.KeyBlock
