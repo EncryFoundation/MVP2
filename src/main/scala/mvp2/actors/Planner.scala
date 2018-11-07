@@ -34,6 +34,10 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if nextTurn.timeToPublish =>
       publisher ! Get
       println("Planner send publisher request: time to publish!")
+    case Tick if nextTurn.noBlocksInTime =>
+      val newPeriod = Period(nextTurn, settings)
+      println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
+      nextTurn = newPeriod
     case Tick =>
   }
 }
@@ -56,6 +60,11 @@ object Planner {
 
     def apply(lastKeyBlock: KeyBlock, settings: Settings): Period = {
       val exactTimestamp: Long = lastKeyBlock.timestamp + settings.blockPeriod
+      Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
+    }
+
+    def apply(previousPeriod: Period, settings: Settings): Period = {
+      val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod / 2
       Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
     }
   }
