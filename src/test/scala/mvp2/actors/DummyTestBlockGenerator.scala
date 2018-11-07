@@ -25,7 +25,7 @@ object DummyTestBlockGenerator {
   def generateTransaction(index: Int): Transaction = {
     val addressNonce = addressNoncePull(index)
     addressNoncePull(index) = (addressNoncePull(index)._1, addressNoncePull(index)._2 + 1)
-    Transaction(addressNonce._1, addressNonce._2 + 1, generateHash, generateByteString)
+    Transaction(addressNonce._1, System.currentTimeMillis, addressNonce._2 + 1, generateHash, generateByteString)
   }
 
   def generateChain(length: Int): List[Block] = List.range(1, length + 1)

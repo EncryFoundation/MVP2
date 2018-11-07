@@ -3,6 +3,9 @@ package mvp2.utils
 case class Settings(port: Int,
                     otherNodes: List[Node],
                     heartbeat: Int,
+                    plannerHeartbeat: Int,
+                    blockPeriod: Long,
+                    biasForBlockPeriod: Long,
                     apiSettings: ApiSettings,
                     influx: Option[InfluxSettings],
                     testingSettings: Option[TestingSettings]

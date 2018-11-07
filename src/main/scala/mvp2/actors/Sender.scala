@@ -12,8 +12,6 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
-  override def preStart(): Unit = logger.info("Starting the Sender!")
-
   override def receive: Receive = {
     case UdpSocket(connection) => context.become(sendingCycle(connection))
     case smth: Any => logger.info(s"Got smth strange: $smth.")
