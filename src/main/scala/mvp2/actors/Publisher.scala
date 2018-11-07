@@ -25,7 +25,7 @@ class Publisher extends CommonActor {
       val newBlock: KeyBlock = createKeyBlock
       lastKeyBlock = newBlock
       context.parent ! newBlock
-      //networker ! newBlock
+      networker ! newBlock
   }
 
   def createKeyBlock: KeyBlock = {
