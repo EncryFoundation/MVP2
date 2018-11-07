@@ -1,14 +1,11 @@
 package mvp2.actors
 
-import akka.actor.{Actor, Props}
+import akka.actor.Props
 import mvp2.utils.Settings
-import com.typesafe.scalalogging.StrictLogging
 import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
-class Starter extends Actor with StrictLogging {
+class Starter extends CommonActor {
 
   import mvp2.messages.InfoMessage
 
@@ -20,18 +17,19 @@ class Starter extends Actor with StrictLogging {
     bornKids()
   }
 
-  override def receive: Receive = {
+  override def specialBehavior: Receive = {
     case message: InfoMessage => logger.info(message.info)
   }
 
   def bornKids(): Unit = {
+
+    context.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     settings.influx.foreach(influxSettings =>
       context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
     )
+    context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
+    context.actorOf(Props(classOf[Informator], settings), "informator")
+    context.actorOf(Props(classOf[Zombie]), "zombie")
     context.actorOf(Props(classOf[TimeProvider], settings.ntp), "timeProvider")
-    context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "networker")
-    context.actorOf(Props(classOf[Blockchainer]), "blockchainer")
-    context.actorOf(Props[Zombie])
   }
 }

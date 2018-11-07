@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
 import mvp2.actors.Networker.Peer
+import mvp2.data.KeyBlock
 import mvp2.messages._
 import mvp2.utils.Settings
 
@@ -16,9 +17,9 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers)
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
     if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
-      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers)
+      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
 
@@ -34,6 +35,9 @@ class Networker(settings: Settings) extends CommonActor {
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
       }
+    case myPublishedBlock: KeyBlock =>
+      logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
+        s"But broadcasting yet implemented not.")
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =
@@ -46,12 +50,12 @@ class Networker(settings: Settings) extends CommonActor {
         knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
       )
 
-  def pingAllPeers: Unit =
+  def pingAllPeers(): Unit =
     knownPeers.foreach(peer =>
       context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
     )
 
-  def sendPeers: Unit =
+  def sendPeers(): Unit =
     knownPeers.foreach(peer =>
       context.actorSelection("/user/starter/networker/sender") !
         SendToNetwork(
