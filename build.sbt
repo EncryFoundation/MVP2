@@ -38,3 +38,5 @@ resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repos
 
 fork in Test := true
 fork in run := true
+connectInput in run := true
+outputStrategy := Some(StdoutOutput)
