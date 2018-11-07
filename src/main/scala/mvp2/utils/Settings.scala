@@ -15,6 +15,6 @@ case class Node(host: String, port: Int)
 
 case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 
-case class InfluxSettings(host: String, port: Int, login: String, password: String)
+case class InfluxSettings(host: String, port: Int, login: String, password: String, nodeName: Option[String])
 
 case class TestingSettings(pingPong: Boolean)

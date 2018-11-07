@@ -27,7 +27,7 @@ class Starter extends CommonActor {
 
     context.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
     settings.influx.foreach(influxSettings =>
-      context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
+      context.actorOf(Props(classOf[InfluxActor], settings), name = "influxActor")
     )
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
     context.actorOf(Props(classOf[Informator], settings), "informator")

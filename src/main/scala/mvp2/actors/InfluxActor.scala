@@ -4,20 +4,25 @@ import java.net.{InetAddress, InetSocketAddress}
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
-import mvp2.utils.InfluxSettings
+import mvp2.utils.Settings
 import org.influxdb.{InfluxDB, InfluxDBFactory}
 
-class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
+class InfluxActor(settings: Settings) extends Actor with StrictLogging {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
   var pingPongResponsePequestTime: Map[InetSocketAddress, Long] = Map.empty
 
   val influxDB: InfluxDB = InfluxDBFactory.connect(
-    settings.host,
-    settings.login,
-    settings.password
+    settings.influx.map(infl => infl.host).getOrElse(""),
+    settings.influx.map(infl => infl.login).getOrElse(""),
+    settings.influx.map(infl => infl.password).getOrElse(""),
   )
+
+  val nodeName: String = settings.influx.map(infl => infl.nodeName match {
+    case Some(value) => value
+    case None => InetAddress.getLocalHost.getHostAddress + ":" + settings.port
+  }).getOrElse("")
 
   override def preStart(): Unit = {
     influxDB.write(settings.port, s"""startMvp value=12""")
