@@ -23,7 +23,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
       context.become(readCycle(sender))
-      context.actorSelection("/user/starter/networker/sender") ! UdpSocket(sender)
+      context.actorSelection("/user/starter/blockchainer/networker/sender") ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
 
