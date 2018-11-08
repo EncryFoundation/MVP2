@@ -45,10 +45,12 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
       }
+      val i: Int = getRemoteMsgIncrement(remote)
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + getRemoteMsgIncrement(remote)},msg=$msg value=${System.currentTimeMillis()}""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
+      logger.info(s"Report about msg: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
         case Ping =>
@@ -58,11 +60,12 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
       }
+      val i: Int = getRemoteMsgIncrement(remote)
       influxDB.write(settings.port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(settings.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + getRemoteMsgIncrement(remote)},msg=$msg value=${System.currentTimeMillis()}""")
-      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)}")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
+      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case _ =>
   }
 }
