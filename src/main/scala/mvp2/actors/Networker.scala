@@ -4,16 +4,17 @@ import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
+import akka.util.ByteString
 import mvp2.actors.Networker.Peer
 import mvp2.data.KeyBlock
 import mvp2.messages._
-import mvp2.utils.Settings
+import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
 
-  var knownPeers: List[Peer] = settings.otherNodes.map(node =>
-    Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
-  )
+  var knownPeers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
+    Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis()) -> None
+  ).toMap
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
@@ -28,7 +29,7 @@ class Networker(settings: Settings) extends CommonActor {
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peers, remote) =>
-          (peers :+ msgFromRemote.remote).foreach(addPeer)
+          peers.foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
@@ -40,19 +41,26 @@ class Networker(settings: Settings) extends CommonActor {
         s"But broadcasting yet implemented not.")
   }
 
-  def addPeer(peerAddr: InetSocketAddress): Unit =
-    if (!knownPeers.map(_.remoteAddress).contains(peerAddr))
-      knownPeers = knownPeers :+ Peer(peerAddr, 0)
+  def addPeer(peer: (InetSocketAddress, Option[ByteString])): Unit = {
+    if (!knownPeers.keys.map(_.remoteAddress).toList.contains(peer._1)) {
+      knownPeers = knownPeers + (Peer(peer._1, 0) -> peer._2)
+      peer._2.foreach(serializedPubKey =>
+        context.actorSelection("/user/starter/blockchainer/planner/keyKeeper") !
+          PeerPublicKey(ECDSA.uncompressPublicKey(serializedPubKey))
+      )
+    }
+  }
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
-    if (knownPeers.par.exists(_.remoteAddress == peer))
-      knownPeers.find(_.remoteAddress == peer).foreach ( prevPeer =>
-        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
+    if (knownPeers.keys.toList.exists(_.remoteAddress == peer))
+      knownPeers.find(_._1.remoteAddress == peer).foreach ( prevPeer =>
+        knownPeers = knownPeers.filter(_ != prevPeer) +
+          (prevPeer._1.copy(lastMessageTime = System.currentTimeMillis()) -> prevPeer._2)
       )
 
   def pingAllPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
+      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer._1.remoteAddress)
     )
 
   def sendPeers(): Unit =
@@ -60,10 +68,11 @@ class Networker(settings: Settings) extends CommonActor {
       context.actorSelection("/user/starter/networker/sender") !
         SendToNetwork(
           Peers(
-            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
-            peer.remoteAddress
+            knownPeers.filter(_._1.remoteAddress != peer._1.remoteAddress)
+              .map(peerToSend => peerToSend._1.remoteAddress -> peerToSend._2),
+            peer._1.remoteAddress
           ),
-          peer.remoteAddress
+          peer._1.remoteAddress
         )
     )
 

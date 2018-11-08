@@ -1,6 +1,7 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
+import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.Chain
@@ -32,7 +33,7 @@ case object Pong extends NetworkMessage {
   val typeId: Byte = 2: Byte
 }
 
-case class Peers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
+case class Peers(peers: Map[InetSocketAddress, Option[ByteString]], remote: InetSocketAddress) extends NetworkMessage
 
 case object Peers {
 
@@ -51,3 +52,5 @@ case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) ext
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
+
+case class PeerPublicKey(peerPublicKey: PublicKey)
