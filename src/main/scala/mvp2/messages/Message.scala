@@ -53,4 +53,6 @@ case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress)
 
 case class UdpSocket(conection: ActorRef) extends Message
 
-case class PeerPublicKey(peerPublicKey: PublicKey)
+case class PeerPublicKey(peerPublicKey: PublicKey) extends Message
+
+case class MyPublicKey(publicKey: PublicKey) extends Message

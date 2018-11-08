@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
@@ -11,6 +11,10 @@ import mvp2.messages._
 import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
+
+  var publicKey: Option[ByteString] = None
+
+  val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
 
   var knownPeers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis()) -> None
@@ -39,6 +43,7 @@ class Networker(settings: Settings) extends CommonActor {
     case myPublishedBlock: KeyBlock =>
       logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
         s"But broadcasting yet implemented not.")
+    case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
   }
 
   def addPeer(peer: (InetSocketAddress, Option[ByteString])): Unit = {
@@ -69,7 +74,9 @@ class Networker(settings: Settings) extends CommonActor {
         SendToNetwork(
           Peers(
             knownPeers.filter(_._1.remoteAddress != peer._1.remoteAddress)
-              .map(peerToSend => peerToSend._1.remoteAddress -> peerToSend._2),
+              .map(peerToSend => peerToSend._1.remoteAddress -> peerToSend._2) +
+              (myAddr -> publicKey)
+            ,
             peer._1.remoteAddress
           ),
           peer._1.remoteAddress
