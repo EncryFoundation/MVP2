@@ -30,8 +30,8 @@ class Starter extends CommonActor {
       context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
     )
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
-    context.actorOf(Props(classOf[Informator], settings), "informator")
     context.actorOf(Props(classOf[Zombie]), "zombie")
     */
+    context.actorOf(Props(classOf[Informator], settings), "informator")
   }
 }
