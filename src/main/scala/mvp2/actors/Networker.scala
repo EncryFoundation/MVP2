@@ -30,11 +30,11 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case msgFromRemote: MessageFromRemote =>
-      addPeer(msgFromRemote.remote -> None)
+      addOrUpdatePeer(msgFromRemote.remote -> None)
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peers, remote) =>
-          peers.foreach(addPeer)
+          peers.foreach(addOrUpdatePeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
@@ -47,15 +47,20 @@ class Networker(settings: Settings) extends CommonActor {
     case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
   }
 
-  def addPeer(peer: (InetSocketAddress, Option[ByteString])): Unit = {
-    if (!knownPeers.keys.map(_.remoteAddress).toList.contains(peer._1)) {
-      knownPeers = knownPeers + (Peer(peer._1, 0) -> peer._2)
-      peer._2.foreach(serializedPubKey =>
-        context.actorSelection("/user/starter/blockchainer/planner/keyKeeper") !
-          PeerPublicKey(ECDSA.uncompressPublicKey(serializedPubKey))
-      )
+  def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): Unit =
+    knownPeers.find(_._1.remoteAddress == peer._1) match {
+      case Some(peerInfo) => if (peerInfo._2.isEmpty && peer._2.isDefined) {
+        peer._2.foreach(updatePeerKey)
+        knownPeers = (knownPeers - peerInfo._1) + (Peer(peer._1, 0) -> peer._2)
+      }
+      case None =>
+        knownPeers = knownPeers + (Peer(peer._1, 0) -> peer._2)
+        peer._2.foreach(updatePeerKey)
     }
-  }
+
+  def updatePeerKey(serializedKey: ByteString): Unit =
+    context.actorSelection("/user/starter/blockchainer/planner/keyKeeper") !
+      PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
     if (knownPeers.keys.toList.exists(_.remoteAddress == peer))
