@@ -13,9 +13,9 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
 
   var pingPongResponsePequestTime: Map[InetSocketAddress, Long] = Map.empty
 
-  var msgFromRemote: Map[InetSocketAddress, Int] = Map.empty
+  var msgFromRemote: Map[InetSocketAddress, Map[Message, Int]] = Map.empty
 
-  var msgToRemote: Map[InetSocketAddress, Int] = Map.empty
+  var msgToRemote: Map[InetSocketAddress, Map[Message, Int]] = Map.empty
 
   val influxDB: InfluxDB = InfluxDBFactory.connect(
     settings.host,
@@ -27,17 +27,35 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
     influxDB.write(settings.port, s"""startMvp value=12""")
   }
 
-  def getFromRemoteMsgIncrement(remote: InetSocketAddress): Int = {
-    val newValue: Int = msgFromRemote.getOrElse(remote, 0) + 1
-    msgFromRemote = (msgFromRemote - remote) + (remote -> newValue)
-    newValue
-  }
+  def getFromRemoteMsgIncrement(remote: InetSocketAddress, msg: NetworkMessage): Int =
+    msgFromRemote.find(_._1 == remote) match {
+      case Some(msgInfo) => msgInfo._2.find(_._1.getClass == msg.getClass) match {
+        case Some(i) =>
+          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
+          i._2 + 1
+        case None =>
+          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
+          1
+      }
+      case None =>
+        msgFromRemote += (remote -> Map(msg -> 1))
+        1
+    }
 
-  def getToRemoteMsgIncrement(remote: InetSocketAddress): Int = {
-    val newValue: Int = msgToRemote.getOrElse(remote, 0) + 1
-    msgToRemote = (msgToRemote - remote) + (remote -> newValue)
-    newValue
-  }
+  def getToRemoteMsgIncrement(remote: InetSocketAddress, msg: NetworkMessage): Int =
+    msgToRemote.find(_._1 == remote) match {
+      case Some(msgInfo) => msgInfo._2.find(_._1.getClass == msg.getClass) match {
+        case Some(i) =>
+          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
+          i._2 + 1
+        case None =>
+          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
+          1
+      }
+      case None =>
+        msgToRemote += (remote -> Map(msg -> 1))
+        1
+    }
 
   override def receive: Receive = {
     case MsgFromNetwork(message, id, remote) =>
@@ -53,7 +71,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
       }
-      val i: Int = getFromRemoteMsgIncrement(remote)
+      val i: Int = getFromRemoteMsgIncrement(remote, message)
       influxDB.write(settings.port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(settings.port,
@@ -68,7 +86,7 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
       }
-      val i: Int = getToRemoteMsgIncrement(remote)
+      val i: Int = getToRemoteMsgIncrement(remote, message)
       influxDB.write(settings.port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(settings.port,
