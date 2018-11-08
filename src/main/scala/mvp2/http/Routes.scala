@@ -3,7 +3,6 @@ package mvp2.http
 import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
-import mvp2.MVP2.system
 import mvp2.data.Transaction
 import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
@@ -19,7 +18,6 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import mvp2.utils.EncodingUtils._
@@ -28,7 +26,6 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
 
   implicit val ec: ExecutionContextExecutor = context.dispatcher
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   val route: Route = getTxs ~ apiInfo
 
@@ -43,9 +40,9 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
     toJsonResponse(apiInfoVal.map(_.asJson))
   )
 
-  val publisher: ActorSelection = system.actorSelection("user/starter/blockchainer/publisher")
+  val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
 
-  def getTxs: Route = path("sendTx") {
+  def getTxs: Route = path("sendTxs") {
     post(entity(as[List[Transaction]]) {
       txs =>
         complete {
