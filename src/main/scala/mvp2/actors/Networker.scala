@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -49,7 +49,7 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =
-    if (!knownPeers.map(_.remoteAddress).contains(peerAddr))
+    if (!knownPeers.map(_.remoteAddress).contains(peerAddr) && !isSelfIp(peerAddr))
       knownPeers = knownPeers :+ Peer(peerAddr, 0)
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
@@ -81,6 +81,10 @@ class Networker(settings: Settings) extends CommonActor {
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "sender")
   }
+
+  def isSelfIp(addr: InetSocketAddress): Boolean =
+    (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
+      (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
 }
 
 object Networker {
