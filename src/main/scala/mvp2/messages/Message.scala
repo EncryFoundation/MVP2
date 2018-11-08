@@ -1,8 +1,6 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
-import java.security.PublicKey
-
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.Chain
