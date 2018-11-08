@@ -3,6 +3,7 @@ package mvp2.actors
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.util.ByteString
 import io.circe.Json
 import mvp2.utils.EthereumSettings
@@ -38,7 +39,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
       ("params", Json.fromFields(List(
         ("from", Json.fromString(ethereumSettings.userAccount)),
         ("to", Json.fromString(ethereumSettings.receiverAccount)),
-        ("value", Json.fromDoubleOrNull(ethToTransfer))
+        ("value", Json.fromDoubleOrNull(ethToTransfer)),
         ("gas", Json.fromString(Integer.toHexString(gasAmount))),
         ("gasPrice", Json.fromString(Integer.toHexString(ethereumSettings.gasPrice))),
         ("data", Json.fromString(blockHash.toList.map("%02X" format _).mkString.toList.map(_.toInt.toHexString).mkString))
@@ -60,14 +61,14 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
       )))
       ("id", Json.fromInt(67))
     ))
-    val unlockResponseFuture: Future[HttpResponse] = Http().singleRequest(
-      HttpRequest(
-        HttpMethods.POST, ethereumSettings.peerRPCAddress,
-        entity=HttpEntity(MediaTypes.`application/json`, jsonToUnlock.toString)
-      ))
-    unlockResponseFuture.onComplete {
-      case Success(res) =>
-    }
+//    val unlockResponseFuture: Future[HttpResponse] = Http().singleRequest(
+//      HttpRequest(
+//        HttpMethods.POST, ethereumSettings.peerRPCAddress,
+//        entity=HttpEntity(MediaTypes.`application/json`, jsonToUnlock.toString)
+//      ))
+//    unlockResponseFuture.onComplete {
+//      case Success(res) =>
+//    }
   }
 
   def getEthBlockHashWithTransaction(transactionID: String): Option[String] = {
@@ -91,12 +92,12 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
     responseFuture.onComplete {
       case Success(response) => response.status match {
         case StatusCodes.OK if (response.entity.contentType == ContentTypes.`application/json`) =>
+          Unmarshal(response.entity).to[String].map()
       }
       case Failure(e) => logger.error(e.toString)
     }
     Await.result(responseFuture, Duration.apply(30, TimeUnit.SECONDS))
   }
-
 }
 
 case class UnconfirmedTransaction(BlockHash: ByteString, transactionID: String, inChain:Boolean)
