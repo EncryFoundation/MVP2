@@ -66,12 +66,12 @@ class Networker(settings: Settings) extends CommonActor {
 
   def pingAllPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer._1.remoteAddress)
+      context.actorSelection("/user/starter/blockchainer/networker/sender") ! SendToNetwork(Ping, peer._1.remoteAddress)
     )
 
   def sendPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") !
+      context.actorSelection("/user/starter/blockchainer/networker/sender") !
         SendToNetwork(
           Peers(
             knownPeers.filter(_._1.remoteAddress != peer._1.remoteAddress)
