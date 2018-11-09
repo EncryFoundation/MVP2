@@ -44,6 +44,13 @@ object Blocks {
   val typeId: Byte = 4: Byte
 }
 
+case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
+
+object SyncMessageIterators {
+
+  val typeId: Byte = 5: Byte
+}
+
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
 case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
@@ -51,5 +58,6 @@ case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSoc
 case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
+
 
 case class UdpSocket(conection: ActorRef) extends Message
