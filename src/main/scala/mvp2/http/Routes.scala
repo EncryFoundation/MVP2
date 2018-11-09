@@ -28,8 +28,9 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
 
   val route: Route = getTxs ~ apiInfo
+  val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
 
-  def apiInfoVal: Future[CurrentBlockchainInfo] =
+  def apiInfoDef: Future[CurrentBlockchainInfo] =
     (context.actorSelection("/user/starter/informator") ? Get).mapTo[CurrentBlockchainInfo]
 
   def toJsonResponse(fJson: Future[Json]): Route = onSuccess(fJson)(resp =>
@@ -37,10 +38,8 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   )
 
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse(apiInfoVal.map(_.asJson))
+    toJsonResponse(apiInfoDef.map(_.asJson))
   )
-
-  val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
 
   def getTxs: Route = path("sendTxs") {
     post(entity(as[List[Transaction]]) {
