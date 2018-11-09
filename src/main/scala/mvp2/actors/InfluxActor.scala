@@ -90,6 +90,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
           "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
+        case SyncMessageIterators(_) => "iterSync"
       }
       val i: Int = getFromRemoteMsgIncrement(remote, msg)
       influxDB.write(settings.port,
@@ -105,6 +106,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Pong => "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
+        case SyncMessageIterators(_) => "iterSync"
       }
       val i: Int = getToRemoteMsgIncrement(remote, msg)
       influxDB.write(settings.port,
