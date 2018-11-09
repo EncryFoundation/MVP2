@@ -20,13 +20,16 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
 
   var msgToRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
-  val influxDB: InfluxDB = settings.influx.map(influxSettins =>
+  val port: Int = settings.influx.map(_.port).getOrElse(1234)
+
+  val influxDB: InfluxDB = settings.influx.map { influxSettins =>
+    println("test")
     InfluxDBFactory.connect(
       influxSettins.host,
       influxSettins.login,
       influxSettins.password
     )
-  ).getOrElse(
+  }.getOrElse(
     InfluxDBFactory.connect(
       "127.0.0.1",
       "admin",
@@ -34,7 +37,9 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
     )
   )
 
+
   override def preStart(): Unit = {
+    logger.info("Start influx actor")
     influxDB.write(settings.port, s"""startMvp value=12""")
     context.system.scheduler
       .schedule(1 seconds,
@@ -93,9 +98,9 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case SyncMessageIterators(_) => "iterSync"
       }
       val i: Int = getFromRemoteMsgIncrement(remote, msg)
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
       logger.info(s"Report about msg: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
@@ -109,10 +114,11 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case SyncMessageIterators(_) => "iterSync"
       }
       val i: Int = getToRemoteMsgIncrement(remote, msg)
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
-      influxDB.write(settings.port,
+      influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
+      println(s"networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
       logger.info(s"Sync iterators from $remote")
