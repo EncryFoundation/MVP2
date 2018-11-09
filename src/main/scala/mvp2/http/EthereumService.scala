@@ -6,16 +6,17 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
+import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import io.circe.parser.parse
 import mvp2.MVP2.system
 import mvp2.utils.EthRequestType.EthRequestType
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-object EthereumService {
+object EthereumService extends StrictLogging {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   val anchorer: ActorSelection = system.actorSelection("user/starter/anchorer")
 
@@ -32,14 +33,14 @@ object EthereumService {
           Unmarshal(response.entity).to[String].onComplete {
             case Success(s) => parse(s) match {
               case Right(json) => anchorer ! EthResponse(innerId, requestType, json)
-              case Left(_) => ???
+              case Left(e) => logger.error("failed to parse json response from ethereum:" + e.getMessage)
             }
-            case Failure(e) => ???
+            case Failure(e) => logger.error("failed to Unmarshal response from ethereum:" + e.getMessage)
           }
       }
-      case Failure(e) => ???
+      case Failure(e) => logger.error("failed to get response from ethereum:" + e.getMessage)
     }
-    Await.result(responseFuture, Duration.apply(4, TimeUnit.SECONDS))
+    Await.result(responseFuture, Duration.apply(5, TimeUnit.SECONDS))
   }
 }
 
