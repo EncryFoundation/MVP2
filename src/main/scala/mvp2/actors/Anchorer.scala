@@ -15,7 +15,6 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   private var unconfirmedQueue: List[UnconfirmedTransaction] = _
 
   override def specialBehavior: Receive = {
-
     case blockHash: ByteString =>
       unconfirmedQueue = UnconfirmedTransaction(randomUUID().toString, blockHash, "", isUnlocked=false) :: unconfirmedQueue
       sendUnlockAccount(unconfirmedQueue.head)
@@ -62,7 +61,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
         Json.fromString(ethereumSettings.userAccount),
         Json.fromString(ethereumSettings.userPassword),
         Json.fromInt(600)
-      )))
+      ))),
       ("id", Json.fromInt(67))
     ))
     EthereumService
@@ -73,7 +72,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
     val requestBody = Json.fromFields(List (
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("eth_getTransactionReceipt")),
-      ("params", Json.fromValues(List(Json.fromString(transaction.transactionEthID))))
+      ("params", Json.fromValues(List(Json.fromString(transaction.transactionEthID)))),
       ("id", Json.fromInt(1))
     ))
     EthereumService

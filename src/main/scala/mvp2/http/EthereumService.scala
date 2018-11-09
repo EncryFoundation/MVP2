@@ -5,16 +5,18 @@ import akka.actor.ActorSelection
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.ActorMaterializer
 import io.circe.Json
 import io.circe.parser.parse
 import mvp2.MVP2.system
 import mvp2.utils.EthRequestType.EthRequestType
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 object EthereumService {
-
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
   val anchorer: ActorSelection = system.actorSelection("user/starter/anchorer")
 
   def sendRequestToEthereum(innerId: String, requestBody: Json, peerRPCAddress: String, requestType: EthRequestType): Unit = {
