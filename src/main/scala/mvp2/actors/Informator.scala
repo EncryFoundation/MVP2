@@ -2,7 +2,7 @@ package mvp2.actors
 
 import akka.actor.ActorRefFactory
 import mvp2.messages.Get
-import mvp2.http.ApiRoute
+import mvp2.http.Routes
 import mvp2.messages.CurrentBlockchainInfo
 import akka.http.scaladsl.Http
 import mvp2.MVP2._
@@ -27,6 +27,8 @@ class Informator(settings: Settings) extends CommonActor {
 object Informator {
 
   def start(settings: Settings, context: ActorRefFactory): Unit = Http().bindAndHandle(
-    ApiRoute(settings, context).apiInfo, settings.apiSettings.httpHost, settings.apiSettings.httpPort
+    Routes(settings, context).route,
+    settings.apiSettings.httpHost,
+    settings.apiSettings.httpPort
   )
 }
