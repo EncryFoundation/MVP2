@@ -14,6 +14,7 @@ class Accountant extends CommonActor {
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
+      println(s"Accountant received keyBlock with height ${keyBlock.height}.")
       if (keyBlock.transactions.forall(_.isValid)) updateState(keyBlock.transactions)
   }
 
