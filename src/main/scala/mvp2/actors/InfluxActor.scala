@@ -88,7 +88,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Ping => "ping"
         case Pong =>
           pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
-            influxDB.write(settings.port,
+            influxDB.write(port,
               s"""pingPongResponseTime,remote="$myNodeAddress" value=${System.currentTimeMillis() - pingSendTime},node="${remote.getAddress}"""".stripMargin)
           }
           pingPongResponsePequestTime = pingPongResponsePequestTime - remote
