@@ -82,7 +82,8 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   def getUnlockResult(json: Json): Boolean = json.hcursor.downField("result").as[Boolean].getOrElse(false)
 
   def getTransactionReceipt(json: Json): (Boolean, String)  =
-    (json.hcursor.downField("status").as[String].getOrElse("")=="0x1", json.hcursor.as[String].getOrElse(""))
+    (json.hcursor.downField("status").as[String].getOrElse("")=="0x1",
+      json.hcursor.downField("blockHash").as[String].getOrElse(""))
 
   def getTransactionId(json: Json): String = json.hcursor.downField("result").as[String].getOrElse("")
 
