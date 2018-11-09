@@ -23,7 +23,6 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
   val port: Int = settings.influx.map(_.port).getOrElse(1234)
 
   val influxDB: InfluxDB = settings.influx.map { influxSettins =>
-    println("test")
     InfluxDBFactory.connect(
       influxSettins.host,
       influxSettins.login,
