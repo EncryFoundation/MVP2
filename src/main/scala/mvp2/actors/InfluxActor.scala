@@ -4,10 +4,13 @@ import java.net.{InetAddress, InetSocketAddress}
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
-import mvp2.utils.{EncodingUtils, InfluxSettings}
+import scala.concurrent.ExecutionContext.Implicits.global
+import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
 
-class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
+import scala.concurrent.duration._
+
+class InfluxActor(settings: Settings) extends Actor with StrictLogging {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
@@ -17,14 +20,25 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
 
   var msgToRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
-  val influxDB: InfluxDB = InfluxDBFactory.connect(
-    settings.host,
-    settings.login,
-    settings.password
+  val influxDB: InfluxDB = settings.influx.map(influxSettins =>
+    InfluxDBFactory.connect(
+      influxSettins.host,
+      influxSettins.login,
+      influxSettins.password
+    )
+  ).getOrElse(
+    InfluxDBFactory.connect(
+      "127.0.0.1",
+      "admin",
+      "12345"
+    )
   )
 
   override def preStart(): Unit = {
     influxDB.write(settings.port, s"""startMvp value=12""")
+    context.system.scheduler
+      .schedule(1 seconds,
+        settings.testingSettings.map(_.iteratorsSyncTime).getOrElse(5) seconds)(syncIterators())
   }
 
   def getFromRemoteMsgIncrement(remote: InetSocketAddress, msg: String): Int =
@@ -55,6 +69,12 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       case None =>
         msgToRemote += (remote -> Map(msg -> 1))
         1
+    }
+
+  def syncIterators(): Unit =
+    msgToRemote.foreach {
+      case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/sender") !
+        SendToNetwork(SyncMessageIterators(iterators), peer)
     }
 
   override def receive: Receive = {
@@ -92,6 +112,9 @@ class InfluxActor(settings: InfluxSettings) extends Actor with StrictLogging {
       influxDB.write(settings.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
+    case SyncMessageIteratorsFromRemote(iterators, remote) =>
+      logger.info(s"Sync iterators from $remote")
+      msgFromRemote = msgFromRemote - remote + (remote -> iterators)
     case _ =>
   }
 }

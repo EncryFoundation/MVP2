@@ -59,5 +59,6 @@ case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetS
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
+case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message

@@ -30,7 +30,7 @@ class Networker(settings: Settings) extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
-        case Peers(peers, remote) =>
+        case Peers(peers, _) =>
           (peers :+ msgFromRemote.remote).foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
@@ -40,6 +40,11 @@ class Networker(settings: Settings) extends CommonActor {
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case Blocks(blocks) =>
           logger.info(s"Receive blocks: ${blocks.mkString(",")} from remote: ${msgFromRemote.remote}")
+        case SyncMessageIterators(iterators) =>
+          if (settings.testingSettings.exists(_.messagesTime)) {
+            context.actorSelection("/user/starter/influxActor") !
+              SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+          }
       }
     case keyBlock: KeyBlock =>
       knownPeers.foreach(peer =>
