@@ -3,7 +3,7 @@ package mvp2.messages
 import java.net.InetSocketAddress
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.Chain
+import mvp2.data.{Chain, KeyBlock}
 
 sealed trait Message
 
@@ -12,7 +12,7 @@ case object Get extends Message
 final case class InfoMessage(info: String) extends Message
 
 final case class CurrentBlockchainInfo(height: Long = 0,
-                                       lastKeyBlock: Option[ByteString] = None,
+                                       lastKeyBlock: Option[KeyBlock] = None,
                                        lastMicroBlock: Option[ByteString] = None) extends Message {
 
   override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."

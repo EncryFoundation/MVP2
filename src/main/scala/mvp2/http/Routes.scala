@@ -3,7 +3,7 @@ package mvp2.http
 import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
-import mvp2.data.Transaction
+import mvp2.data.{Blockchain, KeyBlock, Transaction}
 import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
 import akka.actor.ActorRefFactory
@@ -27,18 +27,19 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   implicit val ec: ExecutionContextExecutor = context.dispatcher
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
 
-  val route: Route = getTxs ~ apiInfo
+  val route: Route = getTxs ~ apiInfo ~ chainInfo
   val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
-
-  def apiInfoDef: Future[CurrentBlockchainInfo] =
-    (context.actorSelection("/user/starter/informator") ? Get).mapTo[CurrentBlockchainInfo]
+  val blockchainer: ActorSelection = context.actorSelection("/user/starter/blockchainer")
+  val informator: ActorSelection = context.actorSelection("/user/starter/informator")
 
   def toJsonResponse(fJson: Future[Json]): Route = onSuccess(fJson)(resp =>
     complete(HttpEntity(ContentTypes.`application/json`, resp.spaces2))
   )
 
+  def apiInfoF: Future[CurrentBlockchainInfo] = (informator ? Get).mapTo[CurrentBlockchainInfo]
+
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse(apiInfoDef.map(_.asJson))
+    toJsonResponse(apiInfoF.map(_.asJson))
   )
 
   def getTxs: Route = path("sendTxs") {
@@ -50,4 +51,11 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
         }
     })
   }
+
+  def chainInfoF: Future[List[KeyBlock]] = (blockchainer ? Get).mapTo[Blockchain].map(x => x.chain)
+
+  def chainInfo: Route = path("chainInfo")(
+    toJsonResponse(chainInfoF.map(_.asJson))
+  )
+
 }
