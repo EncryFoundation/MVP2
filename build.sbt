@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
   "org.iq80.leveldb" % "leveldb" % "0.7",
   "io.circe" %% "circe-generic" % "0.9.3",
+  "io.circe" %% "circe-parser" % "0.9.3",
   "javax.xml.bind" % "jaxb-api" % "2.3.0",
   "com.iheart" %% "ficus" % "1.4.2",
   "org.slf4j" % "slf4j-api" % "1.7.25",

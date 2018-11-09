@@ -2,13 +2,12 @@ package mvp2.http
 
 import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import mvp2.MVP2.system
 import mvp2.data.Transaction
 import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
 import akka.actor.ActorRefFactory
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import io.circe.Json
 import scala.concurrent.Future

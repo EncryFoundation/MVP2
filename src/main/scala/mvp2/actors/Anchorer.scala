@@ -1,15 +1,11 @@
 package mvp2.actors
 
-import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import java.util.UUID.randomUUID
 import akka.util.ByteString
+import com.google.common.io.BaseEncoding
 import io.circe.Json
-import mvp2.utils.EthereumSettings
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success}
+import mvp2.http.{EthResponse, EthereumService}
+import mvp2.utils.{EthRequestType, EthereumSettings}
 
 class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
@@ -19,21 +15,29 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   private var unconfirmedQueue: List[UnconfirmedTransaction] = _
 
   override def specialBehavior: Receive = {
+
     case blockHash: ByteString =>
-      if (unlockAccount) {
-        val transactionID: String = sendEthereumTransaction(blockHash)
-        unconfirmedQueue = UnconfirmedTransaction(blockHash, transactionID, inChain = false) :: unconfirmedQueue
-        getEthBlockHashWithTransaction(transactionID) match {
-          case Some(value) => lastEthBlockHash = value
-            unconfirmedQueue.filter(_.transactionID!=transactionID)
-          case None => logger.warn("Still not in the block: " +
-            unconfirmedQueue.filter(_.transactionID==transactionID).head.toString)
-        }
+      unconfirmedQueue = UnconfirmedTransaction(randomUUID().toString, blockHash, "", isUnlocked=false) :: unconfirmedQueue
+      sendUnlockAccount(unconfirmedQueue.head)
+    case response: EthResponse => response.rtype match {
+      case EthRequestType.UNLOCKACC => if (getUnlockResult(response.responseBody))
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId==response.innerId).head.copy(isUnlocked = true) ::
+          unconfirmedQueue.filter(_.innerId!=response.innerId)
+        sendEthereumTransaction(unconfirmedQueue.head)
+      case EthRequestType.SENDTX =>
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId==response.innerId)
+          .head.copy(transactionEthID = getTransactionId(response.responseBody)) ::
+          unconfirmedQueue.filter(_.innerId!=response.innerId)
+        sendTransactionReceiptRequest(unconfirmedQueue.head)
+      case EthRequestType.GETRESULT => if (getTransactionReceipt(response.responseBody)._1){
+        lastEthBlockHash = getTransactionReceipt(response.responseBody)._2
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId!=response.innerId)
       }
+    }
   }
 
-  def sendEthereumTransaction(blockHash: ByteString) = {
-    val transaction: Json = Json.fromFields(List(
+  def sendEthereumTransaction(transaction: UnconfirmedTransaction): Unit = {
+    val transactionJson: Json = Json.fromFields(List(
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("eth_sendTransaction")),
       ("params", Json.fromFields(List(
@@ -42,15 +46,15 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
         ("value", Json.fromDoubleOrNull(ethToTransfer)),
         ("gas", Json.fromString(Integer.toHexString(gasAmount))),
         ("gasPrice", Json.fromString(Integer.toHexString(ethereumSettings.gasPrice))),
-        ("data", Json.fromString(blockHash.toList.map("%02X" format _).mkString.toList.map(_.toInt.toHexString).mkString))
+        ("data", Json.fromString(encode2Base16(transaction.blockHash)))
       ))),
       ("id", Json.fromInt(1))
     ))
-
-    "tx_id"
+    EthereumService
+      .sendRequestToEthereum(transaction.innerId, transactionJson, ethereumSettings.peerRPCAddress, EthRequestType.SENDTX)
   }
 
-  def unlockAccount: Boolean = {
+  def sendUnlockAccount(transaction: UnconfirmedTransaction): Unit = {
     val jsonToUnlock = Json.fromFields(List (
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("personal_unlockAccount")),
@@ -61,43 +65,33 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
       )))
       ("id", Json.fromInt(67))
     ))
-//    val unlockResponseFuture: Future[HttpResponse] = Http().singleRequest(
-//      HttpRequest(
-//        HttpMethods.POST, ethereumSettings.peerRPCAddress,
-//        entity=HttpEntity(MediaTypes.`application/json`, jsonToUnlock.toString)
-//      ))
-//    unlockResponseFuture.onComplete {
-//      case Success(res) =>
-//    }
+    EthereumService
+      .sendRequestToEthereum(transaction.innerId, jsonToUnlock, ethereumSettings.peerRPCAddress, EthRequestType.UNLOCKACC)
   }
 
-  def getEthBlockHashWithTransaction(transactionID: String): Option[String] = {
+  def sendTransactionReceiptRequest(transaction: UnconfirmedTransaction): Unit = {
     val requestBody = Json.fromFields(List (
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("eth_getTransactionReceipt")),
-      ("params", Json.fromValues(List(Json.fromString(transactionID))))
+      ("params", Json.fromValues(List(Json.fromString(transaction.transactionEthID))))
       ("id", Json.fromInt(1))
     ))
-    Some("block_hash")
+    EthereumService
+      .sendRequestToEthereum(transaction.innerId, requestBody, ethereumSettings.peerRPCAddress, EthRequestType.GETRESULT)
   }
+
+  def getUnlockResult(json: Json): Boolean = json.hcursor.downField("result").as[Boolean].getOrElse(false)
+
+  def getTransactionReceipt(json: Json): (Boolean, String)  =
+    (json.hcursor.downField("status").as[String].getOrElse("")=="0x1", json.hcursor.as[String].getOrElse(""))
+
+  def getTransactionId(json: Json): String = json.hcursor.downField("result").as[String].getOrElse("")
 
   def getLastEthBlockHash: String = lastEthBlockHash
 
-  def sendRequestReceiveResponse(json: Json) = {
-    val responseFuture: Future[HttpResponse] = Http().singleRequest(
-      HttpRequest(
-        HttpMethods.POST, ethereumSettings.peerRPCAddress,
-        entity=HttpEntity(MediaTypes.`application/json`, json.toString)
-      ))
-    responseFuture.onComplete {
-      case Success(response) => response.status match {
-        case StatusCodes.OK if (response.entity.contentType == ContentTypes.`application/json`) =>
-          Unmarshal(response.entity).to[String].map()
-      }
-      case Failure(e) => logger.error(e.toString)
-    }
-    Await.result(responseFuture, Duration.apply(30, TimeUnit.SECONDS))
-  }
+  def encode2Base16(bytes: ByteString): String = "0x" + BaseEncoding.base16().encode(bytes.toArray)
+
 }
 
-case class UnconfirmedTransaction(BlockHash: ByteString, transactionID: String, inChain:Boolean)
+case class UnconfirmedTransaction(innerId: String, blockHash: ByteString,
+                                  transactionEthID: String, isUnlocked: Boolean)
