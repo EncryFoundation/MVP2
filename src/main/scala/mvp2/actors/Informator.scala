@@ -1,11 +1,11 @@
 package mvp2.actors
 
 import akka.actor.ActorRefFactory
-import mvp2.messages.Get
+import mvp2.messages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.http.Routes
-import mvp2.messages.CurrentBlockchainInfo
 import akka.http.scaladsl.Http
 import mvp2.MVP2._
+import mvp2.data.LightKeyBlock
 import mvp2.utils.Settings
 
 class Informator(settings: Settings) extends CommonActor {
@@ -13,14 +13,25 @@ class Informator(settings: Settings) extends CommonActor {
   Informator.start(settings, context)
 
   var actualInfo: CurrentBlockchainInfo = CurrentBlockchainInfo()
+  var lightChain: List[LightKeyBlock] = List()
 
   override def preStart(): Unit = {
     logger.info("Starting the Informator!")
   }
 
   override def specialBehavior: Receive = {
+    case GetLightChain => sender ! lightChain
     case Get => sender ! actualInfo
-    case currentBlockchainInfo: CurrentBlockchainInfo => actualInfo = currentBlockchainInfo
+    case currentBlockchainInfo: CurrentBlockchainInfo =>
+      lightChain = currentBlockchainInfo.lastKeyBlock.map(block => LightKeyBlock(
+        block.height,
+        block.timestamp,
+        block.previousKeyBlockHash,
+        block.currentBlockHash,
+        block.transactions.size,
+        block.data
+      )).getOrElse(LightKeyBlock()) :: lightChain
+      actualInfo = currentBlockchainInfo
   }
 }
 
