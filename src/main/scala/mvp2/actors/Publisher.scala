@@ -29,7 +29,9 @@ class Publisher(settings: Settings) extends CommonActor {
       println(s"Publisher got new request and published block with height ${newBlock.height}.")
       context.parent ! newBlock
       networker ! newBlock
-    case TimeDelta(delta: Long) => currentDelta = delta
+    case TimeDelta(delta: Long) =>
+      logger.info(s"Update delta to: $delta")
+      currentDelta = delta
   }
 
   def time: Long = System.currentTimeMillis() + currentDelta

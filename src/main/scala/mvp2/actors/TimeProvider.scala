@@ -20,20 +20,21 @@ class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor
     context.actorSelection("/user/starter/blockchainer/publisher")
   )
 
-  override def preStart(): Unit =
-    context.system.scheduler.schedule(1 seconds, ntpSettings.updateEvery)(sendTimeToActors())
-
-  override def specialBehavior: Receive = {
-    case _ =>
-  }
-
-  def updateOffSetTry(): Try[Long] = Try {
+  context.system.scheduler.schedule(1 seconds, ntpSettings.updateEvery)(
+    Try {
       client.open()
       val info: TimeInfo = client.getTime(InetAddress.getByName(ntpSettings.server))
       client.close()
       info.computeDetails()
       info.getOffset
-    }
+    }.recover {
+      case e: Throwable =>
+        logger.error(s"Err during updating delta: $e")
+        throw e
+    }.foreach(delta => actors.foreach(_ ! TimeDelta(delta)))
+  )
 
-  def sendTimeToActors(): Unit = updateOffSetTry().foreach(offset => actors.foreach(ref => ref ! TimeDelta(offset)))
+  override def specialBehavior: Receive = {
+    case _ =>
+  }
 }
