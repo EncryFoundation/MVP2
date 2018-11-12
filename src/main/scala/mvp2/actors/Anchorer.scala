@@ -6,6 +6,7 @@ import com.google.common.io.BaseEncoding
 import io.circe.Json
 import mvp2.http.{EthResponse, EthereumService}
 import mvp2.utils.{EthRequestType, EthereumSettings}
+import scala.concurrent.duration._
 
 class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
@@ -16,23 +17,32 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case blockHash: ByteString =>
-      unconfirmedQueue = UnconfirmedTransaction(randomUUID().toString, blockHash, "", isUnlocked=false) :: unconfirmedQueue
+      unconfirmedQueue = UnconfirmedTransaction(randomUUID().toString, blockHash, System.currentTimeMillis() / 1000L,
+        "", isUnlocked = false) :: unconfirmedQueue
       sendUnlockAccount(unconfirmedQueue.head)
+      context.system.scheduler.scheduleOnce(30 minutes)(retryUnconfirmed())
     case response: EthResponse => response.rtype match {
       case EthRequestType.UNLOCKACC => if (getUnlockResult(response.responseBody))
-        unconfirmedQueue = unconfirmedQueue.filter(_.innerId==response.innerId).head.copy(isUnlocked = true) ::
-          unconfirmedQueue.filter(_.innerId!=response.innerId)
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId == response.innerId).head.copy(isUnlocked = true) ::
+          unconfirmedQueue.filter(_.innerId != response.innerId)
         sendEthereumTransaction(unconfirmedQueue.head)
       case EthRequestType.SENDTX =>
-        unconfirmedQueue = unconfirmedQueue.filter(_.innerId==response.innerId)
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId == response.innerId)
           .head.copy(transactionEthID = getTransactionId(response.responseBody)) ::
-          unconfirmedQueue.filter(_.innerId!=response.innerId)
+          unconfirmedQueue.filter(_.innerId != response.innerId)
         sendTransactionReceiptRequest(unconfirmedQueue.head)
-      case EthRequestType.GETRESULT => if (getTransactionReceipt(response.responseBody)._1){
+      case EthRequestType.GETRESULT => if (getTransactionReceipt(response.responseBody)._1) {
         lastEthBlockHash = getTransactionReceipt(response.responseBody)._2
-        unconfirmedQueue = unconfirmedQueue.filter(_.innerId!=response.innerId)
+        logger.info("transaction with block hash: " + ByteString.toString +
+          "written in Ethereum block: " + lastEthBlockHash)
+        unconfirmedQueue = unconfirmedQueue.filter(_.innerId != response.innerId)
       }
     }
+  }
+
+  def retryUnconfirmed() : Unit = {
+    unconfirmedQueue = unconfirmedQueue.sortBy(_.timeStamp)
+    unconfirmedQueue.foreach(e => sendUnlockAccount(e))
   }
 
   def sendEthereumTransaction(transaction: UnconfirmedTransaction): Unit = {
@@ -54,7 +64,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   }
 
   def sendUnlockAccount(transaction: UnconfirmedTransaction): Unit = {
-    val jsonToUnlock = Json.fromFields(List (
+    val jsonToUnlock = Json.fromFields(List(
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("personal_unlockAccount")),
       ("params", Json.fromValues(List(
@@ -69,7 +79,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   }
 
   def sendTransactionReceiptRequest(transaction: UnconfirmedTransaction): Unit = {
-    val requestBody = Json.fromFields(List (
+    val requestBody = Json.fromFields(List(
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("eth_getTransactionReceipt")),
       ("params", Json.fromValues(List(Json.fromString(transaction.transactionEthID)))),
@@ -81,8 +91,8 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
   def getUnlockResult(json: Json): Boolean = json.hcursor.downField("result").as[Boolean].getOrElse(false)
 
-  def getTransactionReceipt(json: Json): (Boolean, String)  =
-    (json.hcursor.downField("status").as[String].getOrElse("")=="0x1",
+  def getTransactionReceipt(json: Json): (Boolean, String) =
+    (json.hcursor.downField("status").as[String].getOrElse("") == "0x1",
       json.hcursor.downField("blockHash").as[String].getOrElse(""))
 
   def getTransactionId(json: Json): String = json.hcursor.downField("result").as[String].getOrElse("")
@@ -93,5 +103,5 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
 }
 
-case class UnconfirmedTransaction(innerId: String, blockHash: ByteString,
+case class UnconfirmedTransaction(innerId: String, blockHash: ByteString, timeStamp: Long,
                                   transactionEthID: String, isUnlocked: Boolean)
