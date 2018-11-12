@@ -36,8 +36,6 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def time: Long = System.currentTimeMillis() + currentDelta
 
-  def createGenesisBlock(): KeyBlock = ???
-
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
