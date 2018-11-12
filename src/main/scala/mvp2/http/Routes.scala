@@ -55,9 +55,7 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
     })
   }
 
-  def chainInfoF: Future[List[LightKeyBlock]] = (informator ? GetLightChain).mapTo[List[LightKeyBlock]]
-
   def chainInfo: Route = path("chainInfo")(
-    toJsonResponse(chainInfoF.map(_.asJson))
+    toJsonResponse((informator ? GetLightChain).mapTo[List[LightKeyBlock]].map(_.asJson))
   )
 }
