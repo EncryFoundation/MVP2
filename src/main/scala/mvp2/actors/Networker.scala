@@ -16,7 +16,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
 
-  var knownPeers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
+  var peers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis()) -> None
   ).toMap
 
@@ -50,13 +50,13 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): Unit =
-    knownPeers.find(_._1.remoteAddress == peer._1) match {
+    peers.find(_._1.remoteAddress == peer._1) match {
       case Some(peerInfo) => if (peerInfo._2.isEmpty && peer._2.isDefined) {
         peer._2.foreach(updatePeerKey)
-        knownPeers = (knownPeers - peerInfo._1) + (Peer(peer._1, 0) -> peer._2)
+        peers = (peers - peerInfo._1) + (Peer(peer._1, 0) -> peer._2)
       }
       case None =>
-        knownPeers = knownPeers + (Peer(peer._1, 0) -> peer._2)
+        peers = peers + (Peer(peer._1, 0) -> peer._2)
         peer._2.foreach(updatePeerKey)
     }
 
@@ -65,23 +65,23 @@ class Networker(settings: Settings) extends CommonActor {
       PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
-    if (knownPeers.keys.toList.exists(_.remoteAddress == peer))
-      knownPeers.find(_._1.remoteAddress == peer).foreach ( prevPeer =>
-        knownPeers = knownPeers.filter(_ != prevPeer) +
+    if (peers.keys.toList.exists(_.remoteAddress == peer))
+      peers.find(_._1.remoteAddress == peer).foreach (prevPeer =>
+        peers = peers.filter(_ != prevPeer) +
           (prevPeer._1.copy(lastMessageTime = System.currentTimeMillis()) -> prevPeer._2)
       )
 
   def pingAllPeers(): Unit =
-    knownPeers.foreach(peer =>
+    peers.foreach(peer =>
       context.actorSelection("/user/starter/blockchainer/networker/sender") ! SendToNetwork(Ping, peer._1.remoteAddress)
     )
 
   def sendPeers(): Unit =
-    knownPeers.foreach(peer =>
+    peers.foreach(peer =>
       context.actorSelection("/user/starter/blockchainer/networker/sender") !
         SendToNetwork(
           Peers(
-            knownPeers.filter(_._1.remoteAddress != peer._1.remoteAddress)
+            peers.filter(_._1.remoteAddress != peer._1.remoteAddress)
               .map(peerToSend => peerToSend._1.remoteAddress -> peerToSend._2) +
               (myAddr -> publicKey)
             ,
