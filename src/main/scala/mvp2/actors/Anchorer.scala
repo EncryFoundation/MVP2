@@ -7,6 +7,7 @@ import io.circe.Json
 import mvp2.http.{EthResponse, EthereumService}
 import mvp2.utils.{EthRequestType, EthereumSettings}
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
 
@@ -46,6 +47,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
   }
 
   def sendEthereumTransaction(transaction: UnconfirmedTransaction): Unit = {
+    val price = ethereumSettings.gasPrice
     val transactionJson: Json = Json.fromFields(List(
       ("jsonrpc", Json.fromDoubleOrNull(2.0)),
       ("method", Json.fromString("eth_sendTransaction")),
@@ -54,7 +56,7 @@ class Anchorer(ethereumSettings: EthereumSettings) extends CommonActor {
         ("to", Json.fromString(ethereumSettings.receiverAccount)),
         ("value", Json.fromDoubleOrNull(ethToTransfer)),
         ("gas", Json.fromString(Integer.toHexString(gasAmount))),
-        ("gasPrice", Json.fromString(Integer.toHexString(ethereumSettings.gasPrice))),
+        ("gasPrice", Json.fromString(f"$price%#x")),
         ("data", Json.fromString(encode2Base16(transaction.blockHash)))
       ))),
       ("id", Json.fromInt(1))

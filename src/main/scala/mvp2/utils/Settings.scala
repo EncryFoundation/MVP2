@@ -20,6 +20,6 @@ case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 case class InfluxSettings(host: String, port: Int, login: String, password: String)
 
 case class EthereumSettings(userAccount: String, userPassword: String, receiverAccount:String,
-                            peerRPCAddress: String, gasPrice: Int)
+                            peerRPCAddress: String, gasPrice: Long)
 
 case class TestingSettings(pingPong: Boolean)
