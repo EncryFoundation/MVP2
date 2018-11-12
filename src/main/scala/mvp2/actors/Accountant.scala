@@ -2,7 +2,7 @@ package mvp2.actors
 
 import akka.util.ByteString
 import mvp2.utils.Sha256
-import mvp2.data.{KeyBlock, MicroBlock, Transaction}
+import mvp2.data.{KeyBlock, Transaction}
 import scala.collection.immutable.HashMap
 
 class Accountant extends CommonActor {
@@ -13,9 +13,8 @@ class Accountant extends CommonActor {
   var stateRoot: ByteString = Sha256.toSha256(accountsInfo.toString)
 
   override def specialBehavior: Receive = {
-    case microBlock: MicroBlock =>
-      if (microBlock.transactions.forall(_.isValid)) updateState(microBlock.transactions)
     case keyBlock: KeyBlock =>
+      println(s"Accountant received keyBlock with height ${keyBlock.height}.")
       if (keyBlock.transactions.forall(_.isValid)) updateState(keyBlock.transactions)
   }
 
