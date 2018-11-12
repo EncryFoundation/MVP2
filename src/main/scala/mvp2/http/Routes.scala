@@ -37,10 +37,8 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
     complete(HttpEntity(ContentTypes.`application/json`, resp.spaces2))
   )
 
-  def apiInfoF: Future[CurrentBlockchainInfo] = (informator ? Get).mapTo[CurrentBlockchainInfo]
-
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse(apiInfoF.map(x =>
+    toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(x =>
       ApiInfo(x.height, x.lastKeyBlock.map(block => block.currentBlockHash), x.lastMicroBlock).asJson)
     )
   )
