@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.Block
+import mvp2.data.{Block, KeyBlock}
 
 sealed trait Message
 
@@ -13,7 +13,7 @@ case object Get extends Message
 final case class InfoMessage(info: String) extends Message
 
 final case class CurrentBlockchainInfo(height: Long = 0,
-                                       lastKeyBlock: Option[ByteString] = None,
+                                       lastKeyBlock: Option[KeyBlock] = None,
                                        lastMicroBlock: Option[ByteString] = None) extends Message {
 
   override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."
@@ -56,3 +56,5 @@ case class UdpSocket(conection: ActorRef) extends Message
 case class PeerPublicKey(peerPublicKey: PublicKey) extends Message
 
 case class MyPublicKey(publicKey: PublicKey) extends Message
+
+case object GetLightChain extends Message

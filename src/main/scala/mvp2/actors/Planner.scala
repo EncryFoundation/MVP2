@@ -33,7 +33,7 @@ class Planner(settings: Settings) extends CommonActor {
       publishersPubKeys += newPublisher.publicKey
     case Tick if nextTurn.timeToPublish =>
       publisher ! Get
-      println("Planner send publisher request: time to publish!")
+      println("Planner sent publisher request: time to publish!")
     case Tick if nextTurn.noBlocksInTime =>
       val newPeriod = Period(nextTurn, settings)
       println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
