@@ -12,19 +12,7 @@ sealed trait Chain {
   def update(block: Block): Unit = chain = chain.updated(block.height, block)
 }
 
-trait Blockchain extends Chain {
-
-  override var chain: TreeMap[Long, Block] = TreeMap.empty
-
-  def lastKeyBlock: Option[Block] = chain.lastOption.map(_._2)
-
-  def lastMicroBlock: MicroBlock = ???
-
-  def genesisBlock: KeyBlock = ???
-
-  def update(newChainPart: TreeMap[Long, Block]): Unit = chain ++= newChainPart
-
-}
+final case class Blockchain (var chain: List[KeyBlock] = List.empty)
 
 final case class Appendix(override var chain: TreeMap[Long, Block]) extends Chain {
 

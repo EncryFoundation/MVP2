@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % logbackVersion,
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test
 )
 
 resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
@@ -38,3 +39,5 @@ resolvers ++= Seq("Sonatype Releases" at "https://oss.sonatype.org/content/repos
 
 fork in Test := true
 fork in run := true
+connectInput in run := true
+outputStrategy := Some(StdoutOutput)

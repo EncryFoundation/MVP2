@@ -10,7 +10,7 @@ sealed trait Block {
   val previousKeyBlockHash: ByteString
   val currentBlockHash: ByteString
 
-  def isValid: Boolean
+  def isValid(previousBlock: Block): Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
     s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}."
@@ -22,12 +22,19 @@ final case class KeyBlock(height: Long,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
                           data: ByteString) extends Block {
-  override def isValid: Boolean = height > 0 && timestamp > System.currentTimeMillis() - 15000
+  override def isValid(previousBlock: Block): Boolean = {
+    val result: Boolean = previousBlock.height + 1 == this.height
+    val sentence: String =
+      if (result) s"Block with height ${this.height} is valid."
+      else s"Block with height ${this.height} is valid."
+    println(sentence)
+    result
+  }
 
 }
 
 object KeyBlock {
-  def apply(height: Long = 0,
+  def apply(height: Long = -1,
             timestamp: Long = System.currentTimeMillis,
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
@@ -44,5 +51,5 @@ final case class MicroBlock(height: Long,
                             currentBlockHash: ByteString,
                             transactions: List[Transaction] = List.empty,
                             data: ByteString = ByteString.empty) extends Block {
-  override def isValid: Boolean = true
+  override def isValid(previousBlock: Block): Boolean = true
 }

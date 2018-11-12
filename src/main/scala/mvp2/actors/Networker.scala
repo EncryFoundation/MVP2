@@ -1,16 +1,13 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
 import mvp2.actors.Networker.Peer
-import mvp2.data.{Blockchain, KeyBlock}
+import mvp2.data.KeyBlock
 import mvp2.messages._
 import mvp2.utils.Settings
-
-import scala.collection.immutable.TreeMap
 
 class Networker(settings: Settings) extends CommonActor {
 

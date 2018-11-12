@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import akka.actor.Props
+import akka.actor.{ActorRef, Props}
 import mvp2.utils.Settings
 import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory
@@ -28,8 +28,8 @@ class Starter extends CommonActor {
     settings.influx.foreach(influxSettings =>
       context.actorOf(Props(classOf[InfluxActor], influxSettings, settings.testingSettings), name = "influxActor")
     )
-    context.actorOf(Props(classOf[Informator], settings), "informator")
-    context.actorOf(Props(classOf[Zombie]), "zombie")
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
+    context.actorOf(Props(classOf[Zombie]), "zombie")
+    context.actorOf(Props(classOf[Informator], settings), "informator")
   }
 }
