@@ -1,7 +1,7 @@
 package mvp2.data
 
 import akka.util.ByteString
-import mvp2.utils.EncodingUtils.encode2Base64
+import mvp2.utils.EncodingUtils.encode2Base16
 
 case class Transaction(publicKey: ByteString,
                        timestamp: Long = System.currentTimeMillis,
@@ -10,6 +10,6 @@ case class Transaction(publicKey: ByteString,
                        data: ByteString) {
   def isValid: Boolean = true
 
-  override def toString: String = s"PublicKey: ${encode2Base64(publicKey)}, timestamp = $timestamp, nonce = $nonce, " +
-    s"signature = ${encode2Base64(signature)}."
+  override def toString: String = s"PublicKey: ${encode2Base16(publicKey)}, timestamp = $timestamp, nonce = $nonce, " +
+    s"signature = ${encode2Base16(signature)}."
 }
