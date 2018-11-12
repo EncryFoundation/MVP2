@@ -40,6 +40,8 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
+        case Blocks(blocks) =>
+          logger.info(s"Get blocks: ${blocks.mkString(",")}")
       }
     case myPublishedBlock: KeyBlock =>
       logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
