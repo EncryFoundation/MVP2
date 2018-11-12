@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.KeyBlock
+import mvp2.data.{Block, KeyBlock}
 
 sealed trait Message
 
@@ -45,7 +45,7 @@ case object Peers {
   val typeId: Byte = 3: Byte
 }
 
-case class Blocks(blocks: List[KeyBlock]) extends NetworkMessage
+case class Blocks(blocks: List[Block]) extends NetworkMessage
 
 object Blocks {
 
