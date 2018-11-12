@@ -92,7 +92,6 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
-      println(s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
@@ -109,7 +108,6 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
-      println(s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
       logger.info(s"Sync iterators from $remote")
