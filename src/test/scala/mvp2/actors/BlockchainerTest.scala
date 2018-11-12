@@ -39,7 +39,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
     Thread.sleep(1000)
     blockchainer ! PoisonPill
     Thread.sleep(500)
-    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
+    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer1")
     Thread.sleep(1000)
 
     implicit val timeout: Timeout = Timeout(10.seconds)
