@@ -5,7 +5,7 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data._
-import mvp2.messages.Get
+import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
@@ -26,6 +26,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   override def receiveCommand: Receive = {
     case keyBlock: KeyBlock =>
       blockchain = Blockchain(keyBlock :: blockchain.chain)
+      informator ! CurrentBlockchainInfo(
+        blockchain.chain.headOption.map(block => block.height).getOrElse(0),
+        blockchain.chain.headOption,
+        None
+      )
       println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
       planner ! keyBlock
