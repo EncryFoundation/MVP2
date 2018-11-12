@@ -27,7 +27,9 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case keyBlock: KeyBlock =>
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(
-        blockchain.chain.headOption.map(block => block.height).getOrElse(0), blockchain.chain.headOption, None
+        blockchain.chain.headOption.map(block => block.height).getOrElse(0),
+        blockchain.chain.headOption,
+        None
       )
       println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")

@@ -10,24 +10,24 @@ import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import io.circe.Json
-
 import scala.concurrent.Future
 import io.circe.generic.auto._
 import io.circe.syntax._
-
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
-import akka.util.Timeout
+import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
-  implicit val ec: ExecutionContextExecutor = context.dispatcher
+  case class ApiInfo(height: Long = 0, keyBlock: Option[ByteString], microBlock: Option[ByteString])
+
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val ec: ExecutionContextExecutor = context.dispatcher
 
   val route: Route = getTxs ~ apiInfo ~ chainInfo
   val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
@@ -40,7 +40,9 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   def apiInfoF: Future[CurrentBlockchainInfo] = (informator ? Get).mapTo[CurrentBlockchainInfo]
 
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse(apiInfoF.map(_.asJson))
+    toJsonResponse(apiInfoF.map(x =>
+      ApiInfo(x.height, x.lastKeyBlock.map(block => block.currentBlockHash), x.lastMicroBlock).asJson)
+    )
   )
 
   def getTxs: Route = path("sendTxs") {
