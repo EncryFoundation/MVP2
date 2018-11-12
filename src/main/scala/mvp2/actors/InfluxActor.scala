@@ -5,12 +5,12 @@ import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
 import scala.concurrent.ExecutionContext.Implicits.global
-import mvp2.utils.{EncodingUtils, Settings}
+import mvp2.utils.{EncodingUtils, InfluxSettings, TestingSettings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
 
 import scala.concurrent.duration._
 
-class InfluxActor(settings: Settings) extends Actor with StrictLogging {
+class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[TestingSettings]) extends Actor with StrictLogging {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
@@ -20,29 +20,21 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
 
   var msgToRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
-  val port: Int = settings.influx.map(_.port).getOrElse(1234)
+  val port: Int = influxSettings.port
 
-  val influxDB: InfluxDB = settings.influx.map { influxSettins =>
+  val influxDB: InfluxDB =
     InfluxDBFactory.connect(
-      influxSettins.host,
-      influxSettins.login,
-      influxSettins.password
+      influxSettings.host,
+      influxSettings.login,
+      influxSettings.password
     )
-  }.getOrElse(
-    InfluxDBFactory.connect(
-      "127.0.0.1",
-      "admin",
-      "12345"
-    )
-  )
-
 
   override def preStart(): Unit = {
     logger.info("Start influx actor")
-    influxDB.write(settings.port, s"""startMvp value=12""")
-    context.system.scheduler
-      .schedule(1 seconds,
-        settings.testingSettings.map(_.iteratorsSyncTime).getOrElse(5) seconds)(syncIterators())
+    influxDB.write(port, s"""startMvp value=12""")
+    testingSettings.foreach(testSettings =>
+      context.system.scheduler.schedule(1 seconds, testSettings.iteratorsSyncTime seconds)(syncIterators())
+    )
   }
 
   def getFromRemoteMsgIncrement(remote: InetSocketAddress, msg: String): Int =
