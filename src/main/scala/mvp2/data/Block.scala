@@ -53,3 +53,12 @@ final case class MicroBlock(height: Long,
                             data: ByteString = ByteString.empty) extends Block {
   override def isValid(previousBlock: Block): Boolean = true
 }
+
+case class LightKeyBlock(height: Long = 0,
+                         timestamp: Long = 0,
+                         previousKeyBlockHash: ByteString = ByteString.empty,
+                         currentBlockHash: ByteString = ByteString.empty,
+                         txNum: Int = 0,
+                         data: ByteString = ByteString.empty) extends Block {
+  override def isValid(previousBlock: Block): Boolean = true
+}
