@@ -36,35 +36,25 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
     )
   }
 
-  def getFromRemoteMsgIncrement(remote: InetSocketAddress, msg: String): Int =
-    msgFromRemote.find(_._1 == remote) match {
+  def getMsgIncrement(remote: InetSocketAddress, msg: String, direction: String): Int = {
+    var collection = direction match {
+      case "fromRemote" => msgFromRemote
+      case "toRemote" => msgToRemote
+    }
+    collection.find(_._1 == remote) match {
       case Some(msgInfo) => msgInfo._2.find(_._1 == msg) match {
         case Some(i) =>
-          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
+          collection = collection - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
           i._2 + 1
         case None =>
-          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
+          collection = collection - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
           1
       }
       case None =>
-        msgFromRemote += (remote -> Map(msg -> 1))
+        collection += (remote -> Map(msg -> 1))
         1
     }
-
-  def getToRemoteMsgIncrement(remote: InetSocketAddress, msg: String): Int =
-    msgToRemote.find(_._1 == remote) match {
-      case Some(msgInfo) => msgInfo._2.find(_._1 == msg) match {
-        case Some(i) =>
-          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
-          i._2 + 1
-        case None =>
-          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
-          1
-      }
-      case None =>
-        msgToRemote += (remote -> Map(msg -> 1))
-        1
-    }
+  }
 
   def syncIterators(): Unit =
     msgToRemote.foreach {
@@ -87,7 +77,7 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
       }
-      val i: Int = getFromRemoteMsgIncrement(remote, msg)
+      val i: Int = getMsgIncrement(remote, msg, "fromRemote")
       influxDB.write(port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(port,
@@ -103,7 +93,7 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
       }
-      val i: Int = getToRemoteMsgIncrement(remote, msg)
+      val i: Int = getMsgIncrement(remote, msg, "toRemote")
       influxDB.write(port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(port,
