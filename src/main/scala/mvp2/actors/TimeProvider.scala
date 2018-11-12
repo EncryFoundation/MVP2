@@ -7,6 +7,7 @@ import mvp2.utils.NetworkTimeProviderSettings
 import org.apache.commons.net.ntp.{NTPUDPClient, TimeInfo}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.Try
 
 class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor {
@@ -20,13 +21,13 @@ class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor
   )
 
   override def preStart(): Unit =
-    context.system.scheduler.schedule(1 seconds, ntpSettings.updateEvery)(sendTimeToActors)
+    context.system.scheduler.schedule(1 seconds, ntpSettings.updateEvery)(sendTimeToActors())
 
   override def specialBehavior: Receive = {
     case _ =>
   }
 
-  def updateOffSetTry: Try[Long] = Try {
+  def updateOffSetTry(): Try[Long] = Try {
       client.open()
       val info: TimeInfo = client.getTime(InetAddress.getByName(ntpSettings.server))
       client.close()
@@ -34,5 +35,5 @@ class TimeProvider(ntpSettings: NetworkTimeProviderSettings) extends CommonActor
       info.getOffset
     }
 
-  def sendTimeToActors: Unit = updateOffSetTry.foreach(offset => actors.foreach(ref => ref ! TimeDelta(offset)))
+  def sendTimeToActors(): Unit = updateOffSetTry().foreach(offset => actors.foreach(ref => ref ! TimeDelta(offset)))
 }
