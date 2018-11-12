@@ -37,24 +37,6 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
-  /*
-  def saveModifier(block: Block): Unit = if (block.isValid) block match {
-    case keyBlock: KeyBlock =>
-      logger.info(s"New keyBlock with height ${keyBlock.height} is received on blockchainer.")
-      appendix.chain.foreach(block =>
-        persist(block._2) { block =>
-          logger.info(s"Block with id: ${encode2Base64(block.currentBlockHash)} and height ${block.height} is persisted.")
-        })
-      update(appendix.chain)
-      appendix = appendix.copy(TreeMap(keyBlock.height -> keyBlock))
-      accountant ! keyBlock
-    case microBlock: MicroBlock =>
-      logger.info(s"KeyBlock is valid with height ${microBlock.height}.")
-      appendix = appendix.copy(appendix.chain + (microBlock.height -> microBlock))
-      accountant ! microBlock
-  }
-  */
-
   override def persistenceId: String = "blockchainer"
 
   override def journalPluginId: String = "akka.persistence.journal.leveldb"
