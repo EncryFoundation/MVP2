@@ -33,8 +33,8 @@ class Networker(settings: Settings) extends CommonActor {
       addOrUpdatePeer(msgFromRemote.remote -> None)
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
-        case Peers(peers, remote) =>
-          peers.foreach(addOrUpdatePeer)
+        case Peers(peersFromRemote, _) =>
+          peersFromRemote.foreach(addOrUpdatePeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
