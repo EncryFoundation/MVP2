@@ -12,7 +12,7 @@ import mvp2.messages.{Get, TimeDelta}
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
   var blockchain: Blockchain = Blockchain()
-  var currentDelta: Long = 0L
+  var currentDelta: Long = 0
   var nextTurn: Period = Period(KeyBlock(), settings)
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
