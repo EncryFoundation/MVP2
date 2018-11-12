@@ -37,6 +37,11 @@ case class Peers(peers: Map[InetSocketAddress, Option[ByteString]], remote: Inet
 
 case object Peers {
 
+  def apply(peers: Map[InetSocketAddress, Option[ByteString]],
+            myNode: (InetSocketAddress, Option[ByteString]),
+            remote: InetSocketAddress): Peers =
+    Peers(peers.filter(_._1 != remote) + myNode, remote)
+
   val typeId: Byte = 3: Byte
 }
 

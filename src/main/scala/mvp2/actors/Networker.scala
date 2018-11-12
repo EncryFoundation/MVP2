@@ -83,13 +83,7 @@ class Networker(settings: Settings) extends CommonActor {
     peers.foreach(peer =>
       networkSender !
         SendToNetwork(
-          Peers(
-            peers.filter(_._1.remoteAddress != peer._1.remoteAddress)
-              .map(peerToSend => peerToSend._1.remoteAddress -> peerToSend._2) +
-              (myAddr -> publicKey)
-            ,
-            peer._1.remoteAddress
-          ),
+          Peers(peers.map(peer => (peer._1.remoteAddress, peer._2)), (myAddr, publicKey), peer._1.remoteAddress),
           peer._1.remoteAddress
         )
     )
