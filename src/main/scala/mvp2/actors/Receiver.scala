@@ -49,17 +49,19 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
 
   def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes.head match {
-    case Ping.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
+    case NetworkMessagesId.PingId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
       case ping: Ping.type => ping
     }
-    case Pong.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
+    case NetworkMessagesId.PongId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
       case pong: Pong.type => pong
     }
-    case Peers.typeId => Option(serialization.findSerializerFor(Peers).fromBinary(bytes.toArray.tail)).map {
-      case knownPeers: Peers => knownPeers
-    }
-    case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail)).map {
-      case blocks: Blocks => blocks
-    }
+    case NetworkMessagesId.PeersId => Option(serialization.findSerializerFor(Peers).fromBinary(bytes.toArray.tail))
+      .map {
+        case knownPeers: Peers => knownPeers
+      }
+    case NetworkMessagesId.BlocksId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail))
+      .map {
+        case blocks: Blocks => blocks
+      }
   }
 }

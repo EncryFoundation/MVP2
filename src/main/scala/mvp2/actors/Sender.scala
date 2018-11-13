@@ -26,9 +26,9 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
   }
 
   def serialize(message: NetworkMessage): ByteString = ByteString(message match {
-    case ping: Ping.type => Ping.typeId +: serialization.findSerializerFor(Ping).toBinary(ping)
-    case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
-    case knownPeers: Peers => Peers.typeId +: serialization.findSerializerFor(Peers).toBinary(knownPeers)
-    case blocks: Blocks => Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+    case ping: Ping.type => NetworkMessagesId.PingId +: serialization.findSerializerFor(Ping).toBinary(ping)
+    case pong: Pong.type => NetworkMessagesId.PongId +: serialization.findSerializerFor(Pong).toBinary(pong)
+    case peers: Peers => NetworkMessagesId.PeersId +: serialization.findSerializerFor(Peers).toBinary(peers)
+    case blocks: Blocks => NetworkMessagesId.BlocksId +: serialization.findSerializerFor(blocks).toBinary(blocks)
   })
 }
