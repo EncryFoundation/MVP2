@@ -39,11 +39,9 @@ class Publisher(settings: Settings) extends CommonActor {
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
-    //logger.info(s"${mempool.size} transactions in the mempool.")
     println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool = List.empty
-    //logger.info(s"${mempool.size} transactions in the mempool.")
     keyBlock
   }
 }
