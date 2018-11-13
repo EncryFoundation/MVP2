@@ -14,6 +14,8 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
   var pingPongResponsePequestTime: Map[InetSocketAddress, Long] = Map.empty
+  
+  var currentDelta: Long = 0
 
   var msgFromRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
@@ -34,6 +36,52 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
     testingSettings.foreach(testSettings =>
       context.system.scheduler.schedule(1 seconds, testSettings.iteratorsSyncTime seconds)(syncIterators())
     )
+  }
+
+  override def receive: Receive = {
+    case MsgFromNetwork(message, id, remote) =>
+      val msg: String = message match {
+        case Ping => "ping"
+        case Pong =>
+          pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
+            influxDB.write(port,
+              s"""pingPongResponseTime,remote="$myNodeAddress" value=${time - pingSendTime},node="${remote.getAddress}"""".stripMargin)
+          }
+          pingPongResponsePequestTime = pingPongResponsePequestTime - remote
+          "pong"
+        case Peers(_, _) => "peers"
+        case Blocks(_) => "blocks"
+        case SyncMessageIterators(_) => "iterSync"
+      }
+      val i: Int = getMsgIncrement(remote, msg, "fromRemote")
+      influxDB.write(port,
+        s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
+      influxDB.write(port,
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${time}""")
+      logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
+    case MsgToNetwork(message, id, remote) =>
+      val msg: String = message match {
+        case Ping =>
+          pingPongResponsePequestTime = pingPongResponsePequestTime + ((remote, time))
+          "ping"
+        case Pong => "pong"
+        case Peers(_, _) => "peers"
+        case Blocks(_) => "blocks"
+        case SyncMessageIterators(_) => "iterSync"
+      }
+      val i: Int = getMsgIncrement(remote, msg, "toRemote")
+      influxDB.write(port,
+        s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
+      influxDB.write(port,
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${time}""")
+      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
+    case SyncMessageIteratorsFromRemote(iterators, remote) =>
+      logger.info(s"Sync iterators from $remote")
+      msgFromRemote = msgFromRemote - remote + (remote -> iterators)
+    case TimeDelta(delta: Long) =>
+      logger.info(s"Update delta to: $delta")
+      currentDelta = delta
+    case _ =>
   }
 
   def getMsgIncrement(remote: InetSocketAddress, msg: String, direction: String): Int = {
@@ -62,46 +110,5 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         SendToNetwork(SyncMessageIterators(iterators), peer)
     }
 
-  override def receive: Receive = {
-    case MsgFromNetwork(message, id, remote) =>
-      val msg: String = message match {
-        case Ping => "ping"
-        case Pong =>
-          pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
-            influxDB.write(port,
-              s"""pingPongResponseTime,remote="$myNodeAddress" value=${System.currentTimeMillis() - pingSendTime},node="${remote.getAddress}"""".stripMargin)
-          }
-          pingPongResponsePequestTime = pingPongResponsePequestTime - remote
-          "pong"
-        case Peers(_, _) => "peers"
-        case Blocks(_) => "blocks"
-        case SyncMessageIterators(_) => "iterSync"
-      }
-      val i: Int = getMsgIncrement(remote, msg, "fromRemote")
-      influxDB.write(port,
-        s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
-      influxDB.write(port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
-      logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
-    case MsgToNetwork(message, id, remote) =>
-      val msg: String = message match {
-        case Ping =>
-          pingPongResponsePequestTime = pingPongResponsePequestTime + ((remote, System.currentTimeMillis()))
-          "ping"
-        case Pong => "pong"
-        case Peers(_, _) => "peers"
-        case Blocks(_) => "blocks"
-        case SyncMessageIterators(_) => "iterSync"
-      }
-      val i: Int = getMsgIncrement(remote, msg, "toRemote")
-      influxDB.write(port,
-        s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
-      influxDB.write(port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${System.currentTimeMillis()}""")
-      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
-    case SyncMessageIteratorsFromRemote(iterators, remote) =>
-      logger.info(s"Sync iterators from $remote")
-      msgFromRemote = msgFromRemote - remote + (remote -> iterators)
-    case _ =>
-  }
+  def time: Long = System.currentTimeMillis() + currentDelta
 }
