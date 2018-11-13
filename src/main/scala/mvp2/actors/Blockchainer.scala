@@ -7,14 +7,15 @@ import mvp2.actors.Planner.Period
 import mvp2.data._
 import mvp2.messages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
+import akka.typed.scaladsl.adapter._
+import mvp2.actors.TypedAccountant.BlockTyped
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
   var blockchain: Blockchain = Blockchain()
   var nextTurn: Period = Period(KeyBlock(), settings)
-  val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
-  accountant ! List(KeyBlock, KeyBlock, KeyBlock)
-  accountant ! List(Transaction, Transaction, Transaction)
+  val accountant: akka.typed.ActorRef[TypedAccountant.TypedCommands] =
+    context.spawn(TypedAccountant.behavior, "typedAccountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
@@ -37,6 +38,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         s"Blockchain's height is ${blockchain.chain.size}.")
       planner ! keyBlock
       publisher ! keyBlock
+      accountant ! BlockTyped(keyBlock, self)
     case Get => sender ! blockchain
     case period: Period =>
       logger.info(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
