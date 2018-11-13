@@ -52,4 +52,6 @@ case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress)
 
 case class UdpSocket(conection: ActorRef) extends Message
 
+case class TimeDelta(delta: Long)
+
 case object GetLightChain extends Message
