@@ -66,4 +66,6 @@ case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: I
 
 case class UdpSocket(conection: ActorRef) extends Message
 
+case class TimeDelta(delta: Long)
+
 case object GetLightChain extends Message
