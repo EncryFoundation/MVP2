@@ -14,7 +14,7 @@ class AppTest extends TestKit(ActorSystem("TestAkkaSystem")) with WordSpecLike w
   "App" should {
     "work" in {
       StarterActorRef ! 1
-      expectNoMessage
+      //expectNoMessage
     }
   }
 }

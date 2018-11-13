@@ -13,6 +13,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   var blockchain: Blockchain = Blockchain()
   var nextTurn: Period = Period(KeyBlock(), settings)
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
+  accountant ! List(KeyBlock, KeyBlock, KeyBlock)
+  accountant ! List(Transaction, Transaction, Transaction)
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
