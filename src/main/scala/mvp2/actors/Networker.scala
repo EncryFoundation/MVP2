@@ -18,7 +18,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   val keyKeeper: ActorSelection = context.actorSelection("/user/starter/blockchainer/planner/keyKeeper")
 
-  val networkSender: ActorSelection = context.actorSelection("/user/starter/networker/sender")
+  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
   var peers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis()) -> None
