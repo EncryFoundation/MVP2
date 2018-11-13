@@ -11,8 +11,8 @@ case class Settings(port: Int,
                     newBlockchain: Boolean,
                     apiSettings: ApiSettings,
                     ntp: NetworkTimeProviderSettings,
-                    influx: Option[InfluxSettings],
-                    testingSettings: Option[TestingSettings]
+                    influx: InfluxSettings,
+                    testingSettings: TestingSettings
                    )
 
 case class Node(host: String, port: Int)

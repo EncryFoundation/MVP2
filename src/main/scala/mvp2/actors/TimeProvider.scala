@@ -17,11 +17,9 @@ class TimeProvider(settings: Settings) extends CommonActor {
 
   val actors: Seq[ActorSelection] = Seq(
     context.actorSelection("/user/starter/blockchainer"),
-    context.actorSelection("/user/starter/blockchainer/publisher")
-  ) ++ (
-    if (settings.influx.isDefined) Seq(context.actorSelection("/user/starter/influxActor"))
-    else Seq.empty
-    )
+    context.actorSelection("/user/starter/blockchainer/publisher"),
+    context.actorSelection("/user/starter/influxActor")
+  )
 
   context.system.scheduler.schedule(1 seconds, settings.ntp.updateEvery)(
     Try {

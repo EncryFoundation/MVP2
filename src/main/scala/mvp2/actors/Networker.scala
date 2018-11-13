@@ -18,7 +18,7 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
-    if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
+    if (settings.testingSettings.pingPong)
       context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
@@ -38,10 +38,8 @@ class Networker(settings: Settings) extends CommonActor {
         case Blocks(blocks) =>
           logger.info(s"Receive blocks: ${blocks.mkString(",")} from remote: ${msgFromRemote.remote}")
         case SyncMessageIterators(iterators) =>
-          if (settings.testingSettings.exists(_.messagesTime)) {
-            context.actorSelection("/user/starter/influxActor") !
-              SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
-          }
+          context.actorSelection("/user/starter/influxActor") !
+            SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
       }
     case keyBlock: KeyBlock =>
       knownPeers.foreach(peer =>

@@ -5,37 +5,35 @@ import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.messages._
 import scala.concurrent.ExecutionContext.Implicits.global
-import mvp2.utils.{EncodingUtils, InfluxSettings, TestingSettings}
+import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
+
 import scala.concurrent.duration._
 
-class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[TestingSettings]) extends Actor with StrictLogging {
+class InfluxActor(settings: Settings) extends Actor with StrictLogging {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
-  var pingPongResponsePequestTime: Map[InetSocketAddress, Long] = Map.empty
-  
   var currentDelta: Long = 0
 
   var msgFromRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
   var msgToRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
-  val port: Int = influxSettings.port
+  val port: Int = settings.influx.port
 
   val influxDB: InfluxDB =
     InfluxDBFactory.connect(
-      influxSettings.host,
-      influxSettings.login,
-      influxSettings.password
+      settings.influx.host,
+      settings.influx.login,
+      settings.influx.password
     )
 
   override def preStart(): Unit = {
     logger.info("Start influx actor")
     influxDB.write(port, s"""startMvp value=12""")
-    testingSettings.foreach(testSettings =>
-      context.system.scheduler.schedule(1 seconds, testSettings.iteratorsSyncTime seconds)(syncIterators())
-    )
+    context.system.scheduler.schedule(1 seconds,
+      settings.testingSettings.iteratorsSyncTime seconds)(syncIterators())
   }
 
   def getMsgIncrements(remote: InetSocketAddress,
@@ -58,13 +56,7 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
     case MsgFromNetwork(message, id, remote) =>
       val msg: String = message match {
         case Ping => "ping"
-        case Pong =>
-          pingPongResponsePequestTime.get(remote).foreach { pingSendTime =>
-            influxDB.write(port,
-              s"""pingPongResponseTime,remote="$myNodeAddress" value=${time - pingSendTime},node="${remote.getAddress}"""".stripMargin)
-          }
-          pingPongResponsePequestTime = pingPongResponsePequestTime - remote
-          "pong"
+        case Pong => "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
@@ -72,15 +64,11 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgFromRemote)
       msgFromRemote = newIncrements
       influxDB.write(port,
-        s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
-      influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
-        case Ping =>
-          pingPongResponsePequestTime = pingPongResponsePequestTime + ((remote, time))
-          "ping"
+        case Ping => "ping"
         case Pong => "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
@@ -88,8 +76,6 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
       }
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgToRemote)
       msgToRemote = newIncrements
-      influxDB.write(port,
-        s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")

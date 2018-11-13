@@ -21,14 +21,12 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
     case SendToNetwork(message, remote) =>
       logger.info(s"Send $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
-      if (settings.influx.isDefined) {
-        context.actorSelection("/user/starter/influxActor") !
-          MsgToNetwork(
-            message,
-            Sha256.toSha256(EncodingUtils.encode2Base16(serialize(message)) ++ remote.getAddress.toString),
-            remote
-          )
-      }
+      context.actorSelection("/user/starter/influxActor") !
+        MsgToNetwork(
+          message,
+          Sha256.toSha256(EncodingUtils.encode2Base16(serialize(message)) ++ remote.getAddress.toString),
+          remote
+        )
   }
 
   def serialize(message: NetworkMessage): ByteString = ByteString(message match {
