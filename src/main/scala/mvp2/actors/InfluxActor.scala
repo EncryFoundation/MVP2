@@ -38,6 +38,38 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
     )
   }
 
+  def getMsgIncrementToRemote(remote: InetSocketAddress, msg: String): Int = {
+    msgToRemote.find(_._1 == remote) match {
+      case Some(msgInfo) => msgInfo._2.find(_._1 == msg) match {
+        case Some(i) =>
+          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
+          i._2 + 1
+        case None =>
+          msgToRemote = msgToRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
+          1
+      }
+      case None =>
+        msgToRemote += (remote -> Map(msg -> 1))
+        1
+    }
+  }
+
+  def getMsgIncrementFromRemote(remote: InetSocketAddress, msg: String): Int = {
+    msgFromRemote.find(_._1 == remote) match {
+      case Some(msgInfo) => msgInfo._2.find(_._1 == msg) match {
+        case Some(i) =>
+          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
+          i._2 + 1
+        case None =>
+          msgFromRemote = msgFromRemote - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
+          1
+      }
+      case None =>
+        msgFromRemote += (remote -> Map(msg -> 1))
+        1
+    }
+  }
+
   override def receive: Receive = {
     case MsgFromNetwork(message, id, remote) =>
       val msg: String = message match {
@@ -53,11 +85,11 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
       }
-      val i: Int = getMsgIncrement(remote, msg, "fromRemote")
+      val i: Int = getMsgIncrementFromRemote(remote, msg)
       influxDB.write(port,
         s"""msgFromRemote,node="$myNodeAddress",remote="${remote.getAddress}" value=$msg""")
       influxDB.write(port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${time}""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
@@ -69,11 +101,11 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
       }
-      val i: Int = getMsgIncrement(remote, msg, "toRemote")
+      val i: Int = getMsgIncrementToRemote(remote, msg)
       influxDB.write(port,
         s"""msgToRemote,node=$myNodeAddress value="$msg",remote="${remote.getAddress.getHostAddress}"""")
       influxDB.write(port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=${time}""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
       logger.info(s"Sync iterators from $remote")
@@ -82,26 +114,6 @@ class InfluxActor(influxSettings: InfluxSettings, testingSettings: Option[Testin
       logger.info(s"Update delta to: $delta")
       currentDelta = delta
     case _ =>
-  }
-
-  def getMsgIncrement(remote: InetSocketAddress, msg: String, direction: String): Int = {
-    var collection = direction match {
-      case "fromRemote" => msgFromRemote
-      case "toRemote" => msgToRemote
-    }
-    collection.find(_._1 == remote) match {
-      case Some(msgInfo) => msgInfo._2.find(_._1 == msg) match {
-        case Some(i) =>
-          collection = collection - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 - msg + (msg -> (i._2 + 1)))
-          i._2 + 1
-        case None =>
-          collection = collection - msgInfo._1 + msgInfo.copy(_2 = msgInfo._2 + (msg -> 1))
-          1
-      }
-      case None =>
-        collection += (remote -> Map(msg -> 1))
-        1
-    }
   }
 
   def syncIterators(): Unit =
