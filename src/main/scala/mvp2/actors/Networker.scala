@@ -19,7 +19,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
-  var peers: KnownPeers = KnownPeers.fromNodeList2KnownPeers(settings.otherNodes)
+  var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")

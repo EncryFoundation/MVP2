@@ -3,7 +3,7 @@ package mvp2.data
 import java.net.InetSocketAddress
 import akka.util.ByteString
 import mvp2.messages.{Blocks, Peers, SendToNetwork}
-import mvp2.utils.Node
+import mvp2.utils.{Node, Settings}
 
 case class KnownPeers(peers: List[Peer]) {
 
@@ -38,8 +38,8 @@ case class KnownPeers(peers: List[Peer]) {
 
 object KnownPeers {
 
-  def fromNodeList2KnownPeers(peers: List[Node]): KnownPeers =
-    new KnownPeers(peers.map(node =>
+  def apply(settings: Settings): KnownPeers =
+    new KnownPeers(settings.otherNodes.map(node =>
       Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis(), None)
     ))
 }
