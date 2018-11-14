@@ -23,8 +23,8 @@ import akka.util.{ByteString, Timeout}
 import better.files.File
 import better.files._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-
 import scala.util.{Failure, Success, Try}
+import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
@@ -68,9 +68,7 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   def downloadState: Route = (path("download") & get)(
     createZip match {
       case Success(path) => getFromFile(path.toFile, MediaTypes.`application/zip`)
-      case Failure(th) =>
-        th.printStackTrace()
-        complete(HttpResponse(InternalServerError))
+      case Failure(_) => complete(HttpResponse(InternalServerError))
     }
   )
 
