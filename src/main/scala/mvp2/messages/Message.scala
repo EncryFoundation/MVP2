@@ -37,7 +37,7 @@ case object Peers {
     Peers(peers.filter(_._1 != remote) + myNode, remote)
 }
 
-case class Blocks(blocks: List[Block]) extends NetworkMessage
+case class Blocks(chain: List[Block]) extends NetworkMessage
 
 object NetworkMessagesId {
 
@@ -45,16 +45,27 @@ object NetworkMessagesId {
   val PongId: Byte = 2
   val PeersId: Byte = 3
   val BlocksId: Byte = 4
+  val syncMessageIteratorsId: Byte = 5
 }
+
+case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
 
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
+case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
+case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
+
+case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
 
 case class PeerPublicKey(peerPublicKey: PublicKey) extends Message
 
 case class MyPublicKey(publicKey: PublicKey) extends Message
+
+case class TimeDelta(delta: Long)
 
 case object GetLightChain extends Message

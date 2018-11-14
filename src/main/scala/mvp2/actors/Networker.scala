@@ -27,7 +27,7 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
-    if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
+    if (settings.testingSettings.pingPong)
       context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
@@ -46,11 +46,16 @@ class Networker(settings: Settings) extends CommonActor {
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case Blocks(blocks) =>
           logger.info(s"Get blocks: ${blocks.mkString(",")}")
+        case SyncMessageIterators(iterators) =>
+          context.actorSelection("/user/starter/influxActor") !
+            SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
       }
-    case myPublishedBlock: KeyBlock =>
-      logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
-        s"But broadcasting yet implemented not.")
     case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
+    case keyBlock: KeyBlock =>
+      knownPeers.foreach(peer =>
+        context.actorSelection("/user/starter/blockchainer/networker/sender") !
+          SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
+      )
   }
 
   def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): Unit =
@@ -94,6 +99,10 @@ class Networker(settings: Settings) extends CommonActor {
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "sender")
   }
+
+  def isSelfIp(addr: InetSocketAddress): Boolean =
+    (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
+      (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
 }
 
 object Networker {

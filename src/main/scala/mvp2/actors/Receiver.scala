@@ -8,7 +8,7 @@ import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
 import mvp2.messages._
-import mvp2.utils.Settings
+import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
 class Receiver(settings: Settings) extends Actor with StrictLogging {
 
@@ -18,9 +18,11 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
+  val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
+
   override def preStart(): Unit = {
     logger.info("Starting the Receiver!")
-    IO(Udp) ! Udp.Bind(self, new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port))
+    IO(Udp) ! Udp.Bind(self, myAddr)
   }
 
   override def receive: Receive = {
@@ -36,8 +38,12 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
         context.parent ! MessageFromRemote(message, remote)
-        if (settings.influx.isDefined)
-          influxActor ! MessageFromRemote(message, remote)
+        context.actorSelection("/user/starter/influxActor") !
+          MsgFromNetwork(
+            message,
+            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString),
+            remote
+          )
       }
     case Udp.Unbind =>
       socket ! Udp.Unbind
@@ -62,6 +68,10 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case NetworkMessagesId.BlocksId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail))
       .map {
         case blocks: Blocks => blocks
+      }
+    case NetworkMessagesId.SyncMessageIterators =>
+      Option(serialization.findSerializerFor(SyncMessageIterators).fromBinary(bytes.toArray.tail)).map {
+        case iterators: SyncMessageIterators => iterators
       }
   }
 }
