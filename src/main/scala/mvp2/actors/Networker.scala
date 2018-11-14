@@ -1,6 +1,7 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{ActorSelection, Props}
@@ -37,11 +38,6 @@ class Networker(settings: Settings) extends CommonActor {
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
                 .updatePeerTime(msgFromRemote.remote)
           }
-        case Ping =>
-          logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          networkSender ! SendToNetwork(Pong, msgFromRemote.remote)
-        case Pong =>
-          logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case Blocks(blocks) =>
           logger.info(s"Get blocks: ${blocks.mkString(",")}")
         case SyncMessageIterators(iterators) =>

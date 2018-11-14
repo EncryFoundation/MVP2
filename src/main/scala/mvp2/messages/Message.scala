@@ -23,10 +23,6 @@ final case class NewPublisher(publicKey: ByteString) extends Message
 
 sealed trait NetworkMessage extends Message
 
-case object Ping extends NetworkMessage
-
-case object Pong extends NetworkMessage
-
 case class Peers(peers: Map[InetSocketAddress, Option[ByteString]], remote: InetSocketAddress) extends NetworkMessage
 
 case object Peers {
@@ -41,11 +37,9 @@ case class Blocks(chain: List[Block]) extends NetworkMessage
 
 object NetworkMessagesId {
 
-  val PingId: Byte = 1
-  val PongId: Byte = 2
-  val PeersId: Byte = 3
-  val BlocksId: Byte = 4
-  val SyncMessageIteratorsId: Byte = 5
+  val PeersId: Byte = 1
+  val BlocksId: Byte = 2
+  val SyncMessageIteratorsId: Byte = 3
 }
 
 case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
