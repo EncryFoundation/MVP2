@@ -52,9 +52,9 @@ class Networker(settings: Settings) extends CommonActor {
       }
     case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock =>
-      knownPeers.foreach(peer =>
+      peers.foreach(peer =>
         context.actorSelection("/user/starter/blockchainer/networker/sender") !
-          SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
+          SendToNetwork(Blocks(List(keyBlock)), peer._1.remoteAddress)
       )
   }
 

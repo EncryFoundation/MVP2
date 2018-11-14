@@ -69,7 +69,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
       .map {
         case blocks: Blocks => blocks
       }
-    case NetworkMessagesId.SyncMessageIterators =>
+    case NetworkMessagesId.SyncMessageIteratorsId =>
       Option(serialization.findSerializerFor(SyncMessageIterators).fromBinary(bytes.toArray.tail)).map {
         case iterators: SyncMessageIterators => iterators
       }

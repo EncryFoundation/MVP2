@@ -35,6 +35,6 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
     case peers: Peers => NetworkMessagesId.PeersId +: serialization.findSerializerFor(Peers).toBinary(peers)
     case blocks: Blocks => NetworkMessagesId.BlocksId +: serialization.findSerializerFor(blocks).toBinary(blocks)
     case syncIterators: SyncMessageIterators =>
-      NetworkMessagesId.syncMessageIteratorsId +: serialization.findSerializerFor(syncIterators).toBinary(syncIterators)
+      NetworkMessagesId.SyncMessageIteratorsId +: serialization.findSerializerFor(syncIterators).toBinary(syncIterators)
   })
 }

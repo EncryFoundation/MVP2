@@ -45,7 +45,7 @@ object NetworkMessagesId {
   val PongId: Byte = 2
   val PeersId: Byte = 3
   val BlocksId: Byte = 4
-  val syncMessageIteratorsId: Byte = 5
+  val SyncMessageIteratorsId: Byte = 5
 }
 
 case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
