@@ -5,8 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
-import mvp2.actors.Networker.Peer
-import mvp2.data.KeyBlock
+import mvp2.data.{KeyBlock, KnownPeers, Peer}
 import mvp2.messages._
 import mvp2.utils.{ECDSA, Settings}
 
@@ -20,25 +19,23 @@ class Networker(settings: Settings) extends CommonActor {
 
   val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
-  var peers: Map[Peer, Option[ByteString]] = settings.otherNodes.map(node =>
-    Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis()) -> None
-  ).toMap
+  var peers: KnownPeers = KnownPeers.fromNodeList2KnownPeers(settings.otherNodes)
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
-    if (settings.testingSettings.pingPong)
-      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
 
   override def specialBehavior: Receive = {
     case msgFromRemote: MessageFromRemote =>
-      addOrUpdatePeer(msgFromRemote.remote -> None)
-      updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
         case Peers(peersFromRemote, _) =>
-          peersFromRemote.foreach(addOrUpdatePeer)
+          peers = peersFromRemote.foldLeft(peers){
+            case (newKnownPeers, peerToAddOrUpdate) =>
+              peerToAddOrUpdate._2.foreach(updatePeerKey)
+              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
+          }
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
           networkSender ! SendToNetwork(Pong, msgFromRemote.remote)
@@ -52,46 +49,15 @@ class Networker(settings: Settings) extends CommonActor {
       }
     case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock =>
-      peers.foreach(peer =>
-        context.actorSelection("/user/starter/blockchainer/networker/sender") !
-          SendToNetwork(Blocks(List(keyBlock)), peer._1.remoteAddress)
+      peers.getBlockMsg(keyBlock).foreach(msg =>
+        context.actorSelection("/user/starter/blockchainer/networker/sender") ! msg
       )
   }
-
-  def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): Unit =
-    peers.find(_._1.remoteAddress == peer._1) match {
-      case Some(peerInfo) => if (peerInfo._2.isEmpty && peer._2.isDefined) {
-        peer._2.foreach(updatePeerKey)
-        peers = (peers - peerInfo._1) + (Peer(peer._1, 0) -> peer._2)
-      }
-      case None =>
-        peers = peers + (Peer(peer._1, 0) -> peer._2)
-        peer._2.foreach(updatePeerKey)
-    }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
     keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
-  def updatePeerTime(peer: InetSocketAddress): Unit =
-    if (peers.keys.toList.exists(_.remoteAddress == peer))
-      peers.find(_._1.remoteAddress == peer).foreach (prevPeer =>
-        peers = peers.filter(_ != prevPeer) +
-          (prevPeer._1.copy(lastMessageTime = System.currentTimeMillis()) -> prevPeer._2)
-      )
-
-  def pingAllPeers(): Unit =
-    peers.foreach(peer =>
-      networkSender ! SendToNetwork(Ping, peer._1.remoteAddress)
-    )
-
-  def sendPeers(): Unit =
-    peers.foreach(peer =>
-      networkSender !
-        SendToNetwork(
-          Peers(peers.map(peer => (peer._1.remoteAddress, peer._2)), (myAddr, publicKey), peer._1.remoteAddress),
-          peer._1.remoteAddress
-        )
-    )
+  def sendPeers(): Unit = peers.getPeersMessages(myAddr, publicKey).foreach(msg => networkSender ! msg)
 
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
@@ -103,10 +69,4 @@ class Networker(settings: Settings) extends CommonActor {
   def isSelfIp(addr: InetSocketAddress): Boolean =
     (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
       (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
-}
-
-object Networker {
-
-  case class Peer(remoteAddress: InetSocketAddress,
-                  lastMessageTime: Long)
 }
