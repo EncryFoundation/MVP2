@@ -3,7 +3,7 @@ package mvp2.data
 import java.net.InetSocketAddress
 import akka.util.ByteString
 import mvp2.messages.{Blocks, Peers, SendToNetwork}
-import mvp2.utils.{Node, Settings}
+import mvp2.utils.Settings
 
 case class KnownPeers(peers: List[Peer]) {
 
@@ -43,3 +43,7 @@ object KnownPeers {
       Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis(), None)
     ))
 }
+
+case class Peer(remoteAddress: InetSocketAddress,
+                lastMessageTime: Long,
+                key: Option[ByteString])

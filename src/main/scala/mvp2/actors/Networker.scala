@@ -5,7 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
-import mvp2.data.{KeyBlock, KnownPeers, Peer}
+import mvp2.data.{KeyBlock, KnownPeers}
 import mvp2.messages._
 import mvp2.utils.{ECDSA, Settings}
 
