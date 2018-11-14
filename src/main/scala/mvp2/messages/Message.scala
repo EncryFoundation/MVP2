@@ -1,9 +1,10 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
+
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.{Chain, KeyBlock}
+import mvp2.data.{Block, KeyBlock}
 
 sealed trait Message
 
@@ -39,16 +40,29 @@ case object Peers {
   val typeId: Byte = 3: Byte
 }
 
-case class Blocks(chain: Chain) extends NetworkMessage
+case class Blocks(chain: List[Block]) extends NetworkMessage
 
 object Blocks {
 
   val typeId: Byte = 4: Byte
 }
 
+case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
+
+object SyncMessageIterators {
+
+  val typeId: Byte = 5: Byte
+}
+
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
+case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
+case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
+
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
+
+case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
 

@@ -23,6 +23,7 @@ class Publisher(settings: Settings) extends CommonActor {
       mempool = transaction :: mempool
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
+      context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
       lastKeyBlock = keyBlock
     case Get =>
       val newBlock: KeyBlock = createKeyBlock

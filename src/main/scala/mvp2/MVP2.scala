@@ -10,5 +10,4 @@ object MVP2 extends App {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   system.actorOf(Props[Starter], "starter")
-
 }
