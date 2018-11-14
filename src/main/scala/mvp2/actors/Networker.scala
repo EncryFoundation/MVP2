@@ -35,6 +35,7 @@ class Networker(settings: Settings) extends CommonActor {
             case (newKnownPeers, peerToAddOrUpdate) =>
               peerToAddOrUpdate._2.foreach(updatePeerKey)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
+                .updatePeerTime(msgFromRemote.remote)
           }
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")

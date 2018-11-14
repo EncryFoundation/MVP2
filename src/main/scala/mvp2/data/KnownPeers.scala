@@ -8,13 +8,12 @@ import mvp2.utils.Settings
 case class KnownPeers(peers: List[Peer]) {
 
   def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): KnownPeers =
-    (peers.find(_.remoteAddress == peer._1) match {
-      case Some(peerInfo) => if (peerInfo.key.isEmpty && peer._2.isDefined)
+    peers.find(_.remoteAddress == peer._1) match {
+      case Some(peerInfo) if peerInfo.key.isEmpty && peer._2.isDefined =>
         this.copy(peers.filter(_ == peerInfo) :+ Peer(peer._1, 0, peer._2))
-      else this
-      case None =>
-        this.copy(peers :+ Peer(peer._1, 0, peer._2))
-    }).updatePeerTime(peer._1)
+      case Some(_) => this
+      case None => this.copy(peers :+ Peer(peer._1, 0, peer._2))
+    }
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
     peers.find(_.remoteAddress == peer).map(prevPeer =>
