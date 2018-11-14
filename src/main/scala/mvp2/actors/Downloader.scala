@@ -14,7 +14,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class Downloader(downloadFrom: String) extends CommonActor {
   override def specialBehavior: Receive = ???
 
-  override def preStart(): Unit = self ! downloadFrom
+  override def preStart(): Unit = {
+    logger.info("Starting downloader")
+    self ! downloadFrom
+  }
 
   override def receive: Receive = {
     case address: String =>
