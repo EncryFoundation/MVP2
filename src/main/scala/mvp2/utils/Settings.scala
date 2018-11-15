@@ -12,7 +12,8 @@ case class Settings(port: Int,
                     apiSettings: ApiSettings,
                     ntp: NetworkTimeProviderSettings,
                     influx: InfluxSettings,
-                    testingSettings: TestingSettings
+                    testingSettings: TestingSettings,
+                    mempoolSetting: MempoolSetting
                    )
 
 case class Node(host: String, port: Int)
@@ -24,3 +25,5 @@ case class InfluxSettings(host: String, port: Int, login: String, password: Stri
 case class NetworkTimeProviderSettings(server: String, updateEvery: FiniteDuration, timeout: FiniteDuration)
 
 case class TestingSettings(pingPong: Boolean, messagesTime: Boolean, iteratorsSyncTime: Int)
+
+case class MempoolSetting(transactionsValidTime: Long, mempoolSharedTime: Long)

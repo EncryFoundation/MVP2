@@ -3,9 +3,9 @@ package mvp2.actors
 import java.net.{InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import akka.actor.Props
+import akka.actor.{ActorSelection, Props}
 import mvp2.actors.Networker.Peer
-import mvp2.data.KeyBlock
+import mvp2.data.{KeyBlock, Transaction}
 import mvp2.messages._
 import mvp2.utils.Settings
 
@@ -14,6 +14,8 @@ class Networker(settings: Settings) extends CommonActor {
   var knownPeers: List[Peer] = settings.otherNodes.map(node =>
     Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
   )
+  val senderActor: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+  val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
@@ -31,8 +33,7 @@ class Networker(settings: Settings) extends CommonActor {
           (peers :+ msgFromRemote.remote).foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          context.actorSelection("/user/starter/blockchainer/networker/sender") !
-            SendToNetwork(Pong, msgFromRemote.remote)
+          senderActor ! SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
         case Blocks(blocks) =>
@@ -40,12 +41,19 @@ class Networker(settings: Settings) extends CommonActor {
         case SyncMessageIterators(iterators) =>
           context.actorSelection("/user/starter/influxActor") !
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+        case Transactions(transactions) =>
+          transactions.foreach { tx =>
+            println(s"Got new transaction $tx from remote ${msgFromRemote.remote}")
+            publisher ! tx
+          }
       }
     case keyBlock: KeyBlock =>
       knownPeers.foreach(peer =>
-        context.actorSelection("/user/starter/blockchainer/networker/sender") !
-          SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
+        senderActor ! SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
       )
+    case transaction: Transaction => knownPeers.foreach(peer =>
+      senderActor ! SendToNetwork(Transactions(List(transaction)), peer.remoteAddress)
+    )
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =
@@ -54,25 +62,22 @@ class Networker(settings: Settings) extends CommonActor {
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
     if (knownPeers.par.exists(_.remoteAddress == peer))
-      knownPeers.find(_.remoteAddress == peer).foreach ( prevPeer =>
+      knownPeers.find(_.remoteAddress == peer).foreach(prevPeer =>
         knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
       )
 
   def pingAllPeers(): Unit =
-    knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/blockchainer/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
-    )
+    knownPeers.foreach(peer => senderActor ! SendToNetwork(Ping, peer.remoteAddress))
 
   def sendPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/blockchainer/networker/sender") !
-        SendToNetwork(
-          Peers(
-            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
-            peer.remoteAddress
-          ),
+      senderActor ! SendToNetwork(
+        Peers(
+          knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
           peer.remoteAddress
-        )
+        ),
+        peer.remoteAddress
+      )
     )
 
   def bornKids(): Unit = {
@@ -91,4 +96,5 @@ object Networker {
 
   case class Peer(remoteAddress: InetSocketAddress,
                   lastMessageTime: Long)
+
 }
