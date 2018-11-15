@@ -29,9 +29,7 @@ case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteStrin
     ).toSeq
 
   def getBlockMsg(block: KeyBlock): Seq[SendToNetwork] =
-    peersPublicKeyMap.map(peer =>
-        SendToNetwork(Blocks(List(block)), peer._1)
-    ).toSeq
+    peersPublicKeyMap.map(peer => SendToNetwork(Blocks(List(block)), peer._1)).toSeq
 
   def isSelfIp(addr: InetSocketAddress): Boolean =
     (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
