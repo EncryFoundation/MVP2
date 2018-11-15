@@ -24,7 +24,7 @@ class Planner(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
-      println(s"Planner received new keyBlock with height: ${keyBlock.height}.")
+      //println(s"Planner received new keyBlock with height: ${keyBlock.height}.")
       nextTurn = Period(keyBlock, settings)
       context.parent ! nextTurn
     case newPublisher: NewPublisher =>
@@ -33,10 +33,10 @@ class Planner(settings: Settings) extends CommonActor {
       publishersPubKeys += newPublisher.publicKey
     case Tick if nextTurn.timeToPublish =>
       publisher ! Get
-      println("Planner sent publisher request: time to publish!")
+      //println("Planner sent publisher request: time to publish!")
     case Tick if nextTurn.noBlocksInTime =>
       val newPeriod = Period(nextTurn, settings)
-      println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
+      //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextTurn = newPeriod
     case Tick =>
   }
