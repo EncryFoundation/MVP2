@@ -33,7 +33,7 @@ class Networker(settings: Settings) extends CommonActor {
         case Peers(peersFromRemote, _) =>
           peers = peersFromRemote.foldLeft(peers){
             case (newKnownPeers, peerToAddOrUpdate) =>
-              peerToAddOrUpdate._2.foreach(updatePeerKey)
+              updatePeerKey(peerToAddOrUpdate._2)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
                 .updatePeerTime(msgFromRemote.remote)
           }
@@ -53,7 +53,8 @@ class Networker(settings: Settings) extends CommonActor {
   def updatePeerKey(serializedKey: ByteString): Unit =
     if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
-  def sendPeers(): Unit = peers.getPeersMessages(myAddr, myPublicKey).foreach(msg => networkSender ! msg)
+  def sendPeers(): Unit =
+    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => networkSender ! msg))
 
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
