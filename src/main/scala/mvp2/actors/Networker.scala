@@ -43,7 +43,7 @@ class Networker(settings: Settings) extends CommonActor {
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
         case Transactions(transactions) =>
           transactions.foreach { tx =>
-            println(s"Got new transaction $tx from remote ${msgFromRemote.remote}")
+            logger.info(s"Got new transaction $tx from remote ${msgFromRemote.remote}")
             publisher ! tx
           }
       }

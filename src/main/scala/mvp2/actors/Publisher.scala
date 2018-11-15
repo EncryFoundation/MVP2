@@ -16,20 +16,18 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")
-  //TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
-  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolSharedTime.seconds) {
+  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.seconds) {
     mempool = cleanMempool(mempool)
     logger.info(s"${mempool.size}, $mempool")
   }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      println(s"${mempool.size} + before update")
       mempool = updateMempool(transaction, mempool)
-      println(s"${mempool.size} + after update")
+      logger.info(s"${mempool.size} after updating.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
       context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock

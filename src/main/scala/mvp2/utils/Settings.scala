@@ -26,4 +26,4 @@ case class NetworkTimeProviderSettings(server: String, updateEvery: FiniteDurati
 
 case class TestingSettings(pingPong: Boolean, messagesTime: Boolean, iteratorsSyncTime: Int)
 
-case class MempoolSetting(transactionsValidTime: Long, mempoolSharedTime: Long)
+case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)

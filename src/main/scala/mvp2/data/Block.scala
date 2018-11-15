@@ -27,7 +27,7 @@ final case class KeyBlock(height: Long,
     val sentence: String =
       if (result) s"Block with height ${this.height} is valid."
       else s"Block with height ${this.height} is valid."
-    //println(sentence)
+    println(sentence)
     result
   }
 
