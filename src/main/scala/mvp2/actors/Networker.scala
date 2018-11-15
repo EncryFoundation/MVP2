@@ -12,7 +12,7 @@ import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
 
-  var publicKey: Option[ByteString] = None
+  var myPublicKey: Option[ByteString] = None
 
   val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
 
@@ -44,7 +44,7 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/influxActor") !
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
       }
-    case MyPublicKey(key) => publicKey = Some(ECDSA.compressPublicKey(key))
+    case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock =>
       peers.getBlockMsg(keyBlock).foreach(msg =>
         context.actorSelection("/user/starter/blockchainer/networker/sender") ! msg
@@ -52,9 +52,9 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
-    keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
+    if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
-  def sendPeers(): Unit = peers.getPeersMessages(myAddr, publicKey).foreach(msg => networkSender ! msg)
+  def sendPeers(): Unit = peers.getPeersMessages(myAddr, myPublicKey).foreach(msg => networkSender ! msg)
 
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
