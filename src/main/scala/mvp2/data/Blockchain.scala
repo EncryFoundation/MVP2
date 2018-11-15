@@ -12,7 +12,12 @@ sealed trait Chain {
   def update(block: Block): Unit = chain = chain.updated(block.height, block)
 }
 
-final case class Blockchain (var chain: List[KeyBlock] = List.empty)
+final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
+
+  def getMissingPart(remoteHeight: Int): Option[List[KeyBlock]] =
+    if (remoteHeight == chain.last.height) None
+    else Some(chain.drop(remoteHeight))
+}
 
 final case class Appendix(override var chain: TreeMap[Long, Block]) extends Chain {
 

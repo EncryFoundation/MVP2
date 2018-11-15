@@ -40,11 +40,14 @@ case object Peers {
 
 case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
 
+case class LastBlockHeight(height: Int) extends NetworkMessage
+
 object NetworkMessagesId {
 
   val PeersId: Byte = 1
   val BlocksId: Byte = 2
   val SyncMessageIteratorsId: Byte = 3
+  val LastBlockHeightId: Byte = 4
 }
 
 case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
@@ -56,6 +59,10 @@ case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSoc
 case class MsgFromNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends Message
 
 case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress) extends Message
+
+case class RemoteBlockchainMissingPart(blocks: List[KeyBlock], remote: InetSocketAddress) extends Message
+
+case class CheckRemoteBlockchain(height: Int, remote: InetSocketAddress) extends Message
 
 case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 

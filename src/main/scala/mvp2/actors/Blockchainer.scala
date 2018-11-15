@@ -5,9 +5,8 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data._
-import mvp2.messages.CurrentBlockchainInfo
+import mvp2.messages._
 import mvp2.utils.Settings
-import mvp2.messages.{Get, TimeDelta}
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -42,6 +41,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case period: Period =>
       logger.info(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
       nextTurn = period
+    case CheckRemoteBlockchain(remoteHeight, remote) =>
+      blockchain.getMissingPart(remoteHeight).foreach(blocks =>
+        networker ! RemoteBlockchainMissingPart(blocks, remote)
+      )
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 

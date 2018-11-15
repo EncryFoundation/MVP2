@@ -19,6 +19,8 @@ class Networker(settings: Settings) extends CommonActor {
 
   val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
+  val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
+
   var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
@@ -39,14 +41,16 @@ class Networker(settings: Settings) extends CommonActor {
           }
         case Blocks(_) =>
         case SyncMessageIterators(iterators) =>
-          context.actorSelection("/user/starter/influxActor") !
-            SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+          influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+        case LastBlockHeight(height) =>
+          context.parent ! CheckRemoteBlockchain(height, msgFromRemote.remote)
       }
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock =>
       peers.getBlockMsg(keyBlock).foreach(msg =>
-        context.actorSelection("/user/starter/blockchainer/networker/sender") ! msg
+        networkSender ! msg
       )
+    case RemoteBlockchainMissingPart(blocks, remote) => networkSender ! SendToNetwork(Blocks(blocks), remote)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
