@@ -9,12 +9,12 @@ case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteStrin
                       peersLastTimeUpdateMap: Map[InetSocketAddress, Long]) {
 
   def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers =
-    if (!isSelfIp(peer._1)) this.copy((peersPublicKeyMap - peer._1) + (peer._1 -> Some(peer._2)))
+    if (!isSelfIp(peer._1)) this.copy(peersPublicKeyMap + (peer._1 -> Some(peer._2)))
     else this
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
     if (!isSelfIp(peer))
-      this.copy(peersLastTimeUpdateMap = peersLastTimeUpdateMap - peer + (peer -> System.currentTimeMillis()))
+      this.copy(peersLastTimeUpdateMap = peersLastTimeUpdateMap + (peer -> System.currentTimeMillis()))
     else this
 
   def getPeersMessages(myAddr: InetSocketAddress, publicKey: ByteString): Seq[SendToNetwork] =
