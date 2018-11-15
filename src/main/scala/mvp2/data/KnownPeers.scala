@@ -22,17 +22,17 @@ case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString]
     else this
 
   def getPeersMessages(myAddr: InetSocketAddress, publicKey: Option[ByteString]): Seq[SendToNetwork] =
-    peersMap.toList.map(peer =>
+    peersMap.map(peer =>
         SendToNetwork(
-          Peers(peersMap.toList.map(peer => (peer._1, peer._2._2)).toMap, (myAddr, publicKey), peer._1),
+          Peers(peersMap.map(peer => (peer._1, peer._2._2)), (myAddr, publicKey), peer._1),
           peer._1
         )
-    )
+    ).toSeq
 
   def getBlockMsg(block: KeyBlock): Seq[SendToNetwork] =
-    peersMap.toList.map(peer =>
+    peersMap.map(peer =>
         SendToNetwork(Blocks(List(block)), peer._1)
-    )
+    ).toSeq
 
   def isSelfIp(addr: InetSocketAddress): Boolean =
     (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
