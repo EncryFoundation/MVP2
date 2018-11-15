@@ -16,7 +16,8 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")
+  //TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolSharedTime.seconds) {
@@ -27,9 +28,9 @@ class Publisher(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      logger.info(s"${mempool.size} + before update")
+      println(s"${mempool.size} + before update")
       mempool = updateMempool(transaction, mempool)
-      logger.info(s"${mempool.size} + after update")
+      println(s"${mempool.size} + after update")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
       context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
@@ -69,8 +70,5 @@ class Publisher(settings: Settings) extends CommonActor {
     mempool.diff(transactions)
 
   def cleanMempool(mempool: List[Transaction]): List[Transaction] =
-    mempool.filter { tx =>
-      println(s"${tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime} sdhjbvkfdbkvbfkdbv")
-      tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime
-    }
+    mempool.filter(tx => tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime)
 }
