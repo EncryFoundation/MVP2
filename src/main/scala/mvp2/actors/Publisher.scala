@@ -4,7 +4,6 @@ import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.{KeyBlock, Transaction}
 import mvp2.messages.{Get, TimeDelta, TransactionFromRemote}
 import mvp2.utils.Settings
-
 import scala.language.postfixOps
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +33,7 @@ class Publisher(settings: Settings) extends CommonActor {
       logger.info(s"${mempool.size} after updating with new tx from local.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
-      context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
+      networker ! keyBlock
       lastKeyBlock = keyBlock
       mempool = checkTxsFromNewBlock(keyBlock.transactions, mempool)
     case Get =>
