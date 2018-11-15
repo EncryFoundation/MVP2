@@ -14,13 +14,14 @@ class Planner(settings: Settings) extends CommonActor {
 
   import Planner.{Period, Tick}
 
-  val heartBeat: Cancellable =
-    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   var nextTurn: Period = Period(KeyBlock(), settings)
   var publishersPubKeys: Set[ByteString] = Set.empty
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   val myKeys: KeyPair = ECDSA.createKeyPair
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+
+  if (settings.canPublishBlocks)
+    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
