@@ -19,7 +19,7 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
 
   def sendingCycle(connection: ActorRef): Receive = {
     case SendToNetwork(message, remote) =>
-      logger.info(s"Send $message to $remote")
+      logger.info(s"Sending $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
       context.actorSelection("/user/starter/influxActor") !
         MsgToNetwork(
@@ -30,11 +30,9 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
   }
 
   def serialize(message: NetworkMessage): ByteString = ByteString(message match {
-    case ping: Ping.type => Ping.typeId +: serialization.findSerializerFor(Ping).toBinary(ping)
-    case pong: Pong.type => Pong.typeId +: serialization.findSerializerFor(Pong).toBinary(pong)
-    case knownPeers: Peers => Peers.typeId +: serialization.findSerializerFor(Peers).toBinary(knownPeers)
-    case blocks: Blocks => Blocks.typeId +: serialization.findSerializerFor(blocks).toBinary(blocks)
+    case peers: Peers => NetworkMessagesId.PeersId +: serialization.findSerializerFor(Peers).toBinary(peers)
+    case blocks: Blocks => NetworkMessagesId.BlocksId +: serialization.findSerializerFor(blocks).toBinary(blocks)
     case syncIterators: SyncMessageIterators =>
-      SyncMessageIterators.typeId +: serialization.findSerializerFor(syncIterators).toBinary(syncIterators)
+      NetworkMessagesId.SyncMessageIteratorsId +: serialization.findSerializerFor(syncIterators).toBinary(syncIterators)
   })
 }
