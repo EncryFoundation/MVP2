@@ -5,34 +5,33 @@ import akka.util.ByteString
 import mvp2.messages.{Blocks, Peers, SendToNetwork}
 import mvp2.utils.Settings
 
-case class KnownPeers(peers: List[Peer]) {
+case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString])]) {
 
   def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): KnownPeers =
-    peers.find(_.remoteAddress == peer._1) match {
-      case Some(peerInfo) if peerInfo.key.isEmpty && peer._2.isDefined =>
-        this.copy(peers.filter(_ == peerInfo) :+ Peer(peer._1, 0, peer._2))
-      case Some(_) => this
-      case None if !isSelfIp(peer._1) => this.copy(peers :+ Peer(peer._1, 0, peer._2))
-      case None => this
-    }
+    if (!isSelfIp(peer._1))
+      KnownPeers((peersMap - peer._1) + (peer._1 -> peersMap.get(peer._1).map(prevPeerInfo =>
+        if (prevPeerInfo._2.isEmpty) (prevPeerInfo._1, peer._2)
+        else prevPeerInfo
+      ).getOrElse((System.currentTimeMillis(), None))))
+    else this
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
-    peers.find(_.remoteAddress == peer).map(prevPeer =>
-      this.copy(peers.filter(_ != prevPeer) :+
-        prevPeer.copy(lastMessageTime = System.currentTimeMillis(), key = prevPeer.key))
-    ).getOrElse(this)
+    if (!isSelfIp(peer))
+      KnownPeers((peersMap - peer) +
+        (peer -> peersMap.getOrElse(peer, (System.currentTimeMillis(), None)).copy(_1 = System.currentTimeMillis())))
+    else this
 
   def getPeersMessages(myAddr: InetSocketAddress, publicKey: Option[ByteString]): Seq[SendToNetwork] =
-    peers.map(peer =>
+    peersMap.toList.map(peer =>
         SendToNetwork(
-          Peers(peers.map(peer => (peer.remoteAddress, peer.key)).toMap, (myAddr, publicKey), peer.remoteAddress),
-          peer.remoteAddress
+          Peers(peersMap.toList.map(peer => (peer._1, peer._2._2)).toMap, (myAddr, publicKey), peer._1),
+          peer._1
         )
     )
 
   def getBlockMsg(block: KeyBlock): Seq[SendToNetwork] =
-    peers.map(peer =>
-        SendToNetwork(Blocks(List(block)), peer.remoteAddress)
+    peersMap.toList.map(peer =>
+        SendToNetwork(Blocks(List(block)), peer._1)
     )
 
   def isSelfIp(addr: InetSocketAddress): Boolean =
@@ -44,8 +43,8 @@ object KnownPeers {
 
   def apply(settings: Settings): KnownPeers =
     new KnownPeers(settings.otherNodes.map(node =>
-      Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis(), None)
-    ))
+      new InetSocketAddress(node.host, node.port) -> (0: Long, None)).toMap
+    )
 }
 
 case class Peer(remoteAddress: InetSocketAddress,
