@@ -23,12 +23,12 @@ final case class NewPublisher(publicKey: ByteString) extends Message
 
 sealed trait NetworkMessage extends Message
 
-case class Peers(peers: Map[InetSocketAddress, Option[ByteString]], remote: InetSocketAddress) extends NetworkMessage
+case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage
 
 case object Peers {
 
-  def apply(peers: Map[InetSocketAddress, Option[ByteString]],
-            myNode: (InetSocketAddress, Option[ByteString]),
+  def apply(peers: Map[InetSocketAddress, ByteString],
+            myNode: (InetSocketAddress, ByteString),
             remote: InetSocketAddress): Peers =
     Peers(peers.filter(_._1 != remote) + myNode, remote)
 }

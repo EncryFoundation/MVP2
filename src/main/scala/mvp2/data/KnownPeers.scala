@@ -5,36 +5,31 @@ import akka.util.ByteString
 import mvp2.messages.{Blocks, Peers, SendToNetwork}
 import mvp2.utils.Settings
 
-case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString])]) {
+case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteString]],
+                      peersLastTimeUpdateMap: Map[InetSocketAddress, Long]) {
 
-  def addOrUpdatePeer(peer: (InetSocketAddress, Option[ByteString])): KnownPeers =
-    if (!isSelfIp(peer._1))
-      KnownPeers((peersMap - peer._1) + (peer._1 -> peersMap.get(peer._1).map(prevPeerInfo =>
-        if (prevPeerInfo._2.isEmpty) (prevPeerInfo._1, peer._2)
-        else prevPeerInfo
-      ).getOrElse((System.currentTimeMillis(), None))))
+  def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers =
+    if (!isSelfIp(peer._1)) this.copy((peersPublicKeyMap - peer._1) + (peer._1 -> Some(peer._2)))
     else this
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
     if (!isSelfIp(peer))
-      KnownPeers((peersMap - peer) +
-        (peer ->
-          peersMap.get(peer).map(_.copy(_1 = System.currentTimeMillis()))
-            .getOrElse(System.currentTimeMillis() -> None)
-          )
-      )
+      this.copy(peersLastTimeUpdateMap = peersLastTimeUpdateMap - peer + (peer -> System.currentTimeMillis()))
     else this
 
-  def getPeersMessages(myAddr: InetSocketAddress, publicKey: Option[ByteString]): Seq[SendToNetwork] =
-    peersMap.map(peer =>
+  def getPeersMessages(myAddr: InetSocketAddress, publicKey: ByteString): Seq[SendToNetwork] =
+    peersPublicKeyMap.map(peer =>
         SendToNetwork(
-          Peers(peersMap.map(peer => (peer._1, peer._2._2)), (myAddr, publicKey), peer._1),
+          Peers(peersPublicKeyMap.flatMap {
+            case (addr, Some(key)) => Some(addr -> key)
+            case (_, None) => None
+          }, (myAddr, publicKey), peer._1),
           peer._1
         )
     ).toSeq
 
   def getBlockMsg(block: KeyBlock): Seq[SendToNetwork] =
-    peersMap.map(peer =>
+    peersPublicKeyMap.map(peer =>
         SendToNetwork(Blocks(List(block)), peer._1)
     ).toSeq
 
@@ -46,7 +41,8 @@ case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString]
 object KnownPeers {
 
   def apply(settings: Settings): KnownPeers =
-    new KnownPeers(settings.otherNodes.map(node =>
-      new InetSocketAddress(node.host, node.port) -> (0: Long, None)).toMap
+    new KnownPeers(
+      settings.otherNodes.map(node => new InetSocketAddress(node.host, node.port) -> None).toMap,
+      settings.otherNodes.map(node => (new InetSocketAddress(node.host, node.port), 0: Long)).toMap
     )
 }
