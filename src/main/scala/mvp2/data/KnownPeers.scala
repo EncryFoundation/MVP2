@@ -19,7 +19,8 @@ case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString]
     if (!isSelfIp(peer))
       KnownPeers((peersMap - peer) +
         (peer ->
-          peersMap.get(peer).map(_.copy(_1 = System.currentTimeMillis())).getOrElse(System.currentTimeMillis() -> None)
+          peersMap.get(peer).map(_.copy(_1 = System.currentTimeMillis()))
+            .getOrElse(System.currentTimeMillis() -> None)
           )
       )
     else this

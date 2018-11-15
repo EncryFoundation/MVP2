@@ -1,7 +1,6 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{ActorSelection, Props}
