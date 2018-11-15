@@ -22,7 +22,6 @@ class Publisher(settings: Settings) extends CommonActor {
 
   context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolSharedTime.seconds) {
     mempool = cleanMempool(mempool)
-    mempool.foreach(tx => networker ! tx)
     logger.info(s"${mempool.size}, $mempool")
   }
 
@@ -60,6 +59,7 @@ class Publisher(settings: Settings) extends CommonActor {
   def updateMempool(transaction: Transaction, mempool: List[Transaction]): List[Transaction] =
     if (!mempool.contains(transaction)) {
       logger.info(s"Got new transaction: $transaction in mempool. Current mempool is: $mempool")
+      networker ! transaction
       transaction :: mempool
     } else {
       logger.info(s"This transaction is already in mempool.")
