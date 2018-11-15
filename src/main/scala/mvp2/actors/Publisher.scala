@@ -26,10 +26,13 @@ class Publisher(settings: Settings) extends CommonActor {
       context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
       lastKeyBlock = keyBlock
     case Get =>
-      val newBlock: KeyBlock = createKeyBlock
-      println(s"Publisher got new request and published block with height ${newBlock.height}.")
-      context.parent ! newBlock
-      networker ! newBlock
+      if (settings.canPublishBlocks) {
+        val newBlock: KeyBlock = createKeyBlock
+        println(s"Publisher got new request and published block with height ${newBlock.height}.")
+        context.parent ! newBlock
+        networker ! newBlock
+      } else
+        logger.info("Trying to publish block, but canPublishBlocks: false")
     case TimeDelta(delta: Long) =>
       logger.info(s"Update delta to: $delta")
       currentDelta = delta

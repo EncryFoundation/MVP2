@@ -40,7 +40,7 @@ case object Peers {
   val typeId: Byte = 3: Byte
 }
 
-case class Blocks(chain: List[Block]) extends NetworkMessage
+case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
 
 object Blocks {
 
