@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, ActorSelection}
 import akka.io.{IO, Udp}
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
@@ -14,6 +14,10 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
+  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+
+  val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
+
   val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
 
   override def preStart(): Unit = {
@@ -25,7 +29,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
       context.become(readCycle(sender))
-      context.actorSelection("/user/starter/blockchainer/networker/sender") ! UdpSocket(sender)
+      networkSender ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
 
@@ -51,19 +55,15 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
 
   def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes.head match {
-    case Ping.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case ping: Ping.type => ping
-    }
-    case Pong.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case pong: Pong.type => pong
-    }
-    case Peers.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case knownPeers: Peers => knownPeers
-    }
-    case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail)).map {
-      case blocks: Blocks => blocks
-    }
-    case SyncMessageIterators.typeId =>
+    case NetworkMessagesId.PeersId => Option(serialization.findSerializerFor(Peers).fromBinary(bytes.toArray.tail))
+      .map {
+        case knownPeers: Peers => knownPeers
+      }
+    case NetworkMessagesId.BlocksId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail))
+      .map {
+        case blocks: Blocks => blocks
+      }
+    case NetworkMessagesId.SyncMessageIteratorsId =>
       Option(serialization.findSerializerFor(SyncMessageIterators).fromBinary(bytes.toArray.tail)).map {
         case iterators: SyncMessageIterators => iterators
       }
