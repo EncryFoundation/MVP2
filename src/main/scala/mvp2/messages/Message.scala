@@ -5,6 +5,7 @@ import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.{Block, KeyBlock}
+import mvp2.utils.EncodingUtils
 
 sealed trait Message
 
@@ -23,7 +24,11 @@ final case class NewPublisher(publicKey: ByteString) extends Message
 
 sealed trait NetworkMessage extends Message
 
-case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage
+case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage {
+
+  override def toString: String =
+    peers.map(peerInfo => s"${peerInfo._1} -> ${EncodingUtils.encode2Base16(peerInfo._2)}").mkString(",")
+}
 
 case object Peers {
 

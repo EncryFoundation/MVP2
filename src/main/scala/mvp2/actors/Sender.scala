@@ -19,7 +19,7 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
 
   def sendingCycle(connection: ActorRef): Receive = {
     case SendToNetwork(message, remote) =>
-      logger.info(s"Send $message to $remote")
+      logger.info(s"Sending $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
       context.actorSelection("/user/starter/influxActor") !
         MsgToNetwork(

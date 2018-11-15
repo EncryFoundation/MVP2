@@ -37,8 +37,7 @@ class Networker(settings: Settings) extends CommonActor {
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
                 .updatePeerTime(msgFromRemote.remote)
           }
-        case Blocks(blocks) =>
-          logger.info(s"Get blocks: ${blocks.mkString(",")}")
+        case Blocks(_) =>
         case SyncMessageIterators(iterators) =>
           context.actorSelection("/user/starter/influxActor") !
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
