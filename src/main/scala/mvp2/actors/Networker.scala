@@ -62,8 +62,4 @@ class Networker(settings: Settings) extends CommonActor {
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "sender")
   }
-
-  def isSelfIp(addr: InetSocketAddress): Boolean =
-    (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
-      (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
 }

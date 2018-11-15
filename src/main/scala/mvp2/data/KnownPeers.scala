@@ -1,6 +1,6 @@
 package mvp2.data
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import akka.util.ByteString
 import mvp2.messages.{Blocks, Peers, SendToNetwork}
 import mvp2.utils.Settings
@@ -12,7 +12,8 @@ case class KnownPeers(peers: List[Peer]) {
       case Some(peerInfo) if peerInfo.key.isEmpty && peer._2.isDefined =>
         this.copy(peers.filter(_ == peerInfo) :+ Peer(peer._1, 0, peer._2))
       case Some(_) => this
-      case None => this.copy(peers :+ Peer(peer._1, 0, peer._2))
+      case None if !isSelfIp(peer._1) => this.copy(peers :+ Peer(peer._1, 0, peer._2))
+      case None => this
     }
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
@@ -33,6 +34,10 @@ case class KnownPeers(peers: List[Peer]) {
     peers.map(peer =>
         SendToNetwork(Blocks(List(block)), peer.remoteAddress)
     )
+
+  def isSelfIp(addr: InetSocketAddress): Boolean =
+    (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
+      (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
 }
 
 object KnownPeers {
