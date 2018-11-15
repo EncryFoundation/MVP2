@@ -18,7 +18,10 @@ case class KnownPeers(peersMap: Map[InetSocketAddress, (Long, Option[ByteString]
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
     if (!isSelfIp(peer))
       KnownPeers((peersMap - peer) +
-        (peer -> peersMap.getOrElse(peer, (System.currentTimeMillis(), None)).copy(_1 = System.currentTimeMillis())))
+        (peer ->
+          peersMap.get(peer).map(_.copy(_1 = System.currentTimeMillis())).getOrElse(System.currentTimeMillis() -> None)
+          )
+      )
     else this
 
   def getPeersMessages(myAddr: InetSocketAddress, publicKey: Option[ByteString]): Seq[SendToNetwork] =
