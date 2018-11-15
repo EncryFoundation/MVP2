@@ -11,6 +11,7 @@ import mvp2.utils.Settings
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
   var blockchain: Blockchain = Blockchain()
+  var blockCache: BlocksCache = BlocksCache()
   var currentDelta: Long = 0
   var nextTurn: Period = Period(KeyBlock(), settings)
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
@@ -26,16 +27,21 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def receiveCommand: Receive = {
     case keyBlock: KeyBlock =>
-      blockchain = Blockchain(keyBlock :: blockchain.chain)
-      informator ! CurrentBlockchainInfo(
-        blockchain.chain.headOption.map(block => block.height).getOrElse(0),
-        blockchain.chain.headOption,
-        None
-      )
-      println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-        s"Blockchain's height is ${blockchain.chain.size}.")
-      planner ! keyBlock
-      publisher ! keyBlock
+      (if (!blockchain.isApplicable(keyBlock)) {
+        blockCache += keyBlock
+        blockCache.getApplicableBlock(blockchain)
+      } else Some(keyBlock)).foreach{ block =>
+          blockchain += block
+          informator ! CurrentBlockchainInfo(
+            blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
+            blockchain.chain.lastOption,
+            None
+          )
+          println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
+            s"Blockchain's height is ${blockchain.chain.size}.")
+          planner ! block
+          publisher ! block
+      }
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
