@@ -44,7 +44,7 @@ class Networker(settings: Settings) extends CommonActor {
         case Transactions(transactions) =>
           transactions.foreach { tx =>
             logger.info(s"Got new transaction $tx from remote ${msgFromRemote.remote}")
-            publisher ! tx
+            publisher ! TransactionFromRemote(tx)
           }
       }
     case keyBlock: KeyBlock =>

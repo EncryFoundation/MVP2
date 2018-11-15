@@ -2,10 +2,10 @@ package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.{KeyBlock, Transaction}
-import mvp2.messages.Get
+import mvp2.messages.{Get, TimeDelta, TransactionFromRemote}
 import mvp2.utils.Settings
+
 import scala.language.postfixOps
-import mvp2.messages.TimeDelta
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -25,10 +25,13 @@ class Publisher(settings: Settings) extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
+    case TransactionFromRemote(tx) =>
+      mempool = updateMempool(tx, mempool)
+      logger.info(s"${mempool.size} after updating with new tx from remote.")
     case transaction: Transaction =>
       mempool = updateMempool(transaction, mempool)
       networker ! transaction
-      logger.info(s"${mempool.size} after updating.")
+      logger.info(s"${mempool.size} after updating with new tx from local.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
       context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
