@@ -46,7 +46,3 @@ object KnownPeers {
       new InetSocketAddress(node.host, node.port) -> (0: Long, None)).toMap
     )
 }
-
-case class Peer(remoteAddress: InetSocketAddress,
-                lastMessageTime: Long,
-                key: Option[ByteString])
