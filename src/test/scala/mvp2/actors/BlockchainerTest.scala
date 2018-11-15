@@ -25,13 +25,6 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
 
   property("Blockchain before and after save should be equals") {
 
-    var map: Map[Int, (String, Int)] = Map.empty
-
-    map = map + (1 -> ("test", 100))
-    map = map + (1 -> ("test", 102))
-
-    println(map)
-
     val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
       .as[Settings]("mvp")
 
