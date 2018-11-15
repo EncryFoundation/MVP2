@@ -76,5 +76,3 @@ case class UdpSocket(conection: ActorRef) extends Message
 case class TimeDelta(delta: Long)
 
 case object GetLightChain extends Message
-
-case class TransactionFromRemote(tx: Transaction) extends Message
