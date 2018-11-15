@@ -12,8 +12,8 @@ case class Settings(port: Int,
                     downloadStateFrom: Option[String] = None,
                     apiSettings: ApiSettings,
                     ntp: NetworkTimeProviderSettings,
-                    influx: Option[InfluxSettings],
-                    testingSettings: Option[TestingSettings]
+                    influx: InfluxSettings,
+                    testingSettings: TestingSettings
                    )
 
 case class Node(host: String, port: Int)
@@ -24,4 +24,4 @@ case class InfluxSettings(host: String, port: Int, login: String, password: Stri
 
 case class NetworkTimeProviderSettings(server: String, updateEvery: FiniteDuration, timeout: FiniteDuration)
 
-case class TestingSettings(pingPong: Boolean)
+case class TestingSettings(pingPong: Boolean, messagesTime: Boolean, iteratorsSyncTime: Int)

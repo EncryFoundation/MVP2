@@ -13,8 +13,7 @@ sealed trait Block {
   def isValid(previousBlock: Block): Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${encode2Base64(previousKeyBlockHash)}, " +
-    s"currentBlockHash = ${encode2Base64(currentBlockHash)}."
+    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}."
 }
 
 final case class KeyBlock(height: Long,

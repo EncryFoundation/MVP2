@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.Props
@@ -18,7 +18,7 @@ class Networker(settings: Settings) extends CommonActor {
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
     context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
-    if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
+    if (settings.testingSettings.pingPong)
       context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
     bornKids()
   }
@@ -27,21 +27,29 @@ class Networker(settings: Settings) extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       updatePeerTime(msgFromRemote.remote)
       msgFromRemote.message match {
-        case Peers(peers, remote) =>
+        case Peers(peers, _) =>
           (peers :+ msgFromRemote.remote).foreach(addPeer)
         case Ping =>
           logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
+          context.actorSelection("/user/starter/blockchainer/networker/sender") !
+            SendToNetwork(Pong, msgFromRemote.remote)
         case Pong =>
           logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
+        case Blocks(blocks) =>
+          logger.info(s"Receive blocks: ${blocks.mkString(",")} from remote: ${msgFromRemote.remote}")
+        case SyncMessageIterators(iterators) =>
+          context.actorSelection("/user/starter/influxActor") !
+            SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
       }
-    case myPublishedBlock: KeyBlock =>
-      logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
-        s"But broadcasting yet implemented not.")
+    case keyBlock: KeyBlock =>
+      knownPeers.foreach(peer =>
+        context.actorSelection("/user/starter/blockchainer/networker/sender") !
+          SendToNetwork(Blocks(List(keyBlock)), peer.remoteAddress)
+      )
   }
 
   def addPeer(peerAddr: InetSocketAddress): Unit =
-    if (!knownPeers.map(_.remoteAddress).contains(peerAddr))
+    if (!knownPeers.map(_.remoteAddress).contains(peerAddr) && !isSelfIp(peerAddr))
       knownPeers = knownPeers :+ Peer(peerAddr, 0)
 
   def updatePeerTime(peer: InetSocketAddress): Unit =
@@ -52,12 +60,12 @@ class Networker(settings: Settings) extends CommonActor {
 
   def pingAllPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
+      context.actorSelection("/user/starter/blockchainer/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
     )
 
   def sendPeers(): Unit =
     knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") !
+      context.actorSelection("/user/starter/blockchainer/networker/sender") !
         SendToNetwork(
           Peers(
             knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
@@ -73,6 +81,10 @@ class Networker(settings: Settings) extends CommonActor {
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "sender")
   }
+
+  def isSelfIp(addr: InetSocketAddress): Boolean =
+    (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
+      (InetAddress.getLoopbackAddress.getAddress sameElements addr.getAddress.getAddress)
 }
 
 object Networker {
