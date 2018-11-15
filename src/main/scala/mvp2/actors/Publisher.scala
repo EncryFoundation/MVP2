@@ -16,26 +16,25 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")
-  //TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolSharedTime.seconds) {
     mempool = cleanMempool(mempool)
     mempool.foreach(tx => networker ! tx)
-    println(s"${mempool.size}, $mempool")
+    logger.info(s"${mempool.size}, $mempool")
   }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      println(s"${mempool.size} + before update")
+      logger.info(s"${mempool.size} + before update")
       mempool = updateMempool(transaction, mempool)
-      println(s"${mempool.size} + after update")
+      logger.info(s"${mempool.size} + after update")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
       context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
       lastKeyBlock = keyBlock
-      //mempool = checkTxsFromNewBlock(keyBlock.transactions, mempool)
+      mempool = checkTxsFromNewBlock(keyBlock.transactions, mempool)
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
       println(s"Publisher got new request and published block with height ${newBlock.height}.")
@@ -53,33 +52,25 @@ class Publisher(settings: Settings) extends CommonActor {
       KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
     println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
-    // mempool = List.empty
+    mempool = List.empty
     keyBlock
   }
 
   def updateMempool(transaction: Transaction, mempool: List[Transaction]): List[Transaction] =
     if (!mempool.contains(transaction)) {
-      //println(s"Got new transaction $transaction in mempool.")
-      val a = transaction :: mempool
-      //a.foreach(x => println(s"$x + new tx in mempool!!!!!"))
-      a
+      logger.info(s"Got new transaction: $transaction in mempool. Current mempool is: $mempool")
+      transaction :: mempool
     } else {
-      println(s"This transaction is already in mempool.")
+      logger.info(s"This transaction is already in mempool.")
       mempool
     }
 
-  def checkTxsFromNewBlock(transactions: List[Transaction], mempool: List[Transaction]): List[Transaction] = {
-    val a = mempool.diff(transactions)
-    a.foreach(println)
-    a
-  }
+  def checkTxsFromNewBlock(transactions: List[Transaction], mempool: List[Transaction]): List[Transaction] =
+    mempool.diff(transactions)
 
-  def cleanMempool(mempool: List[Transaction]): List[Transaction] = {
-    val a = mempool.filter { tx =>
+  def cleanMempool(mempool: List[Transaction]): List[Transaction] =
+    mempool.filter { tx =>
       println(s"${tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime} sdhjbvkfdbkvbfkdbv")
       tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime
     }
-    a.foreach(println)
-    a
-  }
 }

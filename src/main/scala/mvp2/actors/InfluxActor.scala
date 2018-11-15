@@ -60,6 +60,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
+        case Transactions(_) => "tx"
       }
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgFromRemote)
       msgFromRemote = newIncrements
@@ -73,7 +74,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
-        case Transactions(transactions) => "tx"
+        case Transactions(_) => "tx"
       }
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgToRemote)
       msgToRemote = newIncrements
