@@ -19,8 +19,6 @@ class InfluxActor(settings: Settings) extends CommonActor {
 
   var msgToRemote: Map[InetSocketAddress, Map[String, Int]] = Map.empty
 
-  val port: Int = settings.influx.port
-
   val influxDB: InfluxDB =
     InfluxDBFactory.connect(
       settings.influx.host,
@@ -30,7 +28,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Start influx actor")
-    influxDB.write(port, s"""startMvp value=12""")
+    influxDB.write(settings.influx.port, s"""startMvp value=12""")
     context.system.scheduler.schedule(1.seconds,
       settings.testingSettings.iteratorsSyncTime.millisecond)(syncIterators())
   }
@@ -61,7 +59,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
       }
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgFromRemote)
       msgFromRemote = newIncrements
-      influxDB.write(port,
+      influxDB.write(settings.influx.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
@@ -73,7 +71,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
       }
       val (newIncrements, i) = getMsgIncrements(remote, msg, msgToRemote)
       msgToRemote = newIncrements
-      influxDB.write(port,
+      influxDB.write(settings.influx.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
       logger.info(s"Sent data about message to influx: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>

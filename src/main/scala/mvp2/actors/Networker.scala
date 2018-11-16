@@ -60,9 +60,9 @@ class Networker(settings: Settings) extends CommonActor {
     myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
 
   def bornKids(): Unit = {
-    context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "receiver")
-    context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
+    context.actorOf(Props(classOf[UdpReceiver], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "udpReceiver")
+    context.actorOf(Props(classOf[UdpSender], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "udpSender")
   }
 }

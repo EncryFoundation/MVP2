@@ -9,7 +9,7 @@ import mvp2.data.InnerMessages.{MsgToNetwork, SendToNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
-class Sender(settings: Settings) extends Actor with StrictLogging {
+class UdpSender(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
