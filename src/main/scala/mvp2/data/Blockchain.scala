@@ -21,7 +21,7 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
     else chain.lastOption.exists(lastBlock => block.height == lastBlock.height + 1)
 
   def getMissingPart(remoteHeight: Long): Option[List[KeyBlock]] =
-    if (remoteHeight == chain.last.height) None
+    if (chain.lastOption.exists(_.height == remoteHeight)) None
     else Some(chain.drop(remoteHeight.toInt))
 }
 
