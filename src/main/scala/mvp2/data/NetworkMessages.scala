@@ -10,6 +10,7 @@ object NetworkMessages {
     val PeersId: Byte = 1
     val BlocksId: Byte = 2
     val SyncMessageIteratorsId: Byte = 3
+    val TransactionsId: Byte = 4
   }
 
   sealed trait NetworkMessage
@@ -30,5 +31,7 @@ object NetworkMessages {
   case class Blocks(chain: List[Block]) extends NetworkMessage
 
   case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
+
+  case class Transactions(transactions: List[Transaction]) extends NetworkMessage
 
 }

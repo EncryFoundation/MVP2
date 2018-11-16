@@ -4,7 +4,7 @@ import java.net.{InetAddress, InetSocketAddress}
 import akka.actor.Actor
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.data.InnerMessages._
-import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators}
+import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}

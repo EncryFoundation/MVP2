@@ -2,8 +2,9 @@ package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.InnerMessages.{Get, TimeDelta}
-import mvp2.data.{KeyBlock, Transaction}
+import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
+
 import scala.language.postfixOps
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +47,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
+      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool.mempool)
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()
