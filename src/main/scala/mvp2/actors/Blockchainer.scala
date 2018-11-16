@@ -33,8 +33,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         blockchain.chain.headOption,
         None
       )
-      println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-        s"Blockchain's height is ${blockchain.chain.size}.")
+      logger.info(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
+        s"Blockchain consist of ${blockchain.chain.size} blocks.")
       planner ! keyBlock
       publisher ! keyBlock
     case TimeDelta(delta: Long) => currentDelta = delta

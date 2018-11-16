@@ -9,8 +9,6 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 class Starter extends CommonActor {
 
-  import mvp2.messages.InfoMessage
-
   val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
     .as[Settings]("mvp")
 
@@ -20,7 +18,7 @@ class Starter extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case message: InfoMessage => logger.info(message.info)
+    case message: String => logger.info(message)
   }
 
   def bornKids(): Unit = {

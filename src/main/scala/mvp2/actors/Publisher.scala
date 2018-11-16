@@ -27,7 +27,7 @@ class Publisher(settings: Settings) extends CommonActor {
       lastKeyBlock = keyBlock
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
-      println(s"Publisher got new request and published block with height ${newBlock.height}.")
+      logger.info(s"Publisher got new request and published block with height ${newBlock.height}.")
       context.parent ! newBlock
       networker ! newBlock
     case TimeDelta(delta: Long) =>
@@ -40,7 +40,7 @@ class Publisher(settings: Settings) extends CommonActor {
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
-    println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
+    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool = List.empty
     keyBlock

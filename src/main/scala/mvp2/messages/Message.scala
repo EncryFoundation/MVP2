@@ -11,8 +11,6 @@ sealed trait Message
 
 case object Get extends Message
 
-final case class InfoMessage(info: String) extends Message
-
 final case class CurrentBlockchainInfo(height: Long = 0,
                                        lastKeyBlock: Option[KeyBlock] = None,
                                        lastMicroBlock: Option[ByteString] = None) extends Message {
