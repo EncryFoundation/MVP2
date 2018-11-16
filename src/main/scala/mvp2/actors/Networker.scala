@@ -25,7 +25,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.millisecond)(sendPeers())
     bornKids()
   }
 
@@ -44,10 +44,8 @@ class Networker(settings: Settings) extends CommonActor {
           context.actorSelection("/user/starter/influxActor") !
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
         case Transactions(transactions) =>
-          transactions.foreach { tx =>
-            logger.info(s"Got new transaction $tx from remote ${msgFromRemote.remote}")
-            publisher ! tx
-          }
+          logger.info(s"Got ${transactions.size} new transactions.")
+          transactions.foreach(tx => publisher ! tx)
       }
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => networkSender ! msg)

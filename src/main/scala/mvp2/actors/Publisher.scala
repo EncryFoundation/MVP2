@@ -18,15 +18,14 @@ class Publisher(settings: Settings) extends CommonActor {
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var mempool: Mempool = Mempool(settings)
 
-  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.seconds) {
-    mempool.checkMempoolForInvalidTxs
+  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.millisecond) {
+    mempool.checkMempoolForInvalidTxs()
     logger.info(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
   }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      val isAdded: Boolean = mempool.updateMempool(transaction)
-      if (isAdded) networker ! transaction
+      if (mempool.updateMempool(transaction)) networker ! transaction
       logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
@@ -50,7 +49,7 @@ class Publisher(settings: Settings) extends CommonActor {
       KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool.mempool)
     println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
-    mempool.cleanMempool
+    mempool.cleanMempool()
     keyBlock
   }
 }
