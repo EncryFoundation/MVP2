@@ -24,6 +24,9 @@ class Publisher(settings: Settings) extends CommonActor {
     case SyncingDone =>
       logger.info("Syncing done!")
       context.become(publishBlockEnabled)
+    case TimeDelta(delta: Long) =>
+      logger.info(s"Update delta to: $delta")
+      currentDelta = delta
   }
 
   def publishBlockEnabled: Receive = {
