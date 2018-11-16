@@ -42,9 +42,9 @@ class Networker(settings: Settings) extends CommonActor {
         case Blocks(blocks) => blocks.foreach(context.parent ! _)
         case SyncMessageIterators(iterators) =>
           influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
-        case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(networkSender ! _)
         case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromRemote.remote)
       }
+    case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(networkSender ! _)
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(networkSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) => networkSender ! SendToNetwork(Blocks(blocks), remote)
