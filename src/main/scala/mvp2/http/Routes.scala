@@ -20,6 +20,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
 import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
