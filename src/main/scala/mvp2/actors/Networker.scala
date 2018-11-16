@@ -39,7 +39,7 @@ class Networker(settings: Settings) extends CommonActor {
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
                 .updatePeerTime(msgFromRemote.remote)
           }
-        case Blocks(blocks) => blocks.foreach(context.parent ! _)
+        case Blocks(blocks) => blocks.sortWith(_.height > _.height).foreach(context.parent ! _)
         case SyncMessageIterators(iterators) =>
           influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
         case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromRemote.remote)
