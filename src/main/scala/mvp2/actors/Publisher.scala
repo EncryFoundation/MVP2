@@ -14,7 +14,7 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   override def specialBehavior: Receive = {
