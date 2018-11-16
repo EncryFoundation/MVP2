@@ -7,6 +7,9 @@ import mvp2.actors.Planner.Period
 import mvp2.data._
 import mvp2.messages._
 import mvp2.utils.Settings
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.postfixOps
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -20,6 +23,12 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
+
+  override def preStart(): Unit = {
+    if (!settings.canPublishBlocks)
+      context.system.scheduler.scheduleOnce(2 seconds)(networker !
+        OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0)))
+  }
 
   override def receiveRecover: Receive = {
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")
@@ -50,7 +59,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           blockchain.chain.lastOption,
           None
         )
-        println(s"Blockchainer apply new keyBlock with height ${block.height}. " +
+        logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
           s"Blockchain's height is ${blockchain.chain.size}.")
         planner ! block
         publisher ! block

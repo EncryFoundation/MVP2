@@ -7,7 +7,6 @@ import mvp2.messages._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
-
 import scala.concurrent.duration._
 
 class InfluxActor(settings: Settings) extends Actor with StrictLogging {

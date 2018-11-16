@@ -40,7 +40,7 @@ case object Peers {
 
 case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
 
-case class LastBlockHeight(height: Int) extends NetworkMessage
+case class LastBlockHeight(height: Long) extends NetworkMessage
 
 object NetworkMessagesId {
 
@@ -62,9 +62,11 @@ case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress)
 
 case class RemoteBlockchainMissingPart(blocks: List[KeyBlock], remote: InetSocketAddress) extends Message
 
-case class CheckRemoteBlockchain(height: Int, remote: InetSocketAddress) extends Message
+case class CheckRemoteBlockchain(height: Long, remote: InetSocketAddress) extends Message
 
 case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
+
+case class OwnBlockchainHeight(height: Long) extends Message
 
 case object SyncingDone extends Message
 
