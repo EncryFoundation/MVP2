@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.Props
 import mvp2.utils.Settings
 import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory

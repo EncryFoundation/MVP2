@@ -2,7 +2,7 @@ package mvp2.actors
 
 import java.net.InetAddress
 import akka.actor.ActorSelection
-import mvp2.messages.TimeDelta
+import mvp2.data.InnerMessages.TimeDelta
 import mvp2.utils.Settings
 import org.apache.commons.net.ntp.{NTPUDPClient, TimeInfo}
 import scala.concurrent.ExecutionContext.Implicits.global

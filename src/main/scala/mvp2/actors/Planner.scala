@@ -3,8 +3,8 @@ package mvp2.actors
 import java.security.KeyPair
 import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
 import akka.util.ByteString
+import mvp2.data.InnerMessages.{Get, NewPublisher}
 import mvp2.data.KeyBlock
-import mvp2.messages.{Get, NewPublisher}
 import mvp2.utils.{ECDSA, Settings}
 import scala.concurrent.duration._
 import scala.language.postfixOps

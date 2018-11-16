@@ -5,8 +5,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
+import mvp2.data.InnerMessages.{MessageFromRemote, MyPublicKey, PeerPublicKey, SyncMessageIteratorsFromRemote}
+import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators}
 import mvp2.data.{KeyBlock, KnownPeers}
-import mvp2.messages._
 import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {

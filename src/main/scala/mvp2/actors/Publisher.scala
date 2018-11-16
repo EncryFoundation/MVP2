@@ -1,11 +1,10 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
+import mvp2.data.InnerMessages.{Get, TimeDelta}
 import mvp2.data.{KeyBlock, Transaction}
-import mvp2.messages.Get
 import mvp2.utils.Settings
 import scala.language.postfixOps
-import mvp2.messages.TimeDelta
 import scala.util.Random
 
 class Publisher(settings: Settings) extends CommonActor {

@@ -1,7 +1,5 @@
 package mvp2.data
 
-import scala.collection.immutable.TreeMap
-
 sealed trait Chain {
   var chain: List[KeyBlock]
 
