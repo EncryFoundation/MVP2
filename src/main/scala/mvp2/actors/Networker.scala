@@ -3,7 +3,6 @@ package mvp2.actors
 import java.net.{InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
 import mvp2.data.InnerMessages.{MessageFromRemote, MyPublicKey, PeerPublicKey, SyncMessageIteratorsFromRemote}
 import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators}
@@ -20,11 +19,13 @@ class Networker(settings: Settings) extends CommonActor {
 
   val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
+  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+
   var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.millisecond)(sendPeers())
     bornKids()
   }
 
@@ -32,7 +33,7 @@ class Networker(settings: Settings) extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       msgFromRemote.message match {
         case Peers(peersFromRemote, _) =>
-          peers = peersFromRemote.foldLeft(peers){
+          peers = peersFromRemote.foldLeft(peers) {
             case (newKnownPeers, peerToAddOrUpdate) =>
               updatePeerKey(peerToAddOrUpdate._2)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
@@ -42,12 +43,13 @@ class Networker(settings: Settings) extends CommonActor {
         case SyncMessageIterators(iterators) =>
           context.actorSelection("/user/starter/influxActor") !
             SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+        case Transactions(transactions) =>
+          logger.info(s"Got ${transactions.size} new transactions.")
+          transactions.foreach(tx => publisher ! tx)
       }
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
-    case keyBlock: KeyBlock =>
-      peers.getBlockMsg(keyBlock).foreach(msg =>
-        context.actorSelection("/user/starter/blockchainer/networker/sender") ! msg
-      )
+    case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => networkSender ! msg)
+    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => networkSender ! msg)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
