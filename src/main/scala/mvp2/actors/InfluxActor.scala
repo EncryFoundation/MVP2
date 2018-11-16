@@ -52,7 +52,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case MsgFromNetwork(message, id, remote) =>
+    case MsgFromNetwork(message, remote, id) =>
       val msg: String = message match {
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"

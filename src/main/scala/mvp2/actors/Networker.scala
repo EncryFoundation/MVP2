@@ -1,11 +1,13 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+
 import akka.actor.{ActorSelection, Props}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.util.ByteString
-import mvp2.data.InnerMessages.{MessageFromRemote, MyPublicKey, PeerPublicKey, SyncMessageIteratorsFromRemote}
+import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
 import mvp2.utils.{ECDSA, Settings}
@@ -31,19 +33,19 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case msgFromRemote: MessageFromRemote =>
-      msgFromRemote.message match {
+    case msgFromNetwork: MsgFromNetwork =>
+      msgFromNetwork.message match {
         case Peers(peersFromRemote, _) =>
           peers = peersFromRemote.foldLeft(peers) {
             case (newKnownPeers, peerToAddOrUpdate) =>
               updatePeerKey(peerToAddOrUpdate._2)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
-                .updatePeerTime(msgFromRemote.remote)
+                .updatePeerTime(msgFromNetwork.remote)
           }
         case Blocks(_) =>
         case SyncMessageIterators(iterators) =>
           context.actorSelection("/user/starter/influxActor") !
-            SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
+            SyncMessageIteratorsFromRemote(iterators, msgFromNetwork.remote)
         case Transactions(transactions) =>
           logger.info(s"Got ${transactions.size} new transactions.")
           transactions.foreach(tx => publisher ! tx)

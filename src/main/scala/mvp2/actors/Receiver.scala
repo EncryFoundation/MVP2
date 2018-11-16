@@ -7,7 +7,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
-import mvp2.data.InnerMessages.{MessageFromRemote, MsgFromNetwork, UdpSocket}
+import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
@@ -38,12 +38,12 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Received(data: ByteString, remote) =>
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
-        context.parent ! MessageFromRemote(message, remote)
+        context.parent ! MsgFromNetwork(message, remote)
         context.actorSelection("/user/starter/influxActor") !
           MsgFromNetwork(
             message,
-            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString),
-            remote
+            remote,
+            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString)
           )
       }
     case Udp.Unbind =>

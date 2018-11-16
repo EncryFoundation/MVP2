@@ -2,8 +2,7 @@ package mvp2.actors
 
 import java.security.KeyPair
 import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
-import akka.util.ByteString
-import mvp2.data.InnerMessages.{Get, NewPublisher}
+import mvp2.data.InnerMessages.Get
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, Settings}
 import scala.concurrent.duration._
@@ -17,7 +16,6 @@ class Planner(settings: Settings) extends CommonActor {
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   var nextTurn: Period = Period(KeyBlock(), settings)
-  var publishersPubKeys: Set[ByteString] = Set.empty
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   val myKeys: KeyPair = ECDSA.createKeyPair
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
@@ -27,10 +25,6 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Planner received new keyBlock with height: ${keyBlock.height}.")
       nextTurn = Period(keyBlock, settings)
       context.parent ! nextTurn
-    case newPublisher: NewPublisher =>
-      logger.info(s"Planner knows about new poblisher in the network (${newPublisher.publicKey}) " +
-        s"and adds him into next schedule.")
-      publishersPubKeys += newPublisher.publicKey
     case Tick if nextTurn.timeToPublish =>
       publisher ! Get
       logger.info("Planner sent publisher request: time to publish!")
