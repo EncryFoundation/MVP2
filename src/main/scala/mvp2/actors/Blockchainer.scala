@@ -25,11 +25,9 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
 
   override def preStart(): Unit =
-    if (!settings.canPublishBlocks)
+    if (!settings.newBlockchain)
       context.system.scheduler.scheduleOnce(2 seconds)(networker !
         OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0)))
-     else publisher ! SyncingDone
-
 
   override def receiveRecover: Receive = {
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")

@@ -17,13 +17,16 @@ class Publisher(settings: Settings) extends CommonActor {
   //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
+  override def preStart(): Unit =
+    if (settings.newBlockchain) context.become(publishBlockEnabled)
+
   override def specialBehavior: Receive = {
     case SyncingDone =>
       logger.info("Syncing done!")
-      context.become(syncingDone)
+      context.become(publishBlockEnabled)
   }
 
-  def syncingDone: Receive = {
+  def publishBlockEnabled: Receive = {
     case transaction: Transaction =>
       logger.info(s"Publisher received tx: $transaction and put it to the mempool.")
       mempool = transaction :: mempool
