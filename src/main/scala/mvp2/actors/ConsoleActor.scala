@@ -1,9 +1,9 @@
 package mvp2.actors
 
 import akka.actor.{Actor, ActorSelection}
-import mvp2.messages.{CurrentBlockchainInfo, Get}
 import akka.pattern.ask
 import akka.util.Timeout
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

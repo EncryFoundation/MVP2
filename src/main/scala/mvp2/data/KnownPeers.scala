@@ -2,7 +2,8 @@ package mvp2.data
 
 import java.net.{InetAddress, InetSocketAddress}
 import akka.util.ByteString
-import mvp2.messages.{Blocks, Peers, SendToNetwork, Transactions}
+import mvp2.data.InnerMessages.SendToNetwork
+import mvp2.data.NetworkMessages.{Blocks, Peers, Transactions}
 import mvp2.utils.Settings
 
 case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteString]],

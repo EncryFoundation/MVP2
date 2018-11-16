@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import java.security.{KeyPair, PublicKey}
-import mvp2.messages.{Get, MyPublicKey, PeerPublicKey}
+import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.utils.{ECDSA, EncodingUtils}
 
 class KeyKeeper extends CommonActor {

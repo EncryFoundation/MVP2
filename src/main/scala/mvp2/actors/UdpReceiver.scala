@@ -7,14 +7,15 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
-import mvp2.messages._
+import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
+import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
-class Receiver(settings: Settings) extends Actor with StrictLogging {
+class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
-  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
 
   val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
@@ -29,7 +30,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
       context.become(readCycle(sender))
-      networkSender ! UdpSocket(sender)
+      udpSender ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
 
@@ -37,12 +38,12 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Received(data: ByteString, remote) =>
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
-        context.parent ! MessageFromRemote(message, remote)
+        context.parent ! MsgFromNetwork(message, remote)
         context.actorSelection("/user/starter/influxActor") !
           MsgFromNetwork(
             message,
-            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString),
-            remote
+            remote,
+            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString)
           )
       }
     case Udp.Unbind =>

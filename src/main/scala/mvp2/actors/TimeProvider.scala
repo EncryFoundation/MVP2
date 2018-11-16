@@ -2,7 +2,7 @@ package mvp2.actors
 
 import java.net.InetAddress
 import akka.actor.ActorSelection
-import mvp2.messages.TimeDelta
+import mvp2.data.InnerMessages.TimeDelta
 import mvp2.utils.Settings
 import org.apache.commons.net.ntp.{NTPUDPClient, TimeInfo}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,7 +30,7 @@ class TimeProvider(settings: Settings) extends CommonActor {
       info.getOffset
     }.recover {
       case e: Throwable =>
-        logger.error(s"Err during updating delta: $e")
+        logger.error(s"Error during updating time-delta: $e.")
         throw e
     }.foreach(delta => actors.foreach(_ ! TimeDelta(delta)))
   )

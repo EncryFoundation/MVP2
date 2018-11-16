@@ -28,7 +28,7 @@ class TestTxGenerator extends CommonActor {
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      logger.info(s"TestTxGenerator created tx: $transaction.")
+      logger.info(s"TestTxGenerator created tx with publicKey: ${transaction.publicKey}.")
       context.parent ! transaction
   }
 
