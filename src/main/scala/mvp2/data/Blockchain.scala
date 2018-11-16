@@ -14,6 +14,8 @@ sealed trait Chain {
 
 final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
 
+  val maxHeight: Long = chain.lastOption.map(_.height).getOrElse(-1)
+
   def + (block: KeyBlock): Blockchain = this.copy(chain :+ block)
 
   def isApplicable(block: KeyBlock): Boolean =
