@@ -5,14 +5,16 @@ import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import mvp2.data.{LightKeyBlock, Transaction}
 import mvp2.messages.{CurrentBlockchainInfo, Get, GetLightChain}
-import mvp2.utils.Settings
+import mvp2.utils.{EncodingUtils, Settings}
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import io.circe.Json
+
 import scala.concurrent.Future
 import io.circe.generic.auto._
 import io.circe.syntax._
+
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -24,7 +26,7 @@ import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
-  case class ApiInfo(height: Long = 0, keyBlock: Option[ByteString], microBlock: Option[ByteString])
+  case class ApiInfo(height: Long = 0, keyBlock: Option[String], microBlock: Option[ByteString])
 
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
   implicit val ec: ExecutionContextExecutor = context.dispatcher
@@ -39,7 +41,11 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
 
   def apiInfo: Route = pathPrefix("info")(
     toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(x =>
-      ApiInfo(x.height, x.lastKeyBlock.map(block => block.currentBlockHash), x.lastMicroBlock).asJson)
+      ApiInfo(
+        x.height,
+        x.lastKeyBlock.map(block => EncodingUtils.encode2Base16(block.currentBlockHash)),
+        x.lastMicroBlock).asJson
+      )
     )
   )
 
