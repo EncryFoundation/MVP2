@@ -67,6 +67,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         if (blockCache.isEmpty) publisher ! SyncingDone
         applyApplicableBlock
       case None =>
+        networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0))
         logger.info("There is no applicable block in blocks cache")
     }
   }
