@@ -5,14 +5,15 @@ import akka.testkit.TestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
 import mvp2.actors.DummyTestBlockGenerator._
 import mvp2.data.{Block, KeyBlock, MicroBlock}
-import mvp2.messages.Get
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.data.InnerMessages.Get
 import mvp2.utils.Settings
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
