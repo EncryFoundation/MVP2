@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
-import mvp2.data.{KeyBlock, Transaction}
+import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.messages.{Get, TimeDelta}
 import mvp2.utils.Settings
 import scala.language.postfixOps
@@ -11,27 +11,31 @@ import scala.concurrent.duration._
 
 class Publisher(settings: Settings) extends CommonActor {
 
-  var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")
+  //TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
+  var mempool: Mempool = Mempool(settings)
 
   context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.seconds) {
-    mempool = cleanMempool(mempool)
-    logger.info(s"${mempool.size}, $mempool")
+    mempool.checkMempoolForInvalidTxs
+    logger.info(s"${mempool.mempool.size}")
   }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      mempool = updateMempool(transaction, mempool)
-      logger.info(s"${mempool.size} after updating with new tx from local.")
+      println(s"mempool before update by tx ${mempool.mempool.size}")
+      val isAdded: Boolean = mempool.updateMempool(transaction)
+      println(s"mempool after update by tx ${mempool.mempool.size}")
+      if (isAdded) networker ! transaction
+      logger.info(s"${mempool.mempool.size} after updating with new tx from local.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
       networker ! keyBlock
       lastKeyBlock = keyBlock
-      mempool = checkTxsFromNewBlock(keyBlock.transactions, mempool)
+      mempool.removeUsedTxs(keyBlock.transactions)
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
       println(s"Publisher got new request and published block with height ${newBlock.height}.")
@@ -46,26 +50,11 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
+      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool.mempool)
     println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
-    mempool = List.empty
+    mempool.cleanMempool
+    println(s"mempool should be clean ${mempool.mempool == List()}")
     keyBlock
   }
-
-  def updateMempool(transaction: Transaction, mempool: List[Transaction]): List[Transaction] =
-    if (!mempool.contains(transaction)) {
-      logger.info(s"Got new transaction: $transaction in mempool. Current mempool is: $mempool")
-      networker ! transaction
-      transaction :: mempool
-    } else {
-      logger.info(s"This transaction is already in mempool.")
-      mempool
-    }
-
-  def checkTxsFromNewBlock(transactions: List[Transaction], mempool: List[Transaction]): List[Transaction] =
-    mempool.diff(transactions)
-
-  def cleanMempool(mempool: List[Transaction]): List[Transaction] =
-    mempool.filter(tx => tx.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime)
 }
