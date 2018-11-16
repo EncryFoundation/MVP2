@@ -8,7 +8,7 @@ case class Mempool(settings: Settings, var mempool: List[Transaction] = List()) 
 
   def checkMempoolForInvalidTxs: Unit =
     mempool = mempool.filter(transaction =>
-      transaction.timestamp > System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime
+      transaction.timestamp < System.currentTimeMillis() - settings.mempoolSetting.transactionsValidTime
     )
 
   def removeUsedTxs(usedTxs: List[Transaction]): Unit = mempool = mempool.diff(usedTxs)
