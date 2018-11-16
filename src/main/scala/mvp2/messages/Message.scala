@@ -45,13 +45,10 @@ object NetworkMessagesId {
   val PeersId: Byte = 1
   val BlocksId: Byte = 2
   val SyncMessageIteratorsId: Byte = 3
+  val TransactionsId: Byte = 4
 }
+
 case class Transactions(transactions: List[Transaction]) extends NetworkMessage
-
-object Transactions {
-
-  val typeId: Byte = 6
-}
 
 case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
 

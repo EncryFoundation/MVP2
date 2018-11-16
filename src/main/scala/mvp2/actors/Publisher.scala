@@ -20,12 +20,14 @@ class Publisher(settings: Settings) extends CommonActor {
 
   context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.seconds) {
     mempool.checkMempoolForInvalidTxs
-    logger.info(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
+    println(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
   }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
+      println(s"Mempool befor ${mempool.mempool.size}")
       val isAdded: Boolean = mempool.updateMempool(transaction)
+      println(s"Mempool after ${mempool.mempool.size}")
       if (isAdded) networker ! transaction
       logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
     case keyBlock: KeyBlock =>

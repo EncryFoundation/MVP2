@@ -3,12 +3,9 @@ package mvp2.actors
 import java.net.{InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
-import mvp2.data.{KeyBlock, KnownPeers}
 import akka.actor.{ActorSelection, Props}
-import mvp2.actors.Networker.Peer
-import mvp2.data.{KeyBlock, Transaction}
+import mvp2.data.{KeyBlock, Transaction, KnownPeers}
 import mvp2.messages._
 import mvp2.utils.{ECDSA, Settings}
 
@@ -22,6 +19,8 @@ class Networker(settings: Settings) extends CommonActor {
 
   val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
 
+  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+
   var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
@@ -34,7 +33,7 @@ class Networker(settings: Settings) extends CommonActor {
     case msgFromRemote: MessageFromRemote =>
       msgFromRemote.message match {
         case Peers(peersFromRemote, _) =>
-          peers = peersFromRemote.foldLeft(peers){
+          peers = peersFromRemote.foldLeft(peers) {
             case (newKnownPeers, peerToAddOrUpdate) =>
               updatePeerKey(peerToAddOrUpdate._2)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
@@ -51,13 +50,8 @@ class Networker(settings: Settings) extends CommonActor {
           }
       }
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
-    case keyBlock: KeyBlock =>
-      peers.getBlockMsg(keyBlock).foreach(msg =>
-        context.actorSelection("/user/starter/blockchainer/networker/sender") ! msg
-      )
-    case transaction: Transaction => knownPeers.foreach(peer =>
-      senderActor ! SendToNetwork(Transactions(List(transaction)), peer.remoteAddress)
-    )
+    case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => networkSender ! msg)
+    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => networkSender ! msg)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =

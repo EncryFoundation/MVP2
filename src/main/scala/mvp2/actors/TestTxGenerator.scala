@@ -16,7 +16,7 @@ class TestTxGenerator extends CommonActor {
 
   val clients: Seq[(Int, KeyPair)] = for (i <- 1 to 5) yield (i, ECDSA.createKeyPair)
 
-  context.system.scheduler.schedule(1 second, 5 seconds) {
+  context.system.scheduler.schedule(1 second, 1 seconds) {
     val randomData: ByteString = ByteString(randomizer.nextString(100))
     val client: KeyPair = clients.find(_._1 == randomizer.nextInt(5) + 1).getOrElse((0, ECDSA.createKeyPair))._2
     val signature: ByteString = ECDSA.sign(client.getPrivate, randomData)
