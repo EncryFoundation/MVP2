@@ -17,7 +17,8 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
   def + (block: KeyBlock): Blockchain = this.copy(chain :+ block)
 
   def isApplicable(block: KeyBlock): Boolean =
-    chain.lastOption.forall(lastBlock => block.height == lastBlock.height + 1)
+    if (chain.isEmpty) true
+    else chain.lastOption.exists(lastBlock => block.height == lastBlock.height + 1)
 
   def getMissingPart(remoteHeight: Long): Option[List[KeyBlock]] =
     if (remoteHeight == chain.last.height) None
