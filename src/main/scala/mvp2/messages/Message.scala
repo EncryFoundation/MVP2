@@ -22,9 +22,14 @@ final case class CurrentBlockchainInfo(height: Long = 0,
 
 final case class NewPublisher(publicKey: ByteString) extends Message
 
-sealed trait NetworkMessage extends Message
+sealed trait NetworkMessage extends Message {
+
+  val name: String
+}
 
 case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage {
+
+  override val name: String = "peers"
 
   override def toString: String =
     peers.map(peerInfo => s"${peerInfo._1} -> ${EncodingUtils.encode2Base16(peerInfo._2)}").mkString(",")
@@ -38,9 +43,15 @@ case object Peers {
     Peers(peers.filter(_._1 != remote) + myNode, remote)
 }
 
-case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
+case class Blocks(chain: List[KeyBlock]) extends NetworkMessage {
 
-case class LastBlockHeight(height: Long) extends NetworkMessage
+  override val name: String = "blocks"
+}
+
+case class LastBlockHeight(height: Long) extends NetworkMessage {
+
+  override val name: String = "lastBlockHeight"
+}
 
 object NetworkMessagesId {
 
@@ -50,7 +61,10 @@ object NetworkMessagesId {
   val LastBlockHeightId: Byte = 4
 }
 
-case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
+case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage {
+
+  override val name: String = "iterSync"
+}
 
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
