@@ -13,7 +13,6 @@ import mvp2.data.InnerMessages.Get
 import mvp2.utils.Settings
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
