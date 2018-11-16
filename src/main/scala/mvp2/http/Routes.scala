@@ -26,7 +26,7 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
 
   case class ApiInfo(height: Long = 0, keyBlock: Option[ByteString], microBlock: Option[ByteString])
 
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
   implicit val ec: ExecutionContextExecutor = context.dispatcher
 
   val route: Route = getTxs ~ apiInfo ~ chainInfo

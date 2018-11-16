@@ -4,8 +4,8 @@ import java.net.InetSocketAddress
 import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
-import mvp2.data.{Block, KeyBlock}
 import mvp2.utils.EncodingUtils
+import mvp2.data.{Block, KeyBlock, Transaction}
 
 sealed trait Message
 
@@ -45,7 +45,10 @@ object NetworkMessagesId {
   val PeersId: Byte = 1
   val BlocksId: Byte = 2
   val SyncMessageIteratorsId: Byte = 3
+  val TransactionsId: Byte = 4
 }
+
+case class Transactions(transactions: List[Transaction]) extends NetworkMessage
 
 case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
 

@@ -14,7 +14,7 @@ class ConsoleActor(settings: Settings) extends Actor {
   val promt: String = "$> "
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
 
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
 
   override def preStart(): Unit = {
     scala.io.Source.stdin.getLines().foreach {

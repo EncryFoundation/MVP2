@@ -1,30 +1,37 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
-import mvp2.data.{KeyBlock, Transaction}
-import mvp2.messages.Get
+import mvp2.data.{KeyBlock, Mempool, Transaction}
+import mvp2.messages.{Get, TimeDelta}
 import mvp2.utils.Settings
 import scala.language.postfixOps
-import mvp2.messages.TimeDelta
 import scala.util.Random
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class Publisher(settings: Settings) extends CommonActor {
 
-  var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
   val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
+  var mempool: Mempool = Mempool(settings)
+
+  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.millisecond) {
+    mempool.checkMempoolForInvalidTxs()
+    logger.info(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
+  }
 
   override def specialBehavior: Receive = {
     case transaction: Transaction =>
-      logger.info(s"Publisher received tx: $transaction and put it to the mempool.")
-      mempool = transaction :: mempool
+      if (mempool.updateMempool(transaction)) networker ! transaction
+      logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
     case keyBlock: KeyBlock =>
       logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
-      context.actorSelection("/user/starter/blockchainer/networker") ! keyBlock
+      networker ! keyBlock
       lastKeyBlock = keyBlock
+      mempool.removeUsedTxs(keyBlock.transactions)
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
       println(s"Publisher got new request and published block with height ${newBlock.height}.")
@@ -39,10 +46,10 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool)
+      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool.mempool)
     println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
-    mempool = List.empty
+    mempool.cleanMempool()
     keyBlock
   }
 }

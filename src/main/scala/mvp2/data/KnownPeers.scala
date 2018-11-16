@@ -2,7 +2,7 @@ package mvp2.data
 
 import java.net.{InetAddress, InetSocketAddress}
 import akka.util.ByteString
-import mvp2.messages.{Blocks, Peers, SendToNetwork}
+import mvp2.messages.{Blocks, Peers, SendToNetwork, Transactions}
 import mvp2.utils.Settings
 
 case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteString]],
@@ -30,6 +30,9 @@ case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteStrin
 
   def getBlockMsg(block: KeyBlock): Seq[SendToNetwork] =
     peersPublicKeyMap.map(peer => SendToNetwork(Blocks(List(block)), peer._1)).toSeq
+
+  def getTransactionMsg(transaction: Transaction): Seq[SendToNetwork] =
+    peersPublicKeyMap.map(peer => SendToNetwork(Transactions(List(transaction)), peer._1)).toSeq
 
   def isSelfIp(addr: InetSocketAddress): Boolean =
     (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
