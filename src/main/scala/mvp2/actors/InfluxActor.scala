@@ -1,8 +1,6 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-import akka.actor.Actor
-import com.typesafe.scalalogging.StrictLogging
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +9,7 @@ import org.influxdb.{InfluxDB, InfluxDBFactory}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class InfluxActor(settings: Settings) extends Actor with StrictLogging {
+class InfluxActor(settings: Settings) extends CommonActor {
 
   val myNodeAddress: String = InetAddress.getLocalHost.getHostAddress
 
@@ -53,7 +51,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
     }
   }
 
-  override def receive: Receive = {
+  override def specialBehavior: Receive = {
     case MsgFromNetwork(message, id, remote) =>
       val msg: String = message match {
         case Peers(_, _) => "peers"

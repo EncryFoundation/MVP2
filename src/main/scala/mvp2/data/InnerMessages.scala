@@ -16,7 +16,8 @@ object InnerMessages {
                                          lastKeyBlock: Option[KeyBlock] = None,
                                          lastMicroBlock: Option[ByteString] = None) extends InnerMessage {
 
-    override def toString: String = s"Height: $height, last keyBlock: $lastKeyBlock, last microBlock: $lastMicroBlock."
+    override def toString: String = s"Height: $height, last keyBlock: ${lastKeyBlock.getOrElse("None")}, " +
+      s"last microBlock: $lastMicroBlock."
   }
 
   final case class NewPublisher(publicKey: ByteString) extends InnerMessage
