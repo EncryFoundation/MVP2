@@ -18,9 +18,9 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
 
   def isApplicable(block: KeyBlock): Boolean = block.height == chain.head.height + 1
 
-  def getMissingPart(remoteHeight: Int): Option[List[KeyBlock]] =
+  def getMissingPart(remoteHeight: Long): Option[List[KeyBlock]] =
     if (remoteHeight == chain.last.height) None
-    else Some(chain.drop(remoteHeight))
+    else Some(chain.drop(remoteHeight.toInt))
 }
 
 final case class Appendix(override var chain: TreeMap[Long, Block]) extends Chain {

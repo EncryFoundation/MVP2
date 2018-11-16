@@ -1,6 +1,7 @@
 package mvp2.data
 
 import java.net.{InetAddress, InetSocketAddress}
+
 import akka.util.ByteString
 import mvp2.messages.{Blocks, LastBlockHeight, Peers, SendToNetwork}
 import mvp2.utils.Settings
