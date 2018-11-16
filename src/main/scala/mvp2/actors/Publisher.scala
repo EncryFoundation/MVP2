@@ -2,10 +2,10 @@ package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.{KeyBlock, Transaction}
-import mvp2.messages.Get
+import mvp2.messages.{Get, SyncingDone, TimeDelta}
 import mvp2.utils.Settings
+
 import scala.language.postfixOps
-import mvp2.messages.TimeDelta
 import scala.util.Random
 
 class Publisher(settings: Settings) extends CommonActor {
@@ -18,6 +18,12 @@ class Publisher(settings: Settings) extends CommonActor {
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   override def specialBehavior: Receive = {
+    case SyncingDone =>
+      logger.info("Syncing done!")
+      context.become(syncingDone)
+  }
+
+  def syncingDone: Receive = {
     case transaction: Transaction =>
       logger.info(s"Publisher received tx: $transaction and put it to the mempool.")
       mempool = transaction :: mempool

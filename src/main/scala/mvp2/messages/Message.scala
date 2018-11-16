@@ -66,6 +66,8 @@ case class CheckRemoteBlockchain(height: Int, remote: InetSocketAddress) extends
 
 case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 
+case object SyncingDone extends Message
+
 case class UdpSocket(conection: ActorRef) extends Message
 
 case class PeerPublicKey(peerPublicKey: PublicKey) extends Message

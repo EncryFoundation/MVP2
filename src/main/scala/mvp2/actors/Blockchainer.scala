@@ -26,22 +26,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   }
 
   override def receiveCommand: Receive = {
-    case keyBlock: KeyBlock =>
-      (if (!blockchain.isApplicable(keyBlock)) {
-        blockCache += keyBlock
-        blockCache.getApplicableBlock(blockchain)
-      } else Some(keyBlock)).foreach{ block =>
-          blockchain += block
-          informator ! CurrentBlockchainInfo(
-            blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
-            blockchain.chain.lastOption,
-            None
-          )
-          println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-            s"Blockchain's height is ${blockchain.chain.size}.")
-          planner ! block
-          publisher ! block
-      }
+    case keyBlock: KeyBlock => blockCache += keyBlock
+      applyApplicableBlock
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
@@ -52,6 +38,27 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         networker ! RemoteBlockchainMissingPart(blocks, remote)
       )
     case _ => logger.info("Got something strange at Blockchainer!")
+  }
+
+  def applyApplicableBlock: Unit = {
+    blockCache.getApplicableBlock(blockchain) match {
+      case Some(block) =>
+        blockchain += block
+        blockCache -= block
+        informator ! CurrentBlockchainInfo(
+          blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
+          blockchain.chain.lastOption,
+          None
+        )
+        println(s"Blockchainer apply new keyBlock with height ${block.height}. " +
+          s"Blockchain's height is ${blockchain.chain.size}.")
+        planner ! block
+        publisher ! block
+        if (blockCache.isEmpty) publisher ! SyncingDone
+        applyApplicableBlock
+      case None =>
+        logger.info("There is no applicable block in blocks cache")
+    }
   }
 
   override def persistenceId: String = "blockchainer"

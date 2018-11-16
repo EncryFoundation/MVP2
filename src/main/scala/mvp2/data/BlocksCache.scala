@@ -2,6 +2,8 @@ package mvp2.data
 
 case class BlocksCache(blocks: List[KeyBlock] = List.empty) {
 
+  def isEmpty: Boolean = blocks.isEmpty
+
   def + (block: KeyBlock): BlocksCache = this.copy((blocks :+ block).sortWith(_.height > _.height))
 
   def - (block: KeyBlock): BlocksCache = this.copy(blocks.filter(_.height == block.height))
