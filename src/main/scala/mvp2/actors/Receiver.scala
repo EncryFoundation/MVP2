@@ -15,7 +15,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
-  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
 
   val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
@@ -30,7 +30,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
       context.become(readCycle(sender))
-      networkSender ! UdpSocket(sender)
+      udpSender ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
 

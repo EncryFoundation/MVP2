@@ -87,7 +87,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
 
   def syncIterators(): Unit =
     msgToRemote.foreach {
-      case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/sender") !
+      case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/udpSender") !
         SendToNetwork(SyncMessageIterators(iterators), peer)
     }
 

@@ -1,7 +1,5 @@
 package mvp2.utils
 
-import scala.concurrent.duration.FiniteDuration
-
 case class Settings(port: Int,
                     otherNodes: List[Node],
                     heartbeat: Int,

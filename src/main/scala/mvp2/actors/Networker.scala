@@ -1,9 +1,7 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-
 import akka.actor.{ActorSelection, Props}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.util.ByteString
@@ -20,7 +18,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   val keyKeeper: ActorSelection = context.actorSelection("/user/starter/blockchainer/planner/keyKeeper")
 
-  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
 
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
@@ -51,20 +49,20 @@ class Networker(settings: Settings) extends CommonActor {
           transactions.foreach(tx => publisher ! tx)
       }
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
-    case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => networkSender ! msg)
-    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => networkSender ! msg)
+    case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => udpSender ! msg)
+    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
     if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
   def sendPeers(): Unit =
-    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => networkSender ! msg))
+    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
 
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
       .withMailbox("net-mailbox"), "receiver")
     context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "sender")
+      .withMailbox("net-mailbox"), "udpSender")
   }
 }
