@@ -32,8 +32,8 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
   override def preStart(): Unit = {
     logger.info("Start influx actor")
     influxDB.write(port, s"""startMvp value=12""")
-    context.system.scheduler.schedule(1 seconds,
-      settings.testingSettings.iteratorsSyncTime seconds)(syncIterators())
+    context.system.scheduler.schedule(1.seconds,
+      settings.testingSettings.iteratorsSyncTime.millisecond)(syncIterators())
   }
 
   def getMsgIncrements(remote: InetSocketAddress,
