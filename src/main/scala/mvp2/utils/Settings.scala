@@ -24,6 +24,6 @@ case class InfluxSettings(host: String, port: Int, login: String, password: Stri
 
 case class NetworkTimeProviderSettings(server: String, updateEvery: FiniteDuration, timeout: FiniteDuration)
 
-case class TestingSettings(pingPong: Boolean, messagesTime: Boolean, iteratorsSyncTime: Int)
-
 case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)
+
+case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)

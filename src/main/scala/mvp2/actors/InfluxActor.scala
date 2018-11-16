@@ -55,8 +55,6 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
   override def receive: Receive = {
     case MsgFromNetwork(message, id, remote) =>
       val msg: String = message match {
-        case Ping => "ping"
-        case Pong => "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
@@ -69,8 +67,6 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
       val msg: String = message match {
-        case Ping => "ping"
-        case Pong => "pong"
         case Peers(_, _) => "peers"
         case Blocks(_) => "blocks"
         case SyncMessageIterators(_) => "iterSync"
@@ -80,7 +76,7 @@ class InfluxActor(settings: Settings) extends Actor with StrictLogging {
       msgToRemote = newIncrements
       influxDB.write(port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
-      logger.info(s"Send: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
+      logger.info(s"Sent data about message to influx: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
       logger.info(s"Sync iterators from $remote")
       msgFromRemote = msgFromRemote - remote + (remote -> iterators)

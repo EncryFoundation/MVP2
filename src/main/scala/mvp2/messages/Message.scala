@@ -1,9 +1,10 @@
 package mvp2.messages
 
 import java.net.InetSocketAddress
-
+import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
+import mvp2.utils.EncodingUtils
 import mvp2.data.{Block, KeyBlock, Transaction}
 
 sealed trait Message
@@ -23,43 +24,36 @@ final case class NewPublisher(publicKey: ByteString) extends Message
 
 sealed trait NetworkMessage extends Message
 
-case object Ping extends NetworkMessage {
+case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage {
 
-  val typeId: Byte = 1: Byte
+  override def toString: String =
+    peers.map(peerInfo => s"${peerInfo._1} -> ${EncodingUtils.encode2Base16(peerInfo._2)}").mkString(",")
 }
-
-case object Pong extends NetworkMessage {
-
-  val typeId: Byte = 2: Byte
-}
-
-case class Peers(peers: List[InetSocketAddress], remote: InetSocketAddress) extends NetworkMessage
 
 case object Peers {
 
-  val typeId: Byte = 3: Byte
+  def apply(peers: Map[InetSocketAddress, ByteString],
+            myNode: (InetSocketAddress, ByteString),
+            remote: InetSocketAddress): Peers =
+    Peers(peers.filter(_._1 != remote) + myNode, remote)
 }
 
 case class Blocks(chain: List[Block]) extends NetworkMessage
 
-object Blocks {
+object NetworkMessagesId {
 
-  val typeId: Byte = 4: Byte
+  val PeersId: Byte = 1
+  val BlocksId: Byte = 2
+  val SyncMessageIteratorsId: Byte = 3
 }
-
-case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
-
-object SyncMessageIterators {
-
-  val typeId: Byte = 5: Byte
-}
-
 case class Transactions(transactions: List[Transaction]) extends NetworkMessage
 
 object Transactions {
 
   val typeId: Byte = 6
 }
+
+case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
 
 case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends Message
 
@@ -72,6 +66,10 @@ case class MessageFromRemote(message: NetworkMessage, remote: InetSocketAddress)
 case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends Message
 
 case class UdpSocket(conection: ActorRef) extends Message
+
+case class PeerPublicKey(peerPublicKey: PublicKey) extends Message
+
+case class MyPublicKey(publicKey: PublicKey) extends Message
 
 case class TimeDelta(delta: Long)
 
