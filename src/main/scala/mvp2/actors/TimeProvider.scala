@@ -13,7 +13,7 @@ import scala.util.Try
 class TimeProvider(settings: Settings) extends CommonActor {
 
   val client: NTPUDPClient = new NTPUDPClient()
-  client.setDefaultTimeout(settings.ntp.timeout.toMillis.toInt)
+  client.setDefaultTimeout(settings.ntp.timeout)
 
   val actors: Seq[ActorSelection] = Seq(
     context.actorSelection("/user/starter/blockchainer"),
@@ -21,7 +21,7 @@ class TimeProvider(settings: Settings) extends CommonActor {
     context.actorSelection("/user/starter/influxActor")
   )
 
-  context.system.scheduler.schedule(1 seconds, settings.ntp.updateEvery)(
+  context.system.scheduler.schedule(1 seconds, settings.ntp.updateEvery.millisecond)(
     Try {
       client.open()
       val info: TimeInfo = client.getTime(InetAddress.getByName(settings.ntp.server))

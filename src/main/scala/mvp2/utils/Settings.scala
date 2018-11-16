@@ -22,7 +22,7 @@ case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
 
 case class InfluxSettings(host: String, port: Int, login: String, password: String)
 
-case class NetworkTimeProviderSettings(server: String, updateEvery: FiniteDuration, timeout: FiniteDuration)
+case class NetworkTimeProviderSettings(server: String, updateEvery: Int, timeout: Int)
 
 case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)
 
