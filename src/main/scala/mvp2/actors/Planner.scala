@@ -5,6 +5,7 @@ import akka.actor.{ActorSelection, Cancellable}
 import mvp2.data.InnerMessages.{Get, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -63,8 +64,11 @@ object Planner {
     }
   }
 
-  case class Epoch(lastKeyBlock: KeyBlock) {
-    val epochMultiplier: Int = 2
+  case class Epoch(lastKeyBlock: KeyBlock, publicKeys: List[PublicKey], multiplier: Int = 1) {
+    val startingHeight: Long = lastKeyBlock.height + 1
+    val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
+    var schedule: immutable.Seq[(Long, PublicKey)] =
+      (for(i <- startingHeight until startingHeight + numberOfBlocksInEpoch) yield i).zip(publicKeys)
   }
 
   case object Tick
