@@ -20,7 +20,7 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) extends Cha
 
   def getMissingPart(remoteHeight: Long): Option[List[KeyBlock]] =
     if (chain.lastOption.exists(_.height == remoteHeight)) None
-    else Some(chain.drop(remoteHeight.toInt))
+    else Some(chain.drop(remoteHeight.toInt + 1))
 }
 
 final case class BlocksCache(var chain: List[KeyBlock] = List.empty) extends Chain {

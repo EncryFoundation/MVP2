@@ -29,7 +29,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   override def preStart(): Unit =
     if (settings.otherNodes.nonEmpty)
       context.system.scheduler.scheduleOnce(2 seconds)(networker !
-        OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0)))
+        OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(-1)))
 
   override def receiveRecover: Receive = {
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")
