@@ -5,7 +5,6 @@ import akka.actor.{ActorSelection, Cancellable}
 import mvp2.data.InnerMessages.{Get, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
-import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,11 +63,26 @@ object Planner {
     }
   }
 
-  case class Epoch(lastKeyBlock: KeyBlock, publicKeys: List[PublicKey], multiplier: Int = 1) {
-    val startingHeight: Long = lastKeyBlock.height + 1
-    val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
-    var schedule: immutable.Seq[(Long, PublicKey)] =
-      (for(i <- startingHeight until startingHeight + numberOfBlocksInEpoch) yield i).zip(publicKeys)
+  case class Epoch(schedule: Map[Long, String]) {
+
+    def nextBlock: (Long, String) = schedule.head
+
+    def delete: Epoch = this.copy(schedule - schedule.head._1)
+
+    def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
+
+    def isDone: Boolean = this.schedule.isEmpty
+  }
+
+  object Epoch {
+    def apply(lastKeyBlock: KeyBlock, publicKeys: List[String], multiplier: Int = 1): Epoch = {
+      val startingHeight: Long = lastKeyBlock.height + 1
+      val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
+      var schedule: Map[Long, String] =
+        (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
+          yield i).zip(publicKeys).toMap[Long, String]
+      Epoch(schedule)
+    }
   }
 
   case object Tick
