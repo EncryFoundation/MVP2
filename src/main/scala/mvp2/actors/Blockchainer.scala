@@ -39,11 +39,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
       if (blocks.headOption.exists(_.height > blockchain.maxHeight)) {
         blockCache += blocks
-        applyBlockFromCache
+        applyBlockFromCache()
       }
     case keyBlock: KeyBlock =>
       blockCache += keyBlock
-      applyBlockFromCache
+      applyBlockFromCache()
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
@@ -56,29 +56,27 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
-  def applyBlockFromCache: Unit = {
-    blockCache.getApplicableBlock(blockchain) match {
-      case Some(block) =>
-        blockchain += block
-        blockCache -= block
-        informator ! CurrentBlockchainInfo(
-          blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
-          blockchain.chain.lastOption,
-          None
-        )
-        logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
-          s"Blockchain's height is ${blockchain.chain.size}.")
-        planner ! block
-        publisher ! block
-        if (blockCache.isEmpty && !isSynced) {
-          isSynced = true
-          publisher ! SyncingDone
-        }
-        applyBlockFromCache
-      case None =>
-        networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0))
-        logger.info("There is no applicable block in blocks cache")
-    }
+  def applyBlockFromCache(): Unit = blockCache.getApplicableBlock(blockchain) match {
+    case Some(block) =>
+      blockchain += block
+      blockCache -= block
+      informator ! CurrentBlockchainInfo(
+        blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
+        blockchain.chain.lastOption,
+        None
+      )
+      logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
+        s"Blockchain's height is ${blockchain.chain.size}.")
+      planner ! block
+      publisher ! block
+      if (blockCache.isEmpty && !isSynced) {
+        isSynced = true
+        publisher ! SyncingDone
+      }
+      applyBlockFromCache()
+    case None =>
+      networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0))
+      logger.info("There is no applicable block in blocks cache")
   }
 
   override def persistenceId: String = "blockchainer"

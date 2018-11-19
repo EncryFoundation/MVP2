@@ -21,8 +21,7 @@ final case class KeyBlock(height: Long,
                           previousKeyBlockHash: ByteString,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
-                          data: ByteString,
-                          schedule: List[ByteString]) extends Block {
+                          data: ByteString) extends Block {
   override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 }
 
@@ -33,7 +32,7 @@ object KeyBlock {
             transactions: List[Transaction] = List.empty,
             data: ByteString = ByteString.empty): KeyBlock = {
     val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
-    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data, List.empty)
+    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data)
   }
 }
 
