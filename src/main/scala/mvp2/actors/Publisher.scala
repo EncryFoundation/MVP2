@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import akka.actor.ActorSelection
+import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
@@ -14,7 +14,7 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var mempool: Mempool = Mempool(settings)
 
