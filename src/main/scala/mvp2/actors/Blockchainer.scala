@@ -18,13 +18,13 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   var blockCache: BlocksCache = BlocksCache()
   var currentDelta: Long = 0
   var nextTurn: Period = Period(KeyBlock(), settings)
+  var isSynced: Boolean = settings.otherNodes.isEmpty
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
-  var isSynced: Boolean = settings.otherNodes.isEmpty
 
   override def preStart(): Unit =
     if (settings.otherNodes.nonEmpty)
