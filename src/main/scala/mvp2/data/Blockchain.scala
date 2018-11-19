@@ -23,7 +23,7 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) extends Cha
     else Some(chain.drop(remoteHeight.toInt))
 }
 
-final case class BlocksCache(chain: List[KeyBlock] = List.empty) extends Chain {
+final case class BlocksCache(var chain: List[KeyBlock] = List.empty) extends Chain {
 
   def isEmpty: Boolean = chain.isEmpty
 
