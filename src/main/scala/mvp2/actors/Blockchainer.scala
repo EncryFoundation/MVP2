@@ -69,7 +69,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           s"Blockchain's height is ${blockchain.chain.size}.")
         planner ! block
         publisher ! block
-        if (blockCache.isEmpty && isSynced) {
+        if (blockCache.isEmpty && !isSynced) {
           isSynced = true
           publisher ! SyncingDone
         }
