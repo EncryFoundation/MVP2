@@ -8,7 +8,7 @@ sealed trait Chain {
   def lastBlock: Block = chain.last
 }
 
-final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
+final case class Blockchain (var chain: List[KeyBlock] = List.empty) extends Chain {
 
   val maxHeight: Long = chain.lastOption.map(_.height).getOrElse(-1)
 
@@ -21,13 +21,4 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
   def getMissingPart(remoteHeight: Long): Option[List[KeyBlock]] =
     if (chain.lastOption.exists(_.height == remoteHeight)) None
     else Some(chain.drop(remoteHeight.toInt))
-}
-
-final case class Appendix(override var chain: List[KeyBlock]) extends Chain {
-
-  override def size: Int = chain.size
-
-  override def lastBlock: Block = chain.last
-
-  def update(block: KeyBlock): Unit = chain = chain :+ block
 }
