@@ -9,7 +9,7 @@ class KeyKeeper extends CommonActor {
 
   val myKeys: KeyPair = ECDSA.createKeyPair
 
-  var allPublicKeys: SortedSet[PublicKey] = SortedSet.empty[PublicKey]
+  var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
 
   override def preStart(): Unit = {
     logger.info(s"My public key is: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")

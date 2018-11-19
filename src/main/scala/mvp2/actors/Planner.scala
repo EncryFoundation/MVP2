@@ -1,13 +1,10 @@
 package mvp2.actors
 
 import java.security.PublicKey
-
 import akka.actor.{ActorSelection, Cancellable}
 import mvp2.data.InnerMessages.{Get, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
-
-import scala.collection.immutable.SortedSet
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +13,7 @@ class Planner(settings: Settings) extends CommonActor {
 
   import Planner.{Period, Tick}
 
-  var allPublicKeys: SortedSet[PublicKey] = SortedSet.empty[PublicKey]
+  var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
   var nextPeriod: Period = Period(KeyBlock(), settings)
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
