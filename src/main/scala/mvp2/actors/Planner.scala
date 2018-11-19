@@ -1,9 +1,13 @@
 package mvp2.actors
 
+import java.security.PublicKey
+
 import akka.actor.{ActorSelection, Cancellable}
-import mvp2.data.InnerMessages.Get
+import mvp2.data.InnerMessages.{Get, PeerPublicKey}
 import mvp2.data.KeyBlock
-import mvp2.utils.Settings
+import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+
+import scala.collection.immutable.SortedSet
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,9 +16,10 @@ class Planner(settings: Settings) extends CommonActor {
 
   import Planner.{Period, Tick}
 
+  var allPublicKeys: SortedSet[PublicKey] = SortedSet.empty[PublicKey]
+  var nextPeriod: Period = Period(KeyBlock(), settings)
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
-  var nextPeriod: Period = Period(KeyBlock(), settings)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
   override def specialBehavior: Receive = {
@@ -22,6 +27,9 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Planner received new keyBlock with height: ${keyBlock.height}.")
       nextPeriod = Period(keyBlock, settings)
       context.parent ! nextPeriod
+    case PeerPublicKey(key) =>
+      logger.info(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
+      allPublicKeys = allPublicKeys + key
     case Tick if nextPeriod.timeToPublish =>
       publisher ! Get
       logger.info("Planner sent publisher request: time to publish!")
@@ -41,10 +49,8 @@ object Planner {
       now >= this.begin && now <= this.end
     }
 
-    def noBlocksInTime: Boolean = {
-      val now: Long = System.currentTimeMillis
-      now > this.end
-    }
+    def noBlocksInTime: Boolean = System.currentTimeMillis > this.end
+
   }
 
   object Period {
@@ -61,7 +67,7 @@ object Planner {
   }
 
   case class Epoch(lastKeyBlock: KeyBlock) {
-    val allPeriodInThisEpoch: Map[Int, Period] = _
+    val epochMultiplier: Int = 2
   }
 
   case object Tick
