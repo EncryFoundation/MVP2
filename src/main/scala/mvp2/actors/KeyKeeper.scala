@@ -3,12 +3,13 @@ package mvp2.actors
 import java.security.{KeyPair, PublicKey}
 import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.utils.{ECDSA, EncodingUtils}
+import scala.collection.immutable.SortedSet
 
 class KeyKeeper extends CommonActor {
 
   val myKeys: KeyPair = ECDSA.createKeyPair
 
-  var nodesKeys: Set[PublicKey] = Set.empty
+  var nodesKeys: SortedSet[PublicKey] = SortedSet.empty[PublicKey]
 
   override def preStart(): Unit = {
     logger.info(s"My public key is: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")
@@ -19,6 +20,6 @@ class KeyKeeper extends CommonActor {
     case Get => sender ! myKeys.getPublic
     case PeerPublicKey(key) =>
       logger.info(s"Got key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))}")
-      nodesKeys += key
+      nodesKeys = nodesKeys + key
   }
 }

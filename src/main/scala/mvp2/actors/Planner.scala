@@ -1,10 +1,9 @@
 package mvp2.actors
 
-import java.security.KeyPair
-import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
+import akka.actor.{ActorSelection, Cancellable}
 import mvp2.data.InnerMessages.Get
 import mvp2.data.KeyBlock
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.Settings
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,23 +14,21 @@ class Planner(settings: Settings) extends CommonActor {
 
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
-  var nextTurn: Period = Period(KeyBlock(), settings)
-  val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
-  val myKeys: KeyPair = ECDSA.createKeyPair
+  var nextPeriod: Period = Period(KeyBlock(), settings)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
       logger.info(s"Planner received new keyBlock with height: ${keyBlock.height}.")
-      nextTurn = Period(keyBlock, settings)
-      context.parent ! nextTurn
-    case Tick if nextTurn.timeToPublish =>
+      nextPeriod = Period(keyBlock, settings)
+      context.parent ! nextPeriod
+    case Tick if nextPeriod.timeToPublish =>
       publisher ! Get
       logger.info("Planner sent publisher request: time to publish!")
-    case Tick if nextTurn.noBlocksInTime =>
-      val newPeriod = Period(nextTurn, settings)
+    case Tick if nextPeriod.noBlocksInTime =>
+      val newPeriod = Period(nextPeriod, settings)
       logger.info(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
-      nextTurn = newPeriod
+      nextPeriod = newPeriod
     case Tick =>
   }
 }
@@ -61,6 +58,10 @@ object Planner {
       val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod / 2
       Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
     }
+  }
+
+  case class Epoch(lastKeyBlock: KeyBlock) {
+    val allPeriodInThisEpoch: Map[Int, Period] = _
   }
 
   case object Tick
