@@ -22,7 +22,6 @@ class UdpSender(settings: Settings) extends Actor with StrictLogging {
     case SendToNetwork(message, remote) =>
       logger.info(s"Sending $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
-      logger.info(s"Msg size: ${serialize(message).length} bytes")
       context.actorSelection("/user/starter/influxActor") !
         MsgToNetwork(
           message,
