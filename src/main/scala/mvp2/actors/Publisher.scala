@@ -1,14 +1,13 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, ActorSelection, Props}
-import mvp2.data.InnerMessages.{Get, TimeDelta}
+import akka.actor.ActorSelection
+import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
-import mvp2.data.{KeyBlock, Transaction}
 import mvp2.utils.Settings
-import scala.language.postfixOps
-import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.util.Random
 
 class Publisher(settings: Settings) extends CommonActor {
 

@@ -4,9 +4,9 @@ import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
-import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
+import mvp2.data.InnerMessages._
+import mvp2.data.NetworkMessages.Blocks
 import mvp2.data._
-import mvp2.messages._
 import mvp2.utils.Settings
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global

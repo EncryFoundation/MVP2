@@ -11,6 +11,7 @@ object NetworkMessages {
     val BlocksId: Byte = 2
     val SyncMessageIteratorsId: Byte = 3
     val TransactionsId: Byte = 4
+    val LastBlockHeightId: Byte = 5
   }
 
   sealed trait NetworkMessage
@@ -28,10 +29,11 @@ object NetworkMessages {
       Peers(peers.filter(_._1 != remote) + myNode, remote)
   }
 
-  case class Blocks(chain: List[Block]) extends NetworkMessage
+  case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
 
   case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
 
   case class Transactions(transactions: List[Transaction]) extends NetworkMessage
 
+  case class LastBlockHeight(height: Long) extends NetworkMessage
 }

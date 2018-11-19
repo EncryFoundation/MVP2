@@ -23,12 +23,11 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) {
     else Some(chain.drop(remoteHeight.toInt))
 }
 
-final case class Appendix(override var chain: TreeMap[Long, Block]) extends Chain {
+final case class Appendix(override var chain: List[KeyBlock]) extends Chain {
 
   override def size: Int = chain.size
 
-  override def lastBlock: Block = chain.last._2
+  override def lastBlock: Block = chain.last
 
-  override def update(block: Block): Unit = chain = chain.updated(block.height, block)
-
+  def update(block: KeyBlock): Unit = chain = chain :+ block
 }

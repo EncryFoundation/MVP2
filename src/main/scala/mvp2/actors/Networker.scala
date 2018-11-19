@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.util.ByteString
 import mvp2.data.InnerMessages._
-import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
+import mvp2.data.NetworkMessages._
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
 import mvp2.utils.{ECDSA, Settings}
 
@@ -44,18 +44,17 @@ class Networker(settings: Settings) extends CommonActor {
           }
         case Blocks(blocks) => context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
-          influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
-        case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromRemote.remote)
-          context.actorSelection("/user/starter/influxActor") !
+          influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromNetwork.remote)
+        case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromNetwork.remote)
         case Transactions(transactions) =>
           logger.info(s"Got ${transactions.size} new transactions.")
           transactions.foreach(tx => publisher ! tx)
       }
-    case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(networkSender ! _)
+    case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(udpSender ! _)
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
-    case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(networkSender ! _)
-    case RemoteBlockchainMissingPart(blocks, remote) => networkSender ! SendToNetwork(Blocks(blocks), remote)
+    case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
+    case RemoteBlockchainMissingPart(blocks, remote) => udpSender ! SendToNetwork(Blocks(blocks), remote)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
