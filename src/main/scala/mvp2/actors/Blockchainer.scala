@@ -51,7 +51,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       nextTurn = period
     case CheckRemoteBlockchain(remoteHeight, remote) =>
       blockchain.getMissingPart(remoteHeight).foreach(blocks =>
-        networker ! RemoteBlockchainMissingPart(blocks, remote)
+        networker ! RemoteBlockchainMissingPart(blocks.take(settings.network.maxBlockQtyInBlocksMessage), remote)
       )
     case _ => logger.info("Got something strange at Blockchainer!")
   }
