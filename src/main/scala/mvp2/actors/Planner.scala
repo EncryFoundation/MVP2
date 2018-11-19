@@ -63,9 +63,9 @@ object Planner {
     }
   }
 
-  case class Epoch(schedule: Map[Long, String]) {
+  case class Epoch(schedule: Map[Long, PublicKey]) {
 
-    def nextBlock: (Long, String) = schedule.head
+    def nextBlock: (Long, PublicKey) = schedule.head
 
     def delete: Epoch = this.copy(schedule - schedule.head._1)
 
@@ -75,12 +75,12 @@ object Planner {
   }
 
   object Epoch {
-    def apply(lastKeyBlock: KeyBlock, publicKeys: List[String], multiplier: Int = 1): Epoch = {
+    def apply(lastKeyBlock: KeyBlock, publicKeys: List[PublicKey], multiplier: Int = 1): Epoch = {
       val startingHeight: Long = lastKeyBlock.height + 1
       val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
-      var schedule: Map[Long, String] =
+      var schedule: Map[Long, PublicKey] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
-          yield i).zip(publicKeys).toMap[Long, String]
+          yield i).zip(publicKeys).toMap[Long, PublicKey]
       Epoch(schedule)
     }
   }
