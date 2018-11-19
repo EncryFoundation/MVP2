@@ -24,6 +24,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
+  var isSynced: Boolean = settings.newBlockchain
 
   override def preStart(): Unit =
     if (!settings.newBlockchain)
@@ -68,7 +69,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           s"Blockchain's height is ${blockchain.chain.size}.")
         planner ! block
         publisher ! block
-        if (blockCache.isEmpty) publisher ! SyncingDone
+        if (blockCache.isEmpty && isSynced) {
+          isSynced = true
+          publisher ! SyncingDone
+        }
         applyApplicableBlock
       case None =>
         networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0))
