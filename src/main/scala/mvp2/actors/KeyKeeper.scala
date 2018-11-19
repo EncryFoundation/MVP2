@@ -3,7 +3,6 @@ package mvp2.actors
 import java.security.{KeyPair, PublicKey}
 import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.utils.{ECDSA, EncodingUtils}
-import scala.collection.immutable.SortedSet
 
 class KeyKeeper extends CommonActor {
 
@@ -14,6 +13,7 @@ class KeyKeeper extends CommonActor {
   override def preStart(): Unit = {
     logger.info(s"My public key is: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")
     context.actorSelection("/user/starter/blockchainer/networker") ! MyPublicKey(myKeys.getPublic)
+    context.actorSelection("/user/starter/blockchainer/planner") ! MyPublicKey(myKeys.getPublic)
   }
 
   override def specialBehavior: Receive = {

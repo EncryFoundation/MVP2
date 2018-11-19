@@ -4,7 +4,6 @@ import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.InnerMessages.{Get, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
-
 import scala.language.postfixOps
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global

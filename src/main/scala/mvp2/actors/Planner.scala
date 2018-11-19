@@ -2,7 +2,7 @@ package mvp2.actors
 
 import java.security.PublicKey
 import akka.actor.{ActorSelection, Cancellable}
-import mvp2.data.InnerMessages.{Get, PeerPublicKey}
+import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
 import scala.concurrent.duration._
@@ -27,6 +27,7 @@ class Planner(settings: Settings) extends CommonActor {
     case PeerPublicKey(key) =>
       logger.info(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
       allPublicKeys = allPublicKeys + key
+    case MyPublicKey(key) =>
     case Tick if nextPeriod.timeToPublish =>
       publisher ! Get
       logger.info("Planner sent publisher request: time to publish!")
