@@ -1,12 +1,13 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+import akka.actor.{ActorSelection, Props}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import akka.actor.{ActorSelection, Props}
 import akka.util.ByteString
-import mvp2.data.{KeyBlock, KnownPeers}
-import mvp2.messages._
+import mvp2.data.InnerMessages._
+import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
+import mvp2.data.{KeyBlock, KnownPeers, Transaction}
 import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
@@ -17,7 +18,9 @@ class Networker(settings: Settings) extends CommonActor {
 
   val keyKeeper: ActorSelection = context.actorSelection("/user/starter/blockchainer/planner/keyKeeper")
 
-  val networkSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/sender")
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
+
+  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
   val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
@@ -25,27 +28,32 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.millisecond)(sendPeers())
     bornKids()
   }
 
   override def specialBehavior: Receive = {
-    case msgFromRemote: MessageFromRemote =>
-      msgFromRemote.message match {
+    case msgFromNetwork: MsgFromNetwork =>
+      msgFromNetwork.message match {
         case Peers(peersFromRemote, _) =>
-          peers = peersFromRemote.foldLeft(peers){
+          peers = peersFromRemote.foldLeft(peers) {
             case (newKnownPeers, peerToAddOrUpdate) =>
               updatePeerKey(peerToAddOrUpdate._2)
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
-                .updatePeerTime(msgFromRemote.remote)
+                .updatePeerTime(msgFromNetwork.remote)
           }
-        case Blocks(blocks) => context.parent ! msgFromRemote.message
+        case Blocks(blocks) => context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
           influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromRemote.remote)
         case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromRemote.remote)
+          context.actorSelection("/user/starter/influxActor") !
+        case Transactions(transactions) =>
+          logger.info(s"Got ${transactions.size} new transactions.")
+          transactions.foreach(tx => publisher ! tx)
       }
     case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(networkSender ! _)
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
+    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(networkSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) => networkSender ! SendToNetwork(Blocks(blocks), remote)
   }
@@ -54,12 +62,12 @@ class Networker(settings: Settings) extends CommonActor {
     if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
 
   def sendPeers(): Unit =
-    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => networkSender ! msg))
+    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
 
   def bornKids(): Unit = {
-    context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "receiver")
-    context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props(classOf[UdpReceiver], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "udpReceiver")
+    context.actorOf(Props(classOf[UdpSender], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "udpSender")
   }
 }

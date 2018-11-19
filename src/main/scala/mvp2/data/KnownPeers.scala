@@ -1,9 +1,10 @@
 package mvp2.data
 
 import java.net.{InetAddress, InetSocketAddress}
-
 import akka.util.ByteString
 import mvp2.messages.{Blocks, LastBlockHeight, Peers, SendToNetwork}
+import mvp2.data.InnerMessages.SendToNetwork
+import mvp2.data.NetworkMessages.{Blocks, Peers, Transactions}
 import mvp2.utils.Settings
 
 case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteString]],
@@ -31,6 +32,9 @@ case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteStrin
 
   def getBlockMessage(block: KeyBlock): Seq[SendToNetwork] =
     peersPublicKeyMap.map(peer => SendToNetwork(Blocks(List(block)), peer._1)).toSeq
+
+  def getTransactionMsg(transaction: Transaction): Seq[SendToNetwork] =
+    peersPublicKeyMap.map(peer => SendToNetwork(Transactions(List(transaction)), peer._1)).toSeq
 
   def getHeightMessage(height: Long): Seq[SendToNetwork] =
     peersPublicKeyMap.keys.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq

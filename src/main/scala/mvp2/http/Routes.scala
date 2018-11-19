@@ -4,8 +4,8 @@ import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import mvp2.data.{LightKeyBlock, Transaction}
-import mvp2.messages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.utils.{EncodingUtils, Settings}
+import mvp2.utils.Settings
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
@@ -20,13 +20,14 @@ import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
 import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
   case class ApiInfo(height: Long = 0, keyBlock: Option[String], microBlock: Option[ByteString])
 
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
   implicit val ec: ExecutionContextExecutor = context.dispatcher
 
   val route: Route = getTxs ~ apiInfo ~ chainInfo

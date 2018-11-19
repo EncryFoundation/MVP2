@@ -23,15 +23,7 @@ final case class KeyBlock(height: Long,
                           transactions: List[Transaction],
                           data: ByteString,
                           schedule: List[ByteString]) extends Block {
-  override def isValid(previousBlock: Block): Boolean = {
-    val result: Boolean = previousBlock.height + 1 == this.height
-    val sentence: String =
-      if (result) s"Block with height ${this.height} is valid."
-      else s"Block with height ${this.height} is valid."
-    println(sentence)
-    result
-  }
-
+  override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 }
 
 object KeyBlock {

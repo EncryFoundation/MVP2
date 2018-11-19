@@ -5,10 +5,11 @@ import akka.io.Udp
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.messages._
+import mvp2.data.InnerMessages.{MsgToNetwork, SendToNetwork, UdpSocket}
+import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
-class Sender(settings: Settings) extends Actor with StrictLogging {
+class UdpSender(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
 
@@ -36,5 +37,7 @@ class Sender(settings: Settings) extends Actor with StrictLogging {
       NetworkMessagesId.SyncMessageIteratorsId +: serialization.findSerializerFor(syncIterators).toBinary(syncIterators)
     case lastBlockHeight: LastBlockHeight =>
       NetworkMessagesId.LastBlockHeightId +: serialization.findSerializerFor(lastBlockHeight).toBinary(lastBlockHeight)
+    case transactions: Transactions =>
+      NetworkMessagesId.TransactionsId +: serialization.findSerializerFor(transactions).toBinary(transactions)
   })
 }
