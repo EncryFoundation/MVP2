@@ -41,7 +41,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         blockCache += blocks
         applyBlockFromCache
       }
-    case keyBlock: KeyBlock => blockCache += keyBlock
+    case keyBlock: KeyBlock =>
+      blockCache += keyBlock
       applyBlockFromCache
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
