@@ -14,9 +14,14 @@ object NetworkMessages {
     val LastBlockHeightId: Byte = 5
   }
 
-  sealed trait NetworkMessage
+  sealed trait NetworkMessage {
+
+    val name: String
+  }
 
   case class Peers(peers: Map[InetSocketAddress, ByteString], remote: InetSocketAddress) extends NetworkMessage {
+
+    override val name: String = "peers"
 
     override def toString: String =
       peers.map(peerInfo => s"${peerInfo._1} -> ${EncodingUtils.encode2Base16(peerInfo._2)}").mkString(",")
@@ -29,11 +34,23 @@ object NetworkMessages {
       Peers(peers.filter(_._1 != remote) + myNode, remote)
   }
 
-  case class Blocks(chain: List[KeyBlock]) extends NetworkMessage
+  case class Blocks(chain: List[KeyBlock]) extends NetworkMessage {
 
-  case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage
+    override val name: String = "blocks"
+  }
 
-  case class Transactions(transactions: List[Transaction]) extends NetworkMessage
+  case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage {
 
-  case class LastBlockHeight(height: Long) extends NetworkMessage
+    override val name: String = "iterators"
+  }
+
+  case class Transactions(transactions: List[Transaction]) extends NetworkMessage {
+
+    override val name: String = "tx"
+  }
+
+  case class LastBlockHeight(height: Long) extends NetworkMessage {
+
+    override val name: String = "lastBlockHeight"
+  }
 }
