@@ -39,11 +39,11 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
   )
 
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(x =>
+    toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(blockchain =>
       ApiInfo(
-        x.height,
-        x.lastKeyBlock.map(block => EncodingUtils.encode2Base16(block.currentBlockHash)),
-        x.lastMicroBlock).asJson
+        blockchain.height,
+        blockchain.lastKeyBlock.map(block => EncodingUtils.encode2Base16(block.currentBlockHash)),
+        blockchain.lastMicroBlock).asJson
       )
     )
   )
