@@ -24,7 +24,7 @@ class Publisher(settings: Settings) extends CommonActor {
   }
 
   override def preStart(): Unit =
-    if (settings.newBlockchain) context.become(publishBlockEnabled)
+    if (settings.otherNodes.isEmpty) context.become(publishBlockEnabled)
 
   override def specialBehavior: Receive = {
     case SyncingDone =>

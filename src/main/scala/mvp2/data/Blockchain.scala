@@ -22,3 +22,20 @@ final case class Blockchain (var chain: List[KeyBlock] = List.empty) extends Cha
     if (chain.lastOption.exists(_.height == remoteHeight)) None
     else Some(chain.drop(remoteHeight.toInt))
 }
+
+final case class BlocksCache(chain: List[KeyBlock] = List.empty) extends Chain {
+
+  def isEmpty: Boolean = chain.isEmpty
+
+  def + (block: KeyBlock): BlocksCache =
+    this.copy((chain :+ block).sortWith((block1, block2) => block1.height > block2.height))
+
+  def + (blocksToAdd: Seq[KeyBlock]): BlocksCache =
+    this.copy((chain ++ blocksToAdd).sortWith((block1, block2) => block1.height > block2.height))
+
+  def - (block: KeyBlock): BlocksCache = this.copy(chain.filter(_.height != block.height))
+
+  def getApplicableBlock(blochchain: Blockchain): Option[KeyBlock] =
+    if (chain.lastOption.exists(blochchain.isApplicable)) Some(chain.last)
+    else None
+}

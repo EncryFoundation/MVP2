@@ -24,10 +24,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
-  var isSynced: Boolean = settings.newBlockchain
+  var isSynced: Boolean = settings.otherNodes.isEmpty
 
   override def preStart(): Unit =
-    if (!settings.newBlockchain)
+    if (settings.otherNodes.nonEmpty)
       context.system.scheduler.scheduleOnce(2 seconds)(networker !
         OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0)))
 
@@ -39,10 +39,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
       if (blocks.headOption.exists(_.height > blockchain.maxHeight)) {
         blockCache += blocks
-        applyApplicableBlock
+        applyBlockFromCache
       }
     case keyBlock: KeyBlock => blockCache += keyBlock
-      applyApplicableBlock
+      applyBlockFromCache
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
@@ -55,7 +55,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case _ => logger.info("Got something strange at Blockchainer!")
   }
 
-  def applyApplicableBlock: Unit = {
+  def applyBlockFromCache: Unit = {
     blockCache.getApplicableBlock(blockchain) match {
       case Some(block) =>
         blockchain += block
@@ -73,7 +73,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
           isSynced = true
           publisher ! SyncingDone
         }
-        applyApplicableBlock
+        applyBlockFromCache
       case None =>
         networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(0))
         logger.info("There is no applicable block in blocks cache")
