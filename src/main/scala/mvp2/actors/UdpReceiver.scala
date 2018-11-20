@@ -11,6 +11,7 @@ import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import io.circe.parser.decode
 import io.circe.generic.auto._
+import mvp2.utils.EncodingUtils._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
 class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
@@ -58,13 +59,13 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
 
   def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes match {
-    case peers if decode[Peers](bytes.utf8String).isRight => decode[Peers](bytes.utf8String).toOption
-    case blocks if decode[Blocks](bytes.utf8String).isRight => decode[Blocks](bytes.utf8String).toOption
-    case iterators if decode[SyncMessageIterators](bytes.utf8String).isRight =>
+    case _ if decode[Peers](bytes.utf8String).isRight => decode[Peers](bytes.utf8String).toOption
+    case _ if decode[Blocks](bytes.utf8String).isRight => decode[Blocks](bytes.utf8String).toOption
+    case _ if decode[SyncMessageIterators](bytes.utf8String).isRight =>
       decode[SyncMessageIterators](bytes.utf8String).toOption
-    case transactions if decode[Transactions](bytes.utf8String).isRight =>
+    case _ if decode[Transactions](bytes.utf8String).isRight =>
       decode[Transactions](bytes.utf8String).toOption
-    case lastBlock if decode[LastBlockHeight](bytes.utf8String).isRight =>
+    case _ if decode[LastBlockHeight](bytes.utf8String).isRight =>
       decode[LastBlockHeight](bytes.utf8String).toOption
   }
 }

@@ -9,7 +9,8 @@ import mvp2.data.InnerMessages.{MsgToNetwork, SendToNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import io.circe.syntax._
 import io.circe.generic.auto._
-import mvp2.utils.{EncodingUtils, Settings, Sha256}
+import mvp2.utils.EncodingUtils._
+import mvp2.utils.{Settings, Sha256}
 
 class UdpSender(settings: Settings) extends Actor with StrictLogging {
 
@@ -28,7 +29,7 @@ class UdpSender(settings: Settings) extends Actor with StrictLogging {
       context.actorSelection("/user/starter/influxActor") !
         MsgToNetwork(
           message,
-          Sha256.toSha256(EncodingUtils.encode2Base16(ByteString(message.asJson.toString)) ++ remote.getAddress.toString),
+          Sha256.toSha256(encode2Base16(ByteString(message.asJson.toString)) ++ remote.getAddress.toString),
           remote
         )
   }
