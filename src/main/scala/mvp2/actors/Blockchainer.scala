@@ -33,22 +33,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   override def receiveCommand: Receive = {
     case pair: (Long, PublicKey) => waitingChainElements = Some(pair)
       println(s"Blockchainer got new signature")
-    case keyBlock: KeyBlock if sender() == publisher =>
-      println(s"Blockchain got new block from publisher woth heigth: ${keyBlock.height}")
-      blockchain = Blockchain(keyBlock :: blockchain.chain)
-      informator ! CurrentBlockchainInfo(
-        blockchain.chain.headOption.map(block => block.height).getOrElse(0),
-        blockchain.chain.headOption,
-        None
-      )
-      logger.info(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-        s"Blockchain consists of ${blockchain.chain.size} blocks.")
-      planner ! keyBlock
-      publisher ! keyBlock
     case keyBlock: KeyBlock
       if verify(keyBlock.signature, keyBlock.getBytes, compressPublicKey(waitingChainElements.get._2)) &&
         nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>
-      println(s"Blockchain got new block from network woth heigth: ${keyBlock.height}")
+      println(s"Blockchain got new valid block with height: ${keyBlock.height}")
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.headOption.map(block => block.height).getOrElse(0),

@@ -28,47 +28,53 @@ class Planner(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
-      logger.info(s"Planner received new keyBlock with height: ${keyBlock.height}.")
+      println(s"Planner received new keyBlock with height: ${keyBlock.height}.")
+      println(s"Got new block from: $sender ${keyBlock.height}")
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-      println(s"Got new block from: $sender ${keyBlock.height}")
     case PeerPublicKey(key) =>
       println(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
       allPublicKeys = allPublicKeys + key
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = Some(key)
-      println(s"Got new myKey")
+      println(s"Got my public key: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
-      println(epoch.schedule)
+      println(s"New epoch after epoch.isDone - ${epoch.schedule}")
       val a = epoch.schedule.size
       if (epoch.nextBlock._2 == myPublicKey.get) {
         publisher ! Get
-        println(s"New epoch, and send to publisher request")
+        context.parent ! epoch.nextBlock
+        println(s"Sent new request to the publisher")
       }
       else {
         context.parent ! epoch.nextBlock
-        println(s"We are waiting new block from network")
+        println(s"We are waiting new block from network ob blockchainer.")
       }
       epoch = epoch.delete
-      println(s"Epoch befor activity $a and after ${a - epoch.schedule.size}")
+      println(s"EPOCH AFTeRE epochIsDOne - ${epoch.schedule} && ${a - epoch.schedule.size}")
+
     case Tick if nextPeriod.timeToPublish =>
       val a = epoch.schedule.size
+      println(s"Epoch before activity time to publish - ${epoch.schedule}")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
-        println(s"send to publisher request")
+        context.parent ! epoch.nextBlock
+        println(s"Sent new request to the publisher")
       }
       else {
         context.parent ! epoch.nextBlock
-        println(s"We are waiting new block from network")
+        println(s"We are waiting new block from network ob blockchainer.")
       }
       epoch = epoch.delete
-      println(s"time to publish Epoch befor activity $a and after ${a - epoch.schedule.size}")
+      println(s"Epoch after activity time to publish - ${epoch.schedule}  &&  ${a - epoch.schedule.size}")
       logger.info("Planner sent publisher request: time to publish!")
+      println(epoch.schedule)
     case Tick if nextPeriod.noBlocksInTime =>
       val a = epoch.schedule.size
+      println(s"Epoch before activity noBlocksInTime - ${epoch.schedule}")
       val newPeriod = Period(nextPeriod, settings)
       logger.info(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextPeriod = newPeriod
@@ -76,6 +82,7 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = epoch.noBlockInTime
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
+        context.parent ! epoch.nextBlock
         println(s"No block in time - got new period and send to the publosher")
       }
       else {
@@ -83,7 +90,7 @@ class Planner(settings: Settings) extends CommonActor {
         println(s"We are waiting new block from network with no time block in piriod")
       }
       epoch = epoch.delete
-      println(s"no blocks in time Epoch befor activity $a and after ${a - epoch.schedule.size}")
+      println(s"Epoch after activity no blocks in time - ${epoch.schedule}  &&  ${a - epoch.schedule.size}")
     case Tick =>
   }
 }
