@@ -38,13 +38,15 @@ class Networker(settings: Settings) extends CommonActor {
         case Peers(peersFromRemote, _) =>
           peers = peersFromRemote.foldLeft(peers) {
             case (newKnownPeers, peerToAddOrUpdate) =>
-              updatePeerKey(peerToAddOrUpdate._2)
-              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
+              updatePeerKey(peerToAddOrUpdate.publicKey)
+              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate.addr, peerToAddOrUpdate.publicKey)
                 .updatePeerTime(msgFromNetwork.remote)
           }
         case Blocks(_) => context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
-          influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromNetwork.remote)
+          influxActor ! SyncMessageIteratorsFromRemote(
+            iterators.map(iterInfo => iterInfo.msgName -> iterInfo.msgIter).toMap,
+            msgFromNetwork.remote)
         case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromNetwork.remote)
         case Transactions(transactions) =>
           logger.info(s"Got ${transactions.size} new transactions.")

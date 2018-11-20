@@ -2,7 +2,7 @@ package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
 import mvp2.data.InnerMessages._
-import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
+import mvp2.data.NetworkMessages._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
@@ -74,7 +74,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
   def syncIterators(): Unit =
     msgToRemote.foreach {
       case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/udpSender") !
-        SendToNetwork(SyncMessageIterators(iterators), peer)
+        SendToNetwork(SyncMessageIterators(iterators.map(iter => IterInfo(iter._1, iter._2)).toList), peer)
     }
 
   def time: Long = System.currentTimeMillis() + currentDelta

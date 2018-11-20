@@ -3,11 +3,12 @@ package mvp2.data
 import java.net.InetSocketAddress
 import akka.util.ByteString
 import mvp2.utils.EncodingUtils
-import io.circe.parser.decode
-import io.circe.generic.auto._
-import mvp2.utils.EncodingUtils._
 
 object NetworkMessages {
+
+  case class PeerInfo(addr: InetSocketAddress, publicKey: ByteString)
+
+  case class IterInfo(msgName: String, msgIter: Int)
 
   object NetworkMessagesId {
     val PeersId: Byte = 1
@@ -22,19 +23,19 @@ object NetworkMessages {
     val name: String
   }
 
-  case class Peers(peers: List[(InetSocketAddress, ByteString)], remote: InetSocketAddress) extends NetworkMessage {
+  case class Peers(peers: List[PeerInfo], remote: InetSocketAddress) extends NetworkMessage {
 
     override val name: String = "peers"
 
     override def toString: String =
-      peers.map(peerInfo => s"${peerInfo._1} -> ${EncodingUtils.encode2Base16(peerInfo._2)}").mkString(",")
+      peers.map(peerInfo => s"${peerInfo.addr} -> ${EncodingUtils.encode2Base16(peerInfo.publicKey)}").mkString(",")
   }
 
   case object Peers {
     def apply(peers: Map[InetSocketAddress, ByteString],
               myNode: (InetSocketAddress, ByteString),
               remote: InetSocketAddress): Peers =
-      Peers((peers.filter(_._1 != remote) + myNode).toList, remote)
+      Peers((peers.filter(_._1 != remote) + myNode).map(peer => PeerInfo(peer._1, peer._2)).toList, remote)
   }
 
   case class Blocks(chain: List[KeyBlock]) extends NetworkMessage {
@@ -42,7 +43,7 @@ object NetworkMessages {
     override val name: String = "blocks"
   }
 
-  case class SyncMessageIterators(iterators: Map[String, Int]) extends NetworkMessage {
+  case class SyncMessageIterators(iterators: List[IterInfo]) extends NetworkMessage {
 
     override val name: String = "iterators"
   }
