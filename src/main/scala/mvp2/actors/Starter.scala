@@ -14,11 +14,15 @@ class Starter extends CommonActor {
 
   override def preStart(): Unit = {
     logger.info("Starting the Starter!")
-    bornKids()
+    settings.downloadStateFrom match {
+      case None => bornKids()
+      case Some(address) => context.actorOf(Props(classOf[Downloader], address), "downloader")
+    }
   }
 
   override def specialBehavior: Receive = {
     case message: String => logger.info(message)
+    case DownloadComplete if settings.downloadStateFrom.nonEmpty => bornKids()
   }
 
   def bornKids(): Unit = {

@@ -7,6 +7,7 @@ case class Settings(port: Int,
                     blockPeriod: Long,
                     biasForBlockPeriod: Long,
                     newBlockchain: Boolean,
+                    downloadStateFrom: Option[String] = None,
                     apiSettings: ApiSettings,
                     ntp: NetworkTimeProviderSettings,
                     influx: InfluxSettings,
@@ -16,7 +17,7 @@ case class Settings(port: Int,
 
 case class Node(host: String, port: Int)
 
-case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int)
+case class ApiSettings(httpHost: String, httpPort: Int, timeout: Int, enableStateDownload: Boolean)
 
 case class InfluxSettings(host: String, port: Int, login: String, password: String)
 
