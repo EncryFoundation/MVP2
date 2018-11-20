@@ -7,6 +7,8 @@ import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+import scala.collection.SortedSet
+import scala.collection.generic.Sorted
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,30 +32,57 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-
+      println(s"Got new block from: $sender ${keyBlock.height}")
     case PeerPublicKey(key) =>
-      logger.info(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
+      println(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
       allPublicKeys = allPublicKeys + key
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = Some(key)
+      println(s"Got new myKey")
     case Tick if epoch.isDone =>
-      epoch = epoch(lastBlock, allPublicKeys)
-      if (epoch.nextBlock._2 == myPublicKey ) publisher ! Get
-      else context.parent ! epoch.nextBlock
+      epoch = Epoch(lastBlock, allPublicKeys)
+      val a = epoch.schedule.size
+      if (epoch.nextBlock._2 == myPublicKey) {
+        publisher ! Get
+        println(s"New epoch, and send to publisher request")
+      }
+      else {
+        context.parent ! epoch.nextBlock
+        println(s"We are waiting new block from network")
+      }
       epoch = epoch.delete
+      println(s"Epoch befor activity $a and after ${a - epoch.schedule.size}")
     case Tick if nextPeriod.timeToPublish =>
-      if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
-      else context.parent ! epoch.nextBlock
+      val a = epoch.schedule.size
+      if (epoch.nextBlock._2 == myPublicKey) {
+        publisher ! Get
+        println(s"New epoch, and send to publisher request")
+      }
+      else {
+        context.parent ! epoch.nextBlock
+        println(s"We are waiting new block from network")
+      }
       epoch = epoch.delete
+      println(s"time to publish Epoch befor activity $a and after ${a - epoch.schedule.size}")
       logger.info("Planner sent publisher request: time to publish!")
     case Tick if nextPeriod.noBlocksInTime =>
+      val a = epoch.schedule.size
       val newPeriod = Period(nextPeriod, settings)
       logger.info(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextPeriod = newPeriod
+      context.parent ! nextPeriod
       epoch = epoch.noBlockInTime
-      if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
-      else context.parent ! epoch.nextBlock
+      if (epoch.nextBlock._2 == myPublicKey) {
+        publisher ! Get
+        println(s"New epoch, and send to publisher request")
+      }
+      else {
+        context.parent ! epoch.nextBlock
+        println(s"We are waiting new block from network")
+      }
+      epoch = epoch.delete
+      println(s"no blocks in time Epoch befor activity $a and after ${a - epoch.schedule.size}")
     case Tick =>
   }
 }

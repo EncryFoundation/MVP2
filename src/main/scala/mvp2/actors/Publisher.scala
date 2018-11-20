@@ -28,6 +28,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case pair: KeyPair => mySignature = Some(pair)
+      println(s"Got new key pair PUBLISHER")
     case transaction: Transaction =>
       if (mempool.updateMempool(transaction)) networker ! transaction
       logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
