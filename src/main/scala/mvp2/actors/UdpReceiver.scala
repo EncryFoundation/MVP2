@@ -69,6 +69,11 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
       decode[LastBlockHeight](bytes.utf8String).toOption
     case msg =>
       logger.info(s"Failed to parse: ${msg.utf8String}")
+      logger.info(s"Peers: ${decode[Peers](bytes.utf8String)}")
+      logger.info(s"Blocks: ${decode[Blocks](bytes.utf8String)}")
+      logger.info(s"SyncMessageIterators: ${decode[SyncMessageIterators](bytes.utf8String)}")
+      logger.info(s"Transactions: ${decode[Transactions](bytes.utf8String)}")
+      logger.info(s"LastBlockHeight: ${decode[LastBlockHeight](bytes.utf8String)}")
       None
   }
 }
