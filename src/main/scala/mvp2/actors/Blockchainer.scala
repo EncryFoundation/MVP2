@@ -10,7 +10,7 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
 import mvp2.data._
-import mvp2.utils.Settings
+import mvp2.utils.{ECDSA, EncodingUtils, Settings}
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -32,7 +32,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def receiveCommand: Receive = {
     case pair: (Long, PublicKey) => waitingChainElements = Some(pair)
-      println(s"Blockchainer got new signature")
+      println(s"Blockchainer got new signature ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(pair._2))}")
     case keyBlock: KeyBlock
       if verify(keyBlock.signature, keyBlock.getBytes, compressPublicKey(waitingChainElements.get._2)) &&
         nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>

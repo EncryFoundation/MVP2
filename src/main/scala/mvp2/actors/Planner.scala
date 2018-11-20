@@ -23,7 +23,7 @@ class Planner(settings: Settings) extends CommonActor {
   var epoch: Epoch = Epoch(Map())
   var lastBlock: KeyBlock = KeyBlock()
   val heartBeat: Cancellable =
-    context.system.scheduler.schedule(15.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
+    context.system.scheduler.schedule(5.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
   override def specialBehavior: Receive = {
