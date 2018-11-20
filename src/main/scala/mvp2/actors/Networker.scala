@@ -42,7 +42,7 @@ class Networker(settings: Settings) extends CommonActor {
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate._1, peerToAddOrUpdate._2)
                 .updatePeerTime(msgFromNetwork.remote)
           }
-        case Blocks(blocks) => context.parent ! msgFromNetwork.message
+        case Blocks(_) => context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
           influxActor ! SyncMessageIteratorsFromRemote(iterators, msgFromNetwork.remote)
         case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromNetwork.remote)
@@ -54,7 +54,8 @@ class Networker(settings: Settings) extends CommonActor {
     case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
-    case RemoteBlockchainMissingPart(blocks, remote) => udpSender ! SendToNetwork(Blocks(blocks), remote)
+    case RemoteBlockchainMissingPart(blocks, remote) =>
+      udpSender ! SendToNetwork(Blocks(blocks), remote)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
