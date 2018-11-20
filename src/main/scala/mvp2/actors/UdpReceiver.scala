@@ -1,18 +1,23 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, ActorSelection}
 import akka.io.{IO, Udp}
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
-import mvp2.messages._
+import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
+import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
-class Receiver(settings: Settings) extends Actor with StrictLogging {
+class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
   val serialization: Serialization = SerializationExtension(context.system)
+
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
+
+  val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
   val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
 
@@ -25,7 +30,7 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
       context.become(readCycle(sender))
-      context.actorSelection("/user/starter/blockchainer/networker/sender") ! UdpSocket(sender)
+      udpSender ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
 
@@ -33,12 +38,12 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Received(data: ByteString, remote) =>
       deserialize(data).foreach { message =>
         logger.info(s"Received $message from $remote")
-        context.parent ! MessageFromRemote(message, remote)
+        context.parent ! MsgFromNetwork(message, remote)
         context.actorSelection("/user/starter/influxActor") !
           MsgFromNetwork(
             message,
-            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString),
-            remote
+            remote,
+            Sha256.toSha256(EncodingUtils.encode2Base16(data) ++ myAddr.getAddress.toString)
           )
       }
     case Udp.Unbind =>
@@ -51,21 +56,21 @@ class Receiver(settings: Settings) extends Actor with StrictLogging {
 
 
   def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes.head match {
-    case Ping.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case ping: Ping.type => ping
-    }
-    case Pong.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case pong: Pong.type => pong
-    }
-    case Peers.typeId => Option(serialization.findSerializerFor(Ping).fromBinary(bytes.toArray.tail)).map {
-      case knownPeers: Peers => knownPeers
-    }
-    case Blocks.typeId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail)).map {
-      case blocks: Blocks => blocks
-    }
-    case SyncMessageIterators.typeId =>
+    case NetworkMessagesId.PeersId => Option(serialization.findSerializerFor(Peers).fromBinary(bytes.toArray.tail))
+      .map {
+        case knownPeers: Peers => knownPeers
+      }
+    case NetworkMessagesId.BlocksId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail))
+      .map {
+        case blocks: Blocks => blocks
+      }
+    case NetworkMessagesId.SyncMessageIteratorsId =>
       Option(serialization.findSerializerFor(SyncMessageIterators).fromBinary(bytes.toArray.tail)).map {
         case iterators: SyncMessageIterators => iterators
+      }
+    case NetworkMessagesId.TransactionsId =>
+      Option(serialization.findSerializerFor(Transactions).fromBinary(bytes.toArray.tail)).map {
+        case txs: Transactions => txs
       }
   }
 }

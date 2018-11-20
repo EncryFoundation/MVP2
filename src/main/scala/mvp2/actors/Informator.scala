@@ -1,10 +1,10 @@
 package mvp2.actors
 
 import akka.actor.ActorRefFactory
-import mvp2.messages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.http.Routes
 import akka.http.scaladsl.Http
 import mvp2.MVP2._
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.data.LightKeyBlock
 import mvp2.utils.Settings
 

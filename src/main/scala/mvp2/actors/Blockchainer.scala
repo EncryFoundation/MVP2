@@ -4,10 +4,9 @@ import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
 import mvp2.data._
-import mvp2.messages.CurrentBlockchainInfo
 import mvp2.utils.Settings
-import mvp2.messages.{Get, TimeDelta}
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -33,8 +32,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         blockchain.chain.headOption,
         None
       )
-      println(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-        s"Blockchain's height is ${blockchain.chain.size}.")
+      logger.info(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
+        s"Blockchain consists of ${blockchain.chain.size} blocks.")
       planner ! keyBlock
       publisher ! keyBlock
     case TimeDelta(delta: Long) => currentDelta = delta
