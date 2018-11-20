@@ -1,7 +1,11 @@
 package mvp2.actors
 
+import java.security.PublicKey
+
+import mvp2.utils.ECDSA._
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
@@ -20,13 +24,17 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
+  var waitingChainElements: Option[(Long, PublicKey)] = None
 
   override def receiveRecover: Receive = {
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")
   }
 
   override def receiveCommand: Receive = {
-    case keyBlock: KeyBlock =>
+    case pair: (Long, PublicKey) => waitingChainElements = Some(pair)
+    case keyBlock: KeyBlock
+      if verify(keyBlock.signature, keyBlock.getBytes, compressPublicKey(waitingChainElements.get._2)) &&
+        nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.headOption.map(block => block.height).getOrElse(0),

@@ -8,7 +8,6 @@ class KeyKeeper extends CommonActor {
 
   val myKeys: KeyPair = ECDSA.createKeyPair
 
-
   var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
 
   override def preStart(): Unit = {

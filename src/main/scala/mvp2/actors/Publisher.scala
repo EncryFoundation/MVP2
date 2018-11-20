@@ -1,13 +1,11 @@
 package mvp2.actors
 
 import java.security.{KeyPair, PublicKey}
-
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.util.ByteString
 import mvp2.data.InnerMessages.{Get, MyPublicKey, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.{ECDSA, Settings}
-
 import scala.language.postfixOps
 import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global

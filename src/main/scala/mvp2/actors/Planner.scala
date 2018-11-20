@@ -34,24 +34,26 @@ class Planner(settings: Settings) extends CommonActor {
     case PeerPublicKey(key) =>
       logger.info(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
       allPublicKeys = allPublicKeys + key
-
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = Some(key)
-      epoch = epoch.copy(Map(1 -> key))
     case Tick if epoch.isDone =>
       epoch = epoch(lastBlock, allPublicKeys)
-      if (epoch.nextBlock._2 == myPublicKey ) publisher ! epoch.nextBlock
+      if (epoch.nextBlock._2 == myPublicKey ) publisher ! Get
       else context.parent ! epoch.nextBlock
-
+      epoch = epoch.delete
     case Tick if nextPeriod.timeToPublish =>
-      publisher ! Get
+      if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
+      else context.parent ! epoch.nextBlock
+      epoch = epoch.delete
       logger.info("Planner sent publisher request: time to publish!")
-
     case Tick if nextPeriod.noBlocksInTime =>
       val newPeriod = Period(nextPeriod, settings)
       logger.info(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextPeriod = newPeriod
+      epoch = epoch.noBlockInTime
+      if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
+      else context.parent ! epoch.nextBlock
     case Tick =>
   }
 }
