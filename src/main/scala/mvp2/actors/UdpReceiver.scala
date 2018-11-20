@@ -59,21 +59,8 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
 
   def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes match {
-    case _ if decode[Peers](bytes.utf8String).isRight => decode[Peers](bytes.utf8String).toOption
-    case _ if decode[Blocks](bytes.utf8String).isRight => decode[Blocks](bytes.utf8String).toOption
-    case _ if decode[SyncMessageIterators](bytes.utf8String).isRight =>
-      decode[SyncMessageIterators](bytes.utf8String).toOption
-    case _ if decode[Transactions](bytes.utf8String).isRight =>
-      decode[Transactions](bytes.utf8String).toOption
-    case _ if decode[LastBlockHeight](bytes.utf8String).isRight =>
-      decode[LastBlockHeight](bytes.utf8String).toOption
-    case msg =>
-      logger.info(s"Failed to parse: ${msg.utf8String}")
-      logger.info(s"Peers: ${decode[Peers](bytes.utf8String)}")
-      logger.info(s"Blocks: ${decode[Blocks](bytes.utf8String)}")
-      logger.info(s"SyncMessageIterators: ${decode[SyncMessageIterators](bytes.utf8String)}")
-      logger.info(s"Transactions: ${decode[Transactions](bytes.utf8String)}")
-      logger.info(s"LastBlockHeight: ${decode[LastBlockHeight](bytes.utf8String)}")
+    case _ if decode[NetworkMessage](bytes.utf8String).isRight => decode[NetworkMessage](bytes.utf8String).toOption
+    case msg => logger.info(s"Failed to parse: ${msg.utf8String}")
       None
   }
 }
