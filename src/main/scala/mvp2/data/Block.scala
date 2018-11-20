@@ -1,6 +1,7 @@
 package mvp2.data
 
 import akka.util.ByteString
+import com.google.common.primitives.Longs
 import mvp2.utils.Sha256
 import mvp2.utils.EncodingUtils._
 
@@ -21,8 +22,15 @@ final case class KeyBlock(height: Long,
                           previousKeyBlockHash: ByteString,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
-                          data: ByteString) extends Block {
+                          data: ByteString,
+                          signature: ByteString) extends Block {
   override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
+
+  def getBytes: ByteString = previousKeyBlockHash ++
+    currentBlockHash ++
+    data ++
+    Longs.toByteArray(height) ++
+    Longs.toByteArray(timestamp)
 }
 
 object KeyBlock {
@@ -30,9 +38,10 @@ object KeyBlock {
             timestamp: Long = System.currentTimeMillis,
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
-            data: ByteString = ByteString.empty): KeyBlock = {
+            data: ByteString = ByteString.empty,
+            signature: ByteString = ByteString.empty): KeyBlock = {
     val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
-    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data)
+    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data, signature)
   }
 }
 

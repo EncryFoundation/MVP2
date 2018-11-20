@@ -8,12 +8,14 @@ class KeyKeeper extends CommonActor {
 
   val myKeys: KeyPair = ECDSA.createKeyPair
 
+
   var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
 
   override def preStart(): Unit = {
     logger.info(s"My public key is: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")
     context.actorSelection("/user/starter/blockchainer/networker") ! MyPublicKey(myKeys.getPublic)
     context.actorSelection("/user/starter/blockchainer/planner") ! MyPublicKey(myKeys.getPublic)
+    context.actorSelection("/user/starter/blockchainer/publisher") ! myKeys
   }
 
   override def specialBehavior: Receive = {
