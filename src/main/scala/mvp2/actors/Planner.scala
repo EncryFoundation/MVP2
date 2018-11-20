@@ -42,8 +42,9 @@ class Planner(settings: Settings) extends CommonActor {
       println(s"Got new myKey")
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
+      println(epoch.schedule)
       val a = epoch.schedule.size
-      if (epoch.nextBlock._2 == myPublicKey) {
+      if (epoch.nextBlock._2 == myPublicKey.get) {
         publisher ! Get
         println(s"New epoch, and send to publisher request")
       }
