@@ -1,42 +1,55 @@
 package mvp2.actors
 
-import java.security.KeyPair
-import akka.util.ByteString
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import mvp2.data.{KeyBlock, Transaction}
-import mvp2.utils.ECDSA
+import akka.actor.{ActorRef, ActorSelection, Props}
+import mvp2.data.InnerMessages.{Get, TimeDelta}
+import mvp2.data.{KeyBlock, Mempool, Transaction}
+import mvp2.utils.Settings
 import scala.language.postfixOps
 import scala.util.Random
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
-class Publisher extends CommonActor {
+class Publisher(settings: Settings) extends CommonActor {
 
-  var mempool: List[Transaction] = List.empty
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
+  var currentDelta: Long = 0
+  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
+  var mempool: Mempool = Mempool(settings)
 
-  context.system.scheduler.schedule(10 second, 5 seconds)(createKeyBlock)
-
-  context.system.scheduler.schedule(1 second, 3 seconds) {
-    val randomData: ByteString = ByteString(randomizer.nextString(100))
-    val pairOfKeys: KeyPair = ECDSA.createKeyPair
-    val signature: ByteString = ECDSA.sign(pairOfKeys.getPrivate, randomData)
-    self ! Transaction(ByteString(pairOfKeys.getPublic.toString), randomizer.nextLong(), signature, randomData)
+  context.system.scheduler.schedule(1.seconds, settings.mempoolSetting.mempoolCleaningTime.millisecond) {
+    mempool.checkMempoolForInvalidTxs()
+    logger.info(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
   }
 
   override def specialBehavior: Receive = {
-    case transaction: Transaction => mempool = transaction :: mempool
-    case keyBlock: KeyBlock => lastKeyBlock = keyBlock
+    case transaction: Transaction =>
+      if (mempool.updateMempool(transaction)) networker ! transaction
+      logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
+    case keyBlock: KeyBlock =>
+      logger.info(s"Publisher received new lastKeyBlock with height ${keyBlock.height}.")
+      networker ! keyBlock
+      lastKeyBlock = keyBlock
+      mempool.removeUsedTxs(keyBlock.transactions)
+    case Get =>
+      val newBlock: KeyBlock = createKeyBlock
+      logger.info(s"Publisher got new request and published block with height ${newBlock.height}.")
+      context.parent ! newBlock
+      networker ! newBlock
+    case TimeDelta(delta: Long) =>
+      logger.info(s"Update delta to: $delta")
+      currentDelta = delta
   }
+
+  def time: Long = System.currentTimeMillis() + currentDelta
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, System.currentTimeMillis, lastKeyBlock.currentBlockHash, mempool)
-    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher.")
-    mempool = List.empty
-    context.parent ! keyBlock
-    self ! keyBlock
+      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, mempool.mempool)
+    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
+      s"${keyBlock.transactions.size} transactions inside.")
+    mempool.cleanMempool()
     keyBlock
   }
-
 }

@@ -14,7 +14,7 @@ trait CommonActor extends Actor with StrictLogging {
   override def receive: Receive = specialBehavior orElse smth
 
   override def preStart(): Unit = {
-    logger.info(s"Starting the $self!")
+    logger.info(s"Starting the $self.")
   }
 
   override def postStop(): Unit = {

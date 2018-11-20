@@ -9,8 +9,6 @@ import mvp2.utils.{DbService, Settings}
 
 class Starter extends CommonActor {
 
-  import mvp2.messages.InfoMessage
-
   val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
     .as[Settings]("mvp")
 
@@ -20,17 +18,16 @@ class Starter extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case message: InfoMessage => logger.info(message.info)
+    case message: String => logger.info(message)
   }
 
   def bornKids(): Unit = {
     context.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
-    settings.influx.foreach(influxSettings =>
-      context.actorOf(Props(classOf[InfluxActor], influxSettings), name = "influxActor")
-    )
+    context.actorOf(Props(classOf[InfluxActor], settings), name = "influxActor")
     context.actorOf(Props(classOf[ConsoleActor], settings), "cliActor")
-    context.actorOf(Props(classOf[Informator], settings), "informator")
     context.actorOf(Props(classOf[Zombie]), "zombie")
+    context.actorOf(Props(classOf[Informator], settings), "informator")
+    context.actorOf(Props(classOf[TimeProvider], settings), "timeProvider")
     settings.postgres.foreach { pgSettings =>
       if (pgSettings.read || pgSettings.write) {
         val dbService = new DbService(pgSettings)

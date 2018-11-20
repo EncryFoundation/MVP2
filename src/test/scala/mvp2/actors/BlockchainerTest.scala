@@ -5,11 +5,11 @@ import akka.testkit.TestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
 import mvp2.actors.DummyTestBlockGenerator._
 import mvp2.data.{Block, KeyBlock, MicroBlock}
-import mvp2.messages.Get
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.data.InnerMessages.Get
 import mvp2.utils.Settings
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -39,7 +39,7 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
     Thread.sleep(1000)
     blockchainer ! PoisonPill
     Thread.sleep(500)
-    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer")
+    val blockchainerNew: ActorRef = system.actorOf(Props(classOf[Blockchainer], settings), "blockchainer1")
     Thread.sleep(1000)
 
     implicit val timeout: Timeout = Timeout(10.seconds)

@@ -10,10 +10,10 @@ sealed trait Block {
   val previousKeyBlockHash: ByteString
   val currentBlockHash: ByteString
 
-  def isValid: Boolean
+  def isValid(previousBlock: Block): Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${encode2Base64(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base64(currentBlockHash)}."
+    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}."
 }
 
 final case class KeyBlock(height: Long,
@@ -22,12 +22,11 @@ final case class KeyBlock(height: Long,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
                           data: ByteString) extends Block {
-  override def isValid: Boolean = height > 0 && timestamp > System.currentTimeMillis() - 15000
-
+  override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 }
 
 object KeyBlock {
-  def apply(height: Long = 0,
+  def apply(height: Long = -1,
             timestamp: Long = System.currentTimeMillis,
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
@@ -44,5 +43,14 @@ final case class MicroBlock(height: Long,
                             currentBlockHash: ByteString,
                             transactions: List[Transaction] = List.empty,
                             data: ByteString = ByteString.empty) extends Block {
-  override def isValid: Boolean = true
+  override def isValid(previousBlock: Block): Boolean = true
+}
+
+case class LightKeyBlock(height: Long = 0,
+                         timestamp: Long = 0,
+                         previousKeyBlockHash: ByteString = ByteString.empty,
+                         currentBlockHash: ByteString = ByteString.empty,
+                         txNum: Int = 0,
+                         data: ByteString = ByteString.empty) extends Block {
+  override def isValid(previousBlock: Block): Boolean = true
 }
