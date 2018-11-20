@@ -58,7 +58,7 @@ class Planner(settings: Settings) extends CommonActor {
       val a = epoch.schedule.size
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
-        println(s"New epoch, and send to publisher request")
+        println(s"send to publisher request")
       }
       else {
         context.parent ! epoch.nextBlock
@@ -76,11 +76,11 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = epoch.noBlockInTime
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
-        println(s"New epoch, and send to publisher request")
+        println(s"No block in time - got new period and send to the publosher")
       }
       else {
         context.parent ! epoch.nextBlock
-        println(s"We are waiting new block from network")
+        println(s"We are waiting new block from network with no time block in piriod")
       }
       epoch = epoch.delete
       println(s"no blocks in time Epoch befor activity $a and after ${a - epoch.schedule.size}")
