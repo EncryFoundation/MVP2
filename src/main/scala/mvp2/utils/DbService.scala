@@ -59,7 +59,7 @@ private object DbService {
           micro.height,
           micro.timestamp,
           micro.previousKeyBlockHash.toArray,
-          encode2Base64(micro.currentBlockHash),
+          encode2Base16(micro.currentBlockHash),
           micro.data.toArray,
           Some(micro.previousMicroBlock.toArray)
         )
@@ -69,24 +69,25 @@ private object DbService {
           key.height,
           key.timestamp,
           key.previousKeyBlockHash.toArray,
-          encode2Base64(key.currentBlockHash),
+          encode2Base16(key.currentBlockHash),
           key.data.toArray,
           None
         )
     }
   }
 
-  case class TransactionDbVersion(publicKey: String, nonce: Long, signature: Array[Byte], data: Array[Byte], blockHash: String) {
-    def toTransaction: Transaction = Transaction(decodeFromBase64(publicKey), nonce, ByteString(signature), ByteString(data))
+  case class TransactionDbVersion(publicKey: String, ts: Long, nonce: Long, signature: Array[Byte], data: Array[Byte], blockHash: String) {
+    def toTransaction: Transaction = Transaction(decodeFromBase16(publicKey), ts, nonce, ByteString(signature), ByteString(data))
   }
   object TransactionDbVersion {
     def apply(txs: List[Transaction], block: Block): List[TransactionDbVersion] = txs.map { tx =>
       TransactionDbVersion(
-        encode2Base64(tx.publicKey),
+        encode2Base16(tx.publicKey),
+        tx.timestamp,
         tx.nonce,
         tx.signature.toArray,
         tx.data.toArray,
-        encode2Base64(block.currentBlockHash)
+        encode2Base16(block.currentBlockHash)
       )
     }
   }
@@ -141,7 +142,7 @@ private object Queries {
       """
         |INSERT INTO public.accounts (public_key, nonce) VALUES(?, ?) ON CONFLICT (public_key) DO UPDATE SET nonce = EXCLUDED.nonce
       """.stripMargin
-    Update[(String, Long)](query).run((encode2Base64(account.publicKey), account.nonce))
+    Update[(String, Long)](query).run((encode2Base16(account.publicKey), account.nonce))
   }
 
   def writeAccountDataQuery(account: Account): ConnectionIO[Int] = {
@@ -150,7 +151,7 @@ private object Queries {
         |INSERT INTO public.accounts_data (public_key, number_in_account, data) VALUES(?, ?, ?) ON CONFLICT (public_key, number_in_account) DO NOTHING
       """.stripMargin
     Update[(String, Int, Array[Byte])](query)
-      .updateMany(account.data.zipWithIndex.map(entry => (encode2Base64(account.publicKey), entry._2, entry._1.toArray)))
+      .updateMany(account.data.zipWithIndex.map(entry => (encode2Base16(account.publicKey), entry._2, entry._1.toArray)))
   }
 
   def writeBlockQuery(block: Block): ConnectionIO[Int] = for {
@@ -175,7 +176,7 @@ private object Queries {
   def writeTransactionsQuery(transactions: List[Transaction], block: Block): ConnectionIO[Int] = {
     val query: String =
       """
-        |INSERT INTO public.transactions(public_key, nonce, signature, data, block_hash) VALUES(?, ?, ?, ?, ?)
+        |INSERT INTO public.transactions(public_key, timestamp, nonce, signature, data, block_hash) VALUES(?, ?, ?, ?, ?, ?)
       """.stripMargin
     Update[TransactionDbVersion](query).updateMany(TransactionDbVersion(transactions, block))
   }

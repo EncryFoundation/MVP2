@@ -22,6 +22,7 @@ CREATE table blocks(
 
 CREATE TABLE transactions(
   public_key TEXT,
+  timestamp BIGINT NOT NULL,
   nonce BIGINT NOT NULL,
   signature BYTEA,
   data BYTEA,

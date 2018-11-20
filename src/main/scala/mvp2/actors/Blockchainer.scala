@@ -2,12 +2,11 @@ package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
 import mvp2.data._
-import mvp2.messages.CurrentBlockchainInfo
-import mvp2.messages.Get
 import mvp2.utils.EncodingUtils._
 import mvp2.utils.Settings
 
@@ -28,7 +27,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   }
 
   override def receiveCommand: Receive = {
-    case RecoveryCompleted if settings.postgres.exists(_.read) => publisher ! lastKeyBlock.getOrElse(
+    case RecoveryCompleted if settings.postgres.exists(_.read) => publisher ! blockchain.chain.lastOption.getOrElse(
       KeyBlock(0, System.currentTimeMillis(), ByteString.empty, List())
     )
     case keyBlock: KeyBlock =>
@@ -42,7 +41,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         s"Blockchain consists of ${blockchain.chain.size} blocks.")
       planner ! keyBlock
       publisher ! keyBlock
-      if (settings.postgres.exists(_.write)) context.actorSelection("/user/starter/pgWriter") ! block
+      if (settings.postgres.exists(_.write)) context.actorSelection("/user/starter/pgWriter") ! keyBlock
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>

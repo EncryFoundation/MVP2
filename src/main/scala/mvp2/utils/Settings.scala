@@ -11,7 +11,7 @@ case class Settings(port: Int,
                     ntp: NetworkTimeProviderSettings,
                     influx: InfluxSettings,
                     testingSettings: TestingSettings,
-                    mempoolSetting: MempoolSetting
+                    mempoolSetting: MempoolSetting,
                     postgres: Option[PostgresSettings]
                    )
 
