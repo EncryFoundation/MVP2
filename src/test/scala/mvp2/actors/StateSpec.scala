@@ -9,7 +9,7 @@ class StateSpec extends TestKit(ActorSystem("StateTestSystem")) with PropSpecLik
   property("state applying blocks") {
 
     val numBlocks = 10
-    val stateActor = system.actorOf(Props[Accountant], "Accountant")
+    val stateActor = system.actorOf(Props(classOf[Accountant], false), "Accountant")
     val sampleBlockChain = DummyTestBlockGenerator.generateChain(numBlocks)
     sampleBlockChain.foreach(b => stateActor ! b)
     Thread.sleep(1000)

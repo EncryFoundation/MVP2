@@ -11,7 +11,8 @@ case class Settings(port: Int,
                     ntp: NetworkTimeProviderSettings,
                     influx: InfluxSettings,
                     testingSettings: TestingSettings,
-                    mempoolSetting: MempoolSetting
+                    mempoolSetting: MempoolSetting,
+                    postgres: Option[PostgresSettings]
                    )
 
 case class Node(host: String, port: Int)
@@ -25,3 +26,5 @@ case class NetworkTimeProviderSettings(server: String, updateEvery: Int, timeout
 case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)
 
 case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)
+
+case class PostgresSettings(host: String, pass: String, user: String, read: Boolean, write: Boolean, batchSize: Option[Int])

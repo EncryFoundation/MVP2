@@ -1,11 +1,11 @@
 package mvp2.actors
 
-import akka.actor.Props
-import mvp2.utils.Settings
 import scala.language.postfixOps
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import akka.actor.Props
+import mvp2.utils.{DbService, Settings}
 
 class Starter extends CommonActor {
 
@@ -28,5 +28,13 @@ class Starter extends CommonActor {
     context.actorOf(Props(classOf[Zombie]), "zombie")
     context.actorOf(Props(classOf[Informator], settings), "informator")
     context.actorOf(Props(classOf[TimeProvider], settings), "timeProvider")
+    settings.postgres.foreach { pgSettings =>
+      if (pgSettings.read || pgSettings.write) {
+        val dbService = new DbService(pgSettings)
+        if (pgSettings.write) context.actorOf(Props(classOf[PgWriter], dbService), "pgWriter")
+        if (pgSettings.read)
+          context.actorOf(Props(classOf[PgReader], dbService, settings.postgres.flatMap(_.batchSize).getOrElse(5)), "pgReader")
+      }
+    }
   }
 }
