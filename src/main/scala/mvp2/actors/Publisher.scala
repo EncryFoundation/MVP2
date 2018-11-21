@@ -14,7 +14,7 @@ class Publisher(settings: Settings) extends CommonActor {
   var lastKeyBlock: KeyBlock = KeyBlock()
   val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
+  //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var mempool: Mempool = Mempool(settings)
 
@@ -58,7 +58,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def createKeyBlock: KeyBlock = {
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, List(mempool.mempool.head))
+      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, List.empty)
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()
