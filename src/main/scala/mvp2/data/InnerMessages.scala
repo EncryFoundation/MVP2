@@ -31,12 +31,13 @@ object InnerMessages {
 
   final case class UdpSocket(conection: ActorRef) extends InnerMessage
 
-  final case class PeerPublicKey(peerPublicKey: PublicKey) extends InnerMessage
+  final case class PeerPublicKey(peerPublicKey: ByteString) extends InnerMessage
 
-  final case class MyPublicKey(publicKey: PublicKey) extends InnerMessage
+  final case class MyPublicKey(publicKey: ByteString) extends InnerMessage
+
+  final case class ExpectedBlockSignatureAndHeight(height: Long, signature: ByteString) extends InnerMessage
 
   final case class TimeDelta(delta: Long) extends InnerMessage
 
   final case object GetLightChain extends InnerMessage
-
 }

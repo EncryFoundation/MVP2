@@ -1,9 +1,8 @@
 package mvp2.actors
 
-import java.security.{KeyPair, PublicKey}
+import java.security.KeyPair
 import akka.actor.{ActorRef, ActorSelection, Props}
-import akka.util.ByteString
-import mvp2.data.InnerMessages.{Get, MyPublicKey, TimeDelta}
+import mvp2.data.InnerMessages.{Get, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.{ECDSA, Settings}
 import scala.language.postfixOps
@@ -28,7 +27,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case pair: KeyPair => mySignature = Some(pair)
-      println(s"Got new key pair PUBLISHER")
+      println(s"Got new key pair in publisher.")
     case transaction: Transaction =>
       if (mempool.updateMempool(transaction)) networker ! transaction
       logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
@@ -50,15 +49,13 @@ class Publisher(settings: Settings) extends CommonActor {
   def time: Long = System.currentTimeMillis() + currentDelta
 
   def createKeyBlock: KeyBlock = {
-    val timeM = time
+    val currentTime: Long = time
     val keyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, timeM, lastKeyBlock.currentBlockHash)
-    val myNSignature: ByteString = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes)
-    val newKeyBlock: KeyBlock =
-      KeyBlock(lastKeyBlock.height + 1, timeM, lastKeyBlock.currentBlockHash, mempool.mempool, signature = myNSignature)
-    logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
+      KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
+    val singnedBlock: KeyBlock = keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes))
+    println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()
-    newKeyBlock
+    singnedBlock
   }
 }

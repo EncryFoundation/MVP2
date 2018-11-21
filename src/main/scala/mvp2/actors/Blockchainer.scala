@@ -1,16 +1,14 @@
 package mvp2.actors
 
-import java.security.PublicKey
-
 import mvp2.utils.ECDSA._
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
-import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, TimeDelta}
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockSignatureAndHeight, Get, TimeDelta}
 import mvp2.data._
-import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+import mvp2.utils.{EncodingUtils, Settings}
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -24,18 +22,21 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
-  var waitingChainElements: Option[(Long, PublicKey)] = None
+  var expectedBlockSignatureAndHeight: Option[(Long, ByteString)] = None
 
   override def receiveRecover: Receive = {
     case RecoveryCompleted => logger.info("Blockchainer completed recovery.")
   }
 
   override def receiveCommand: Receive = {
-    case pair: (Long, PublicKey) => waitingChainElements = Some(pair)
-      println(s"Blockchainer got new signature ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(pair._2))}")
-    case keyBlock: KeyBlock
-      if verify(keyBlock.signature, keyBlock.getBytes, compressPublicKey(waitingChainElements.get._2)) &&
-        nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>
+    case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockSignatureAndHeight = Some(height, signature)
+      println(s"Blockchainer got new signature " +
+        s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
+    case keyBlock: KeyBlock if verify(
+      keyBlock.signature,
+      keyBlock.getBytes,
+      expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)
+    ) && nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>
       println(s"Blockchain got new valid block with height: ${keyBlock.height}")
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(

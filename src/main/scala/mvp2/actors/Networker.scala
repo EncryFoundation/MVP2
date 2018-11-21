@@ -50,14 +50,14 @@ class Networker(settings: Settings) extends CommonActor {
           logger.info(s"Got ${transactions.size} new transactions.")
           transactions.foreach(tx => publisher ! tx)
       }
-    case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
+    case MyPublicKey(key) => myPublicKey = Some(key)
     case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => udpSender ! msg)
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
     if (!myPublicKey.contains(serializedKey)) {
-      val newPublicKey: PeerPublicKey = PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
+      val newPublicKey: PeerPublicKey = PeerPublicKey(serializedKey)
       keyKeeper ! newPublicKey
       planner ! newPublicKey
     }
