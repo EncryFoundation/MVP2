@@ -1,6 +1,7 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, ActorSelection, Props}
+import akka.actor.SupervisorStrategy.Resume
+import akka.actor.{ActorRef, ActorSelection, OneForOneStrategy, Props, SupervisorStrategy}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
@@ -25,6 +26,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
+
+  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
+    case _: Exception => Resume
+  }
 
   override def preStart(): Unit =
     if (settings.otherNodes.nonEmpty)
