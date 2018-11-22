@@ -116,7 +116,7 @@ object Planner {
 
     def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
 
-    def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
+    def noBlockInTime: Epoch = this.copy((schedule - schedule.head._1).map(each => (each._1 - 1, each._2)))
 
     def isDone: Boolean = this.schedule.isEmpty
   }
