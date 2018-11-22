@@ -27,7 +27,7 @@ class Publisher(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case pair: KeyPair => mySignature = Some(pair)
-      println(s"Got new key pair in publisher.")
+      //println(s"Got new key pair in publisher.")
     case transaction: Transaction =>
       if (mempool.updateMempool(transaction)) networker ! transaction
       logger.info(s"Mempool size is: ${mempool.mempool.size} after updating with new transaction.")
@@ -38,7 +38,7 @@ class Publisher(settings: Settings) extends CommonActor {
       mempool.removeUsedTxs(keyBlock.transactions)
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
-      println(s"Publisher got new request and published block with height ${newBlock.height}.")
+      //println(s"Publisher got new request and published block with height ${newBlock.height}.")
       context.parent ! newBlock
       networker ! newBlock
     case TimeDelta(delta: Long) =>
@@ -53,8 +53,8 @@ class Publisher(settings: Settings) extends CommonActor {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
     val singnedBlock: KeyBlock = keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes))
-    println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
-      s"${keyBlock.transactions.size} transactions inside.")
+//    println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
+//      s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()
     singnedBlock
   }

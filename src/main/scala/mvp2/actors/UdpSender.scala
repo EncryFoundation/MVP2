@@ -11,6 +11,10 @@ import mvp2.utils.{EncodingUtils, Settings, Sha256}
 
 class UdpSender(settings: Settings) extends Actor with StrictLogging {
 
+  override def preStart(): Unit = {
+    println(s" UDP sender started!")
+  }
+
   val serialization: Serialization = SerializationExtension(context.system)
 
   override def receive: Receive = {

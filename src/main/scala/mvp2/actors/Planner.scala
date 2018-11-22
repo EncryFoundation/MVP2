@@ -28,48 +28,50 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-      println(s"Got new keyBlock with height ${keyBlock.height} on a Planner. New period is $nextPeriod")
+      println(s"Got new keyBlock with height ${keyBlock.height} on a Planner")
     case PeerPublicKey(key) =>
-      println(s"Set before new peer's Key: $allPublicKeys and key is $key")
+//      println(s"Set before new peer's Key: $allPublicKeys and key is $key")
       allPublicKeys = allPublicKeys + key
-      println(s"Got public key from remote: ${EncodingUtils.encode2Base16(key)} on Planner. " +
-        s"New key's collection is $allPublicKeys")
+//      println(s"Got public key from remote: ${EncodingUtils.encode2Base16(key)} on Planner. " +
+//        s"New key's collection is $allPublicKeys")
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
-      println(s"Got my public key: ${EncodingUtils.encode2Base16(key)} on Planner.")
+      //println(s"Got my public key: ${EncodingUtils.encode2Base16(key)} on Planner.")
     case Tick if epoch.isDone =>
-      println(s"Epoch is done. Last key block is: $lastBlock. Keys set is: $allPublicKeys. Is it empty ${allPublicKeys.isEmpty}")
+      //println(s"Epoch is done. Last key block is: $lastBlock. Keys set is: $allPublicKeys. Is it empty ${allPublicKeys.isEmpty}")
       epoch = Epoch(lastBlock, allPublicKeys)
-      println(s"Last epoch has done. Create new epoch - ${epoch.schedule}")
+      //println(s"Last epoch has done. Create new epoch - ${epoch.schedule}")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       } else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
+      //println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.timeToPublish =>
-      println(s"It's time to publish new block!")
+      //println(s"It's time to publish new block!")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       }
       else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
+      //println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.noBlocksInTime =>
       val newPeriod = Period(nextPeriod, settings)
-      println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
+      //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextPeriod = newPeriod
       context.parent ! nextPeriod
+      println(s"${epoch.schedule} before")
       epoch = epoch.noBlockInTime
+      println(s"${epoch.schedule} after")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       }
       else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
+      //println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
     case Tick =>
   }
 }
@@ -107,7 +109,7 @@ object Planner {
 
     def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
 
-    def noBlockInTime: Epoch = this.copy((schedule - schedule.head._1).map(each => (each._1 - 1, each._2)))
+    def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
 
     def isDone: Boolean = this.schedule.isEmpty
   }
@@ -119,6 +121,7 @@ object Planner {
       val schedule: Map[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
           yield i).zip(publicKeys).toMap[Long, ByteString]
+      println(s"new schedule $schedule  after create new Epoch")
       Epoch(schedule)
     }
   }

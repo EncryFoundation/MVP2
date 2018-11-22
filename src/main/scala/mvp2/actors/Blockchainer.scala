@@ -30,14 +30,14 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def receiveCommand: Receive = {
     case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockSignatureAndHeight = Some(height, signature)
-      println(s"Blockchainer got new signature " +
-        s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
+//      println(s"Blockchainer got new signature " +
+//        s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
     case keyBlock: KeyBlock if verify(
       keyBlock.signature,
       keyBlock.getBytes,
       expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)
     ) && nextTurn.begin >= System.currentTimeMillis() && System.currentTimeMillis() <= nextTurn.end =>
-      println(s"Blockchain got new valid block with height: ${keyBlock.height}")
+      //println(s"Blockchain got new valid block with height: ${keyBlock.height}")
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.headOption.map(block => block.height).getOrElse(0),
@@ -51,7 +51,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
-      println(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
+      //println(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
       nextTurn = period
     case _ => logger.info("Got something strange at Blockchainer!")
   }
