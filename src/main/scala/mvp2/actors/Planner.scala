@@ -69,7 +69,7 @@ class Planner(settings: Settings) extends CommonActor {
         epoch = newEpoch
         self ! Tick
       } else {
-        epoch = epoch.noBlockInTime
+        epoch = newEpoch
         println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
         if (epoch.nextBlock._2 == myPublicKey) {
           publisher ! Get
@@ -116,7 +116,7 @@ object Planner {
 
     def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
 
-    def noBlockInTime: Epoch = this.copy((schedule - schedule.head._1).map(each => (each._1 - 1, each._2)))
+    def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
 
     def isDone: Boolean = this.schedule.isEmpty
   }
