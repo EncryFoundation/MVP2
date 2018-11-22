@@ -47,7 +47,7 @@ class Planner(settings: Settings) extends CommonActor {
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       } else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      //println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
+      println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.timeToPublish =>
       //println(s"It's time to publish new block!")
       if (epoch.nextBlock._2 == myPublicKey) {
@@ -56,7 +56,7 @@ class Planner(settings: Settings) extends CommonActor {
       }
       else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      //println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
+      println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.noBlocksInTime =>
       val newPeriod = Period(nextPeriod, settings)
       //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
