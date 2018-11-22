@@ -1,6 +1,7 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSelection, Props}
+import mvp2.actors.Planner.Tick
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
@@ -23,6 +24,10 @@ class Publisher(settings: Settings) extends CommonActor {
     logger.info(s"Mempool size is: ${mempool.mempool.size} after cleaning.")
   }
 
+  context.system.scheduler.schedule(1.seconds, 1.seconds) {
+    self ! Tick
+  }
+
   override def preStart(): Unit =
     if (settings.otherNodes.isEmpty) context.become(publishBlockEnabled)
 
@@ -33,6 +38,8 @@ class Publisher(settings: Settings) extends CommonActor {
     case TimeDelta(delta: Long) =>
       logger.info(s"Update delta to: $delta")
       currentDelta = delta
+    case Tick =>
+      logger.info("Publisher not Synced!")
   }
 
   def publishBlockEnabled: Receive = {
@@ -52,6 +59,7 @@ class Publisher(settings: Settings) extends CommonActor {
     case TimeDelta(delta: Long) =>
       logger.info(s"Update delta to: $delta")
       currentDelta = delta
+    case Tick => logger.info("Publisher synced!")
   }
 
   def time: Long = System.currentTimeMillis() + currentDelta
