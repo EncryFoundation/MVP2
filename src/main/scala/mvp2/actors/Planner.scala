@@ -41,7 +41,7 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if epoch.isDone =>
       //println(s"Epoch is done. Last key block is: $lastBlock. Keys set is: $allPublicKeys. Is it empty ${allPublicKeys.isEmpty}")
       epoch = Epoch(lastBlock, allPublicKeys)
-      //println(s"Last epoch has done. Create new epoch - ${epoch.schedule}")
+      println(s"Last epoch has done. Create new epoch - ${epoch.schedule}")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
@@ -49,7 +49,7 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = epoch.delete
       println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.timeToPublish =>
-      //println(s"It's time to publish new block!")
+      println(s"It's time to publish new block!")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
