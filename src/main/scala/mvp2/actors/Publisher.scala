@@ -38,7 +38,7 @@ class Publisher(settings: Settings) extends CommonActor {
       mempool.removeUsedTxs(keyBlock.transactions)
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
-      //println(s"Publisher got new request and published block with height ${newBlock.height}.")
+      println(s"Publisher got new request and published block with height ${newBlock.height}.")
       context.parent ! newBlock
       networker ! newBlock
     case TimeDelta(delta: Long) =>

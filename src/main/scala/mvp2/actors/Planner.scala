@@ -121,7 +121,7 @@ object Planner {
       val schedule: Map[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
           yield i).zip(publicKeys).toMap[Long, ByteString]
-      println(s"new schedule $schedule  after create new Epoch")
+      //println(s"new schedule $schedule  after create new Epoch")
       Epoch(schedule)
     }
   }
