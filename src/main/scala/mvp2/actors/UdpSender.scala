@@ -38,5 +38,7 @@ class UdpSender(settings: Settings) extends Actor with StrictLogging {
       NetworkMessagesId.SyncMessageIteratorsId +: SyncMessageIterators.toBytes(syncIterators)
     case transactions: Transactions =>
       NetworkMessagesId.TransactionsId +: Transactions.toBytes(transactions)
+    case lastBlockHeight: LastBlockHeight =>
+      NetworkMessagesId.LastBlockHeightId +: LastBlockHeight.toBytes(lastBlockHeight)
   }
 }
