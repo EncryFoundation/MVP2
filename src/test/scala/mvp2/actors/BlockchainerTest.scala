@@ -6,16 +6,24 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
 import mvp2.actors.DummyTestBlockGenerator._
 import mvp2.data.{Block, KeyBlock, MicroBlock}
 import akka.pattern.ask
-import akka.util.Timeout
+import akka.util.{ByteString, Timeout}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.data.InnerMessages.Get
-import mvp2.utils.Settings
+import mvp2.data.InnerMessages.{Get, SendToNetwork}
+import mvp2.utils.{Settings, Sha256}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import io.circe.parser.decode
+import io.circe.generic.auto._
+
 import scala.concurrent.duration._
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
+import io.circe.syntax._
+import mvp2.data.NetworkMessages._
+import mvp2.utils.EncodingUtils._
+
+import scala.util.Random
 
 class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
   with PropSpecLike
@@ -24,6 +32,14 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
   with StrictLogging {
 
   property("Blockchain before and after save should be equals") {
+
+    val block = (0 until 10).map(_ => DummyTestBlockGenerator.generateKeyBlock(Sha256.toSha256("123"), 10))
+
+    val blocks = Blocks(block.toList)
+
+    println(blocks.asJson.toString)
+
+    println(ByteString(blocks.asJson.toString).length)
 
     val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
       .as[Settings]("mvp")
