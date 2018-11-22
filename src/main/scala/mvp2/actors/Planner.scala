@@ -64,19 +64,19 @@ class Planner(settings: Settings) extends CommonActor {
       context.parent ! nextPeriod
       //println(s"${epoch.schedule} before")
       val newEpoch: Epoch = epoch.noBlockInTime
+      println(s"no block in time. Epoch with noBlocks is: ${newEpoch.schedule}")
       if (newEpoch.isDone) {
         println(s"no blocks in time Epoch is done. Send self new tick with isDone epoch.")
         epoch = newEpoch
-        self ! Tick
       } else {
         epoch = newEpoch
-        println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
         if (epoch.nextBlock._2 == myPublicKey) {
           publisher ! Get
           context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
         }
         else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
         epoch = epoch.delete
+        println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
       }
       //println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
     case Tick =>
