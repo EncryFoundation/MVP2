@@ -34,6 +34,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 //        s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
     case keyBlock: KeyBlock if verify(keyBlock.signature, keyBlock.getBytes,
       expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
+      println(s"${nextTurn.begin} && ${nextTurn.end} && ${keyBlock.timestamp}")
       println(verify(keyBlock.signature, keyBlock.getBytes,
         expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)))
       println(nextTurn.begin <= keyBlock.timestamp)
@@ -52,7 +53,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
-      //println(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
+      println(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
       nextTurn = period
     case _ => logger.info("Got something strange at Blockchainer!")
   }
