@@ -3,6 +3,7 @@ package mvp2.actors
 import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.actors.Planner.Tick
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
+import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,7 +55,7 @@ class Publisher(settings: Settings) extends CommonActor {
     case Get =>
       val newBlock: KeyBlock = createKeyBlock
       logger.info(s"Publisher got new request and published block with height ${newBlock.height}.")
-      context.parent ! newBlock
+      context.parent ! Blocks(List(newBlock))
       networker ! newBlock
     case TimeDelta(delta: Long) =>
       logger.info(s"Update delta to: $delta")

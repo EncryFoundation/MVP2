@@ -42,13 +42,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
 
   override def receiveCommand: Receive = {
     case Blocks(blocks) =>
-      if (blocks.headOption.exists(_.height > blockchain.maxHeight)) {
         blockCache += blocks
         applyBlockFromCache()
-      }
-    case keyBlock: KeyBlock =>
-      blockCache += keyBlock
-      applyBlockFromCache()
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>

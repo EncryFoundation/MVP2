@@ -42,7 +42,8 @@ class Networker(settings: Settings) extends CommonActor {
               newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate.addr, peerToAddOrUpdate.publicKey)
                 .updatePeerTime(msgFromNetwork.remote)
           }
-        case Blocks(_) => context.parent ! msgFromNetwork.message
+        case Blocks(blocks) =>
+          if (blocks.nonEmpty) context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
           influxActor ! SyncMessageIteratorsFromRemote(
             iterators.map(iterInfo => iterInfo.msgName -> iterInfo.msgIter).toMap,
