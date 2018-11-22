@@ -1,6 +1,8 @@
 package mvp2.data
 
 import akka.util.ByteString
+import com.google.protobuf.{ByteString => pByteString}
+import mvp2.data.my_messages.KeyBlockProtobuf
 import mvp2.utils.Sha256
 import mvp2.utils.EncodingUtils._
 
@@ -36,6 +38,22 @@ object KeyBlock {
     val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
     new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data)
   }
+
+  def toProtobuf(block: KeyBlock): KeyBlockProtobuf = KeyBlockProtobuf()
+    .withCurrentBlockHash(pByteString.copyFrom(block.currentBlockHash.toByteBuffer))
+    .withHeight(block.height)
+    .withTimestamp(block.timestamp)
+    .withTransactions(block.transactions.map(Transaction.toProtobuf))
+    .withData(pByteString.copyFrom(block.data.toByteBuffer))
+
+  def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
+    blockProtobuf.height,
+    blockProtobuf.timestamp,
+    ByteString(blockProtobuf.previousKeyBlockHash.toByteArray),
+    ByteString(blockProtobuf.currentBlockHash.toByteArray),
+    blockProtobuf.transactions.map(Transaction.fromProtobuf).toList,
+    ByteString(blockProtobuf.data.toByteArray)
+  )
 }
 
 final case class MicroBlock(height: Long,

@@ -9,10 +9,8 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.MVP2.system
 import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
-import io.circe.parser.decode
-import io.circe.generic.auto._
-import mvp2.utils.EncodingUtils._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
+import scala.util.Try
 
 class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
@@ -58,9 +56,11 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
   }
 
 
-  def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes match {
-    case _ if decode[NetworkMessage](bytes.utf8String).isRight => decode[NetworkMessage](bytes.utf8String).toOption
-    case msg => logger.info(s"Failed to parse: ${msg.utf8String}")
-      None
+  def deserialize(bytes: ByteString): Try[NetworkMessage] = bytes.head match {
+    case NetworkMessagesId.PeersId => Peers.parseBytes(bytes.tail)
+    case NetworkMessagesId.BlocksId => Blocks.parseBytes(bytes.tail)
+    case NetworkMessagesId.SyncMessageIteratorsId => SyncMessageIterators.parseBytes(bytes.tail)
+    case NetworkMessagesId.TransactionsId => Transactions.parseBytes(bytes.tail)
+    case wrongType => throw new Exception(s"No serializer found for type: $wrongType")
   }
 }

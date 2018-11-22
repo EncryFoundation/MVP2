@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import akka.actor.{ActorRef, ActorSelection, Props}
+import akka.actor.ActorSelection
 import mvp2.actors.Planner.Tick
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.NetworkMessages.Blocks
