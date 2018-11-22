@@ -30,6 +30,7 @@ class Planner(settings: Settings) extends CommonActor {
       context.parent ! nextPeriod
       println(s"Got new keyBlock with height ${keyBlock.height} on a Planner. New period is $nextPeriod")
     case PeerPublicKey(key) =>
+      println(s"Set before new peer's Key: $allPublicKeys and key is $key")
       allPublicKeys = allPublicKeys + key
       println(s"Got public key from remote: ${EncodingUtils.encode2Base16(key)} on Planner. " +
         s"New key's collection is $allPublicKeys")

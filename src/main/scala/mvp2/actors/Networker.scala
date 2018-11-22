@@ -8,7 +8,7 @@ import akka.util.ByteString
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.Settings
 
 class Networker(settings: Settings) extends CommonActor {
 
