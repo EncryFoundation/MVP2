@@ -62,15 +62,22 @@ class Planner(settings: Settings) extends CommonActor {
       //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
       nextPeriod = newPeriod
       context.parent ! nextPeriod
-      println(s"${epoch.schedule} before")
-      epoch = epoch.noBlockInTime
-      println(s"${epoch.schedule} after")
-      if (epoch.nextBlock._2 == myPublicKey) {
-        publisher ! Get
-        context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
+      //println(s"${epoch.schedule} before")
+      val newEpoch: Epoch = epoch.noBlockInTime
+      if (newEpoch.isDone) {
+        println(s"no blocks in time Epoch is done. Send self new tick with isDone epoch.")
+        epoch = newEpoch
+        self ! Tick
+      } else {
+        epoch = epoch.noBlockInTime
+        println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
+        if (epoch.nextBlock._2 == myPublicKey) {
+          publisher ! Get
+          context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
+        }
+        else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
+        epoch = epoch.delete
       }
-      else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-      epoch = epoch.delete
       //println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
     case Tick =>
   }
@@ -109,7 +116,7 @@ object Planner {
 
     def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
 
-    def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
+    def noBlockInTime: Epoch = this.copy((schedule - schedule.head._1).map(each => (each._1 - 1, each._2)))
 
     def isDone: Boolean = this.schedule.isEmpty
   }
