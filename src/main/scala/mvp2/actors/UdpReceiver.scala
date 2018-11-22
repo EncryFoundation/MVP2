@@ -61,6 +61,7 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
     case NetworkMessagesId.BlocksId => Blocks.parseBytes(bytes.tail)
     case NetworkMessagesId.SyncMessageIteratorsId => SyncMessageIterators.parseBytes(bytes.tail)
     case NetworkMessagesId.TransactionsId => Transactions.parseBytes(bytes.tail)
+    case NetworkMessagesId.LastBlockHeightId => LastBlockHeight.parseBytes(bytes.tail)
     case wrongType => throw new Exception(s"No serializer found for type: $wrongType")
   }
 }
