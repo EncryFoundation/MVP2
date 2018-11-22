@@ -36,8 +36,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
       println(verify(keyBlock.signature, keyBlock.getBytes,
         expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)))
-      println(nextTurn.begin >= System.currentTimeMillis())
-      println(System.currentTimeMillis() <= nextTurn.end)
+      println(nextTurn.begin >= keyBlock.timestamp)
+      println(keyBlock.timestamp <= nextTurn.end)
       println(s"Blockchain got new valid block with height: ${keyBlock.height}")
       blockchain = Blockchain(keyBlock :: blockchain.chain)
       informator ! CurrentBlockchainInfo(
