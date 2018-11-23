@@ -2,7 +2,6 @@ package mvp2.actors
 
 import akka.actor.SupervisorStrategy.Resume
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
-import mvp2.utils.ECDSA._
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
@@ -50,22 +49,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
         blockCache += blocks
         applyBlockFromCache()
-    case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockSignatureAndHeight = Some(height, signature)
+    case ExpectedBlockSignatureAndHeight(height, signature) =>
+      expectedBlockSignatureAndHeight = Some(height, signature)
       logger.info(s"Blockchainer got new signature " +
         s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
-    case keyBlock: KeyBlock if verify(keyBlock.signature, keyBlock.getBytes,
-      expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
-      logger.info(s"Blockchain got new valid block with height: ${keyBlock.height}")
-      blockchain = Blockchain(blockchain.chain + keyBlock)
-      informator ! CurrentBlockchainInfo(
-        blockchain.chain.headOption.map(block => block.height).getOrElse(0),
-        blockchain.chain.headOption,
-        None
-      )
-      logger.info(s"Blockchainer received new keyBlock with height ${keyBlock.height}. " +
-        s"Blockchain consists of ${blockchain.chain.size} blocks.")
-      planner ! keyBlock
-      publisher ! keyBlock
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
@@ -91,9 +78,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         s"Blockchain's height is ${blockchain.chain.size}.")
       planner ! block
       publisher ! block
+      planner ! block
       if (blockCache.isEmpty && !isSynced) {
         isSynced = true
         publisher ! SyncingDone
+        planner ! SyncingDone
       }
       applyBlockFromCache()
     case None =>

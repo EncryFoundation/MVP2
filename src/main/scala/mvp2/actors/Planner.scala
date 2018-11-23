@@ -5,7 +5,7 @@ import akka.actor.{ActorRef, Props}
 import akka.actor.{ActorSelection, Cancellable}
 import akka.util.ByteString
 import mvp2.actors.Planner.Epoch
-import mvp2.data.InnerMessages.{ExpectedBlockSignatureAndHeight, Get, MyPublicKey, PeerPublicKey}
+import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, Settings}
 import scala.concurrent.duration._
@@ -32,6 +32,16 @@ class Planner(settings: Settings) extends CommonActor {
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
 
   override def specialBehavior: Receive = {
+    case SyncingDone => context.become(syncedNode)
+    case keyBlock: KeyBlock => lastBlock = keyBlock
+    case PeerPublicKey(key) => allPublicKeys = allPublicKeys + key
+    case MyPublicKey(key) =>
+      allPublicKeys = allPublicKeys + key
+      myPublicKey = key
+    case _ =>
+  }
+
+  def syncedNode: Receive = {
     case keyBlock: KeyBlock =>
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
