@@ -31,7 +31,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
-  var expectedBlockSignatureAndHeight: Option[(Long, ByteString)] = None
+  var expectedBlockPublicKeyAndHeight: Option[(Long, ByteString)] = None
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
     case _: Exception => Resume
@@ -50,11 +50,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
         blockCache += blocks
         applyBlockFromCache()
-    case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockSignatureAndHeight = Some(height, signature)
+    case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockPublicKeyAndHeight = Some(height, signature)
       logger.info(s"Blockchainer got new signature " +
-        s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
+        s"${EncodingUtils.encode2Base16(expectedBlockPublicKeyAndHeight.map(_._2).getOrElse(ByteString.empty))}")
     case keyBlock: KeyBlock if verify(keyBlock.signature, keyBlock.getBytes,
-      expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
+      expectedBlockPublicKeyAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
       logger.info(s"Blockchain got new valid block with height: ${keyBlock.height}")
       blockchain = Blockchain(blockchain.chain + keyBlock)
       informator ! CurrentBlockchainInfo(

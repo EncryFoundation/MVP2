@@ -41,6 +41,7 @@ message KeyBlockProtobuf {
     repeated TransactionProtobuf transactions = 5;
     bytes data = 6;
     bytes signature = 7;
+    repeated bytes scheduler = 8;
 }
 
 message TransactionProtobuf {

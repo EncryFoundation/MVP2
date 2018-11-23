@@ -42,36 +42,19 @@ class Planner(settings: Settings) extends CommonActor {
       myPublicKey = key
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
-      if (epoch.nextBlock._2 == myPublicKey) {
-        publisher ! Get
-        context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-      } else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-      epoch = epoch.delete
-    case Tick if nextPeriod.timeToPublish =>
-      if (epoch.nextBlock._2 == myPublicKey) {
-        publisher ! Get
-        context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-      }
-      else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-      epoch = epoch.delete
+      checkMyTurn()
+    case Tick if nextPeriod.timeToPublish => checkMyTurn()
     case Tick if nextPeriod.noBlocksInTime =>
-      val newEpoch: Epoch = epoch.noBlockInTime
-      if (newEpoch.isDone)
-        epoch = newEpoch
-      else {
-        epoch = newEpoch
-        if (epoch.nextBlock._2 == myPublicKey) {
-          publisher ! Get
-          context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-        }
-        else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
-        epoch = epoch.delete
-      }
-      val newPeriod = Period(nextPeriod, settings)
-      nextPeriod = newPeriod
+      epoch = epoch.noBlockInTime
+      nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
     case Tick =>
   }
+
+  def checkMyTurn(): Unit =
+    if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
+    context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
+    epoch = epoch.delete
 }
 
 object Planner {

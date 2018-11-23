@@ -25,7 +25,8 @@ final case class KeyBlock(height: Long,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
                           data: ByteString,
-                          signature: ByteString) extends Block with Ordered[KeyBlock] {
+                          signature: ByteString,
+                          scheduler: List[ByteString]) extends Block with Ordered[KeyBlock] {
 
   override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 
@@ -44,9 +45,10 @@ object KeyBlock {
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
             data: ByteString = ByteString.empty,
-            signature: ByteString = ByteString.empty): KeyBlock = {
+            signature: ByteString = ByteString.empty,
+            scheduler: List[ByteString] = List.empty): KeyBlock = {
     val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
-    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data, signature)
+    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data, signature, scheduler)
   }
 
   def toProtobuf(block: KeyBlock): KeyBlockProtobuf = KeyBlockProtobuf()
@@ -56,6 +58,7 @@ object KeyBlock {
     .withTransactions(block.transactions.map(Transaction.toProtobuf))
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
     .withSignature(pByteString.copyFrom(block.signature.toByteBuffer))
+    .withScheduler(block.scheduler.map(publicKey => pByteString.copyFrom(publicKey.toByteBuffer)))
 
   def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
     blockProtobuf.height,
@@ -64,7 +67,8 @@ object KeyBlock {
     ByteString(blockProtobuf.currentBlockHash.toByteArray),
     blockProtobuf.transactions.map(Transaction.fromProtobuf).toList,
     ByteString(blockProtobuf.data.toByteArray),
-    ByteString(blockProtobuf.signature.toByteArray)
+    ByteString(blockProtobuf.signature.toByteArray),
+    blockProtobuf.scheduler.map(protKey => ByteString(protKey.toByteArray)).toList
   )
 }
 
