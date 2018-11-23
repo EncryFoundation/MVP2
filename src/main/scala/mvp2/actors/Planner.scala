@@ -65,7 +65,7 @@ class Planner(settings: Settings) extends CommonActor {
 
   def checkMyTurn(): Unit = {
     if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
-    context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
+    context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
     epoch = epoch.delete
   }
 }

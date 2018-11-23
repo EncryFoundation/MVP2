@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Period
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
-import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockSignatureAndHeight, Get, TimeDelta}
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockPublicKeyAndHeight, Get, TimeDelta}
 import mvp2.data._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,7 +49,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
         blockCache += blocks
         applyBlockFromCache()
-    case ExpectedBlockSignatureAndHeight(height, signature) =>
+    case ExpectedBlockPublicKeyAndHeight(height, signature) =>
       expectedPublicKeyAndHeight = Some(height, signature)
       logger.info(s"Blockchainer got new signature " +
         s"${EncodingUtils.encode2Base16(expectedPublicKeyAndHeight.map(_._2).getOrElse(ByteString.empty))}")
