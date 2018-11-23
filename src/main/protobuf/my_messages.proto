@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package mvp2.data;
+
+message BlocksProtobuf {
+    repeated KeyBlockProtobuf blocks = 1;
+}
+
+message PeersProtobuf {
+    repeated PeerProtobuf peers = 1;
+    string remote = 2;
+}
+
+message TransactionsProtobuf {
+    repeated TransactionProtobuf txs = 1;
+}
+
+message SyncMessageIteratorsProtobuf {
+    repeated IterInfoProtobuf iters = 1;
+}
+
+message LastBlockHeightProtobuf {
+    int64 height = 1;
+}
+
+message PeerProtobuf {
+    string address = 1;
+    bytes publickey = 2;
+}
+
+message IterInfoProtobuf {
+    string msgName = 1;
+    int32 iter = 2;
+}
+
+message KeyBlockProtobuf {
+    int64 height = 1;
+    int64 timestamp = 2;
+    bytes previousKeyBlockHash = 3;
+    bytes currentBlockHash = 4;
+    repeated TransactionProtobuf transactions = 5;
+    bytes data = 6;
+}
+
+message TransactionProtobuf {
+    bytes publicKey = 1;
+    int64 timestamp = 2;
+    int64 nonce = 3;
+    bytes signature = 4;
+    bytes data = 5;
+}

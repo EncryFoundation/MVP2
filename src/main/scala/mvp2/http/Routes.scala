@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import mvp2.data.{LightKeyBlock, Transaction}
+import mvp2.utils.{EncodingUtils, Settings}
 import mvp2.utils.Settings
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
@@ -24,7 +25,7 @@ import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
-  case class ApiInfo(height: Long = 0, keyBlock: Option[ByteString], microBlock: Option[ByteString])
+  case class ApiInfo(height: Long = 0, keyBlock: Option[String], microBlock: Option[ByteString])
 
   implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
   implicit val ec: ExecutionContextExecutor = context.dispatcher
@@ -39,8 +40,11 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
 
   def apiInfo: Route = pathPrefix("info")(
     toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(blockchain =>
-      ApiInfo(blockchain.height, blockchain.lastKeyBlock.map(block => block.currentBlockHash),
-        blockchain.lastMicroBlock).asJson)
+      ApiInfo(
+        blockchain.height,
+        blockchain.lastKeyBlock.map(block => EncodingUtils.encode2Base16(block.currentBlockHash)),
+        blockchain.lastMicroBlock).asJson
+      )
     )
   )
 

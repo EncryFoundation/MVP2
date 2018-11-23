@@ -1,7 +1,7 @@
 package mvp2.actors
 
-import java.security.PublicKey
-import akka.actor.{ActorSelection, Cancellable}
+import java.security.{KeyPair, PublicKey}
+import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
 import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
@@ -13,11 +13,17 @@ class Planner(settings: Settings) extends CommonActor {
 
   import Planner.{Period, Tick}
 
+  var nextTurn: Period = Period(KeyBlock(), settings)
+  val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
+  val myKeys: KeyPair = ECDSA.createKeyPair
   var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
   var nextPeriod: Period = Period(KeyBlock(), settings)
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+
+  if (settings.canPublishBlocks)
+    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>

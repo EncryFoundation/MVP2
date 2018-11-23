@@ -10,6 +10,7 @@ import mvp2.MVP2.system
 import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
+import scala.util.Try
 
 class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
 
@@ -55,22 +56,12 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
   }
 
 
-  def deserialize(bytes: ByteString): Option[NetworkMessage] = bytes.head match {
-    case NetworkMessagesId.PeersId => Option(serialization.findSerializerFor(Peers).fromBinary(bytes.toArray.tail))
-      .map {
-        case knownPeers: Peers => knownPeers
-      }
-    case NetworkMessagesId.BlocksId => Option(serialization.findSerializerFor(Blocks).fromBinary(bytes.toArray.tail))
-      .map {
-        case blocks: Blocks => blocks
-      }
-    case NetworkMessagesId.SyncMessageIteratorsId =>
-      Option(serialization.findSerializerFor(SyncMessageIterators).fromBinary(bytes.toArray.tail)).map {
-        case iterators: SyncMessageIterators => iterators
-      }
-    case NetworkMessagesId.TransactionsId =>
-      Option(serialization.findSerializerFor(Transactions).fromBinary(bytes.toArray.tail)).map {
-        case txs: Transactions => txs
-      }
+  def deserialize(bytes: ByteString): Try[NetworkMessage] = bytes.head match {
+    case NetworkMessagesId.PeersId => Peers.parseBytes(bytes.tail)
+    case NetworkMessagesId.BlocksId => Blocks.parseBytes(bytes.tail)
+    case NetworkMessagesId.SyncMessageIteratorsId => SyncMessageIterators.parseBytes(bytes.tail)
+    case NetworkMessagesId.TransactionsId => Transactions.parseBytes(bytes.tail)
+    case NetworkMessagesId.LastBlockHeightId => LastBlockHeight.parseBytes(bytes.tail)
+    case wrongType => throw new Exception(s"No serializer found for type: $wrongType")
   }
 }

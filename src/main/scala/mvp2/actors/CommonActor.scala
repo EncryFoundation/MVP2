@@ -8,7 +8,7 @@ trait CommonActor extends Actor with StrictLogging {
   def specialBehavior: Receive
 
   def smth: Receive = {
-    case smth: Any => logger.info(s"Got smth strange: $smth.")
+    case smth: Any => logger.info(s"Got smth strange: $smth. I am: ${self.path}")
   }
 
   override def receive: Receive = specialBehavior orElse smth
