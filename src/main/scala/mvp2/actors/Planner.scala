@@ -28,7 +28,8 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-      println(s"Got new keyBlock with height ${keyBlock.height} on a Planner")
+      println(s"Got new keyBlock with height ${keyBlock.height} on a Planner and ${keyBlock.timestamp}")
+      println(s"Got new period on a Planner${nextPeriod.begin} ${nextPeriod.end}")
     case PeerPublicKey(key) =>
 //      println(s"Set before new peer's Key: $allPublicKeys and key is $key")
       allPublicKeys = allPublicKeys + key
@@ -47,7 +48,7 @@ class Planner(settings: Settings) extends CommonActor {
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       } else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after creating new and after removing last element is: ${epoch.schedule}")
+      println(s"Epoch after creating new and  removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.timeToPublish =>
       println(s"It's time to publish new block!")
       if (epoch.nextBlock._2 == myPublicKey) {
@@ -103,7 +104,7 @@ object Planner {
     }
 
     def apply(previousPeriod: Period, settings: Settings): Period = {
-      val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod / 2
+      val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod
       Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
     }
   }
@@ -128,7 +129,6 @@ object Planner {
       val schedule: Map[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
           yield i).zip(publicKeys).toMap[Long, ByteString]
-      //println(s"new schedule $schedule  after create new Epoch")
       Epoch(schedule)
     }
   }
