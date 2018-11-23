@@ -17,7 +17,7 @@ object InnerMessages {
                                          lastMicroBlock: Option[ByteString] = None) extends InnerMessage {
 
     override def toString: String = s"Height: $height, last keyBlock: ${lastKeyBlock.getOrElse("None")}, " +
-      s"last microBlock: $lastMicroBlock."
+      s"last microBlock: $lastMicroBlock"
   }
 
   final case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends InnerMessage
@@ -46,4 +46,5 @@ object InnerMessages {
   final case class RemoteBlockchainMissingPart(blocks: List[KeyBlock], remote: InetSocketAddress) extends InnerMessage
 
   final case object SyncingDone extends InnerMessage
+
 }
