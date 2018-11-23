@@ -2,7 +2,7 @@ package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
 import mvp2.data.InnerMessages._
-import mvp2.data.NetworkMessages.{Blocks, Peers, SyncMessageIterators, Transactions}
+import mvp2.data.NetworkMessages._
 import scala.concurrent.ExecutionContext.Implicits.global
 import mvp2.utils.{EncodingUtils, Settings}
 import org.influxdb.{InfluxDB, InfluxDBFactory}
@@ -51,28 +51,16 @@ class InfluxActor(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case MsgFromNetwork(message, remote, id) =>
-      val msg: String = message match {
-        case Peers(_, _) => "peers"
-        case Blocks(_) => "blocks"
-        case SyncMessageIterators(_) => "iterSync"
-        case Transactions(_) => "tx"
-      }
-      val (newIncrements, i) = getMsgIncrements(remote, msg, msgFromRemote)
+      val (newIncrements, i) = getMsgIncrements(remote, message.name, msgFromRemote)
       msgFromRemote = newIncrements
       influxDB.write(settings.influx.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=${message.name} value=$time""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case MsgToNetwork(message, id, remote) =>
-      val msg: String = message match {
-        case Peers(_, _) => "peers"
-        case Blocks(_) => "blocks"
-        case SyncMessageIterators(_) => "iterSync"
-        case Transactions(_) => "tx"
-      }
-      val (newIncrements, i) = getMsgIncrements(remote, msg, msgToRemote)
+      val (newIncrements, i) = getMsgIncrements(remote, message.name, msgToRemote)
       msgToRemote = newIncrements
       influxDB.write(settings.influx.port,
-        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=$msg value=$time""")
+        s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=${message.name} value=$time""")
       logger.info(s"Sent data about message to influx: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
       logger.info(s"Sync iterators from $remote")
@@ -86,7 +74,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
   def syncIterators(): Unit =
     msgToRemote.foreach {
       case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/udpSender") !
-        SendToNetwork(SyncMessageIterators(iterators), peer)
+        SendToNetwork(SyncMessageIterators(iterators.map(iter => IterInfo(iter._1, iter._2)).toList), peer)
     }
 
   def time: Long = System.currentTimeMillis() + currentDelta

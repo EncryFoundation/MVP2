@@ -1,21 +1,21 @@
 package mvp2.actors
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
-import akka.testkit.TestKit
-import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
-import mvp2.actors.DummyTestBlockGenerator._
-import mvp2.data.{Block, KeyBlock, MicroBlock}
 import akka.pattern.ask
+import akka.testkit.TestKit
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
+import mvp2.actors.DummyTestBlockGenerator._
 import mvp2.data.InnerMessages.Get
+import mvp2.data.{Block, KeyBlock, MicroBlock}
 import mvp2.utils.Settings
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import scala.concurrent.duration._
+import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}
 import scala.collection.immutable.TreeMap
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
   with PropSpecLike
