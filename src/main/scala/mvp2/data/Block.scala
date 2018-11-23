@@ -6,7 +6,7 @@ import mvp2.data.my_messages.KeyBlockProtobuf
 import mvp2.utils.Sha256
 import mvp2.utils.EncodingUtils._
 
-sealed trait Block{
+sealed trait Block {
   val height: Long
   val timestamp: Long
   val previousKeyBlockHash: ByteString
@@ -15,7 +15,7 @@ sealed trait Block{
   def isValid(previousBlock: Block): Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}."
+    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}"
 }
 
 final case class KeyBlock(height: Long,
@@ -23,7 +23,7 @@ final case class KeyBlock(height: Long,
                           previousKeyBlockHash: ByteString,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
-                          data: ByteString) extends Block with Ordered[KeyBlock]{
+                          data: ByteString) extends Block with Ordered[KeyBlock] {
   override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 
   override def compare(that: KeyBlock): Int = this.height compare that.height
@@ -47,7 +47,7 @@ object KeyBlock {
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
     .withPreviousKeyBlockHash(pByteString.copyFrom(block.previousKeyBlockHash.toByteBuffer))
 
-  def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
+  def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock(
     blockProtobuf.height,
     blockProtobuf.timestamp,
     ByteString(blockProtobuf.previousKeyBlockHash.toByteArray),
