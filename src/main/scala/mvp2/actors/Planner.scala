@@ -59,10 +59,7 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = epoch.delete
       println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.noBlocksInTime =>
-      val newPeriod = Period(nextPeriod, settings)
       //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
-      nextPeriod = newPeriod
-      context.parent ! nextPeriod
       //println(s"${epoch.schedule} before")
       val newEpoch: Epoch = epoch.noBlockInTime
       println(s"no block in time. Epoch with noBlocks is: ${newEpoch.schedule}")
@@ -79,6 +76,9 @@ class Planner(settings: Settings) extends CommonActor {
         epoch = epoch.delete
         println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
       }
+      val newPeriod = Period(nextPeriod, settings)
+      nextPeriod = newPeriod
+      context.parent ! nextPeriod
       //println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
     case Tick =>
   }
