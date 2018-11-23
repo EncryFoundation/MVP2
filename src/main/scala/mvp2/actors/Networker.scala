@@ -1,16 +1,14 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-
 import akka.actor.{ActorSelection, Props}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.util.ByteString
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages._
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.Settings
 
 class Networker(settings: Settings) extends CommonActor {
 

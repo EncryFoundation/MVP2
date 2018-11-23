@@ -28,11 +28,12 @@ class Planner(settings: Settings) extends CommonActor {
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
-  if (settings.canPublishBlocks)
-    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
-
   override def specialBehavior: Receive = {
-    case SyncingDone => context.become(syncedNode)
+    case SyncingDone =>
+      println(s"Synced done on Planner.")
+      if (settings.canPublishBlocks)
+        context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
+      context.become(syncedNode)
     case keyBlock: KeyBlock => lastBlock = keyBlock
     case PeerPublicKey(key) => allPublicKeys = allPublicKeys + key
     case MyPublicKey(key) =>
@@ -56,15 +57,17 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if nextPeriod.timeToPublish => checkMyTurn()
     case Tick if nextPeriod.noBlocksInTime =>
       epoch = epoch.noBlockInTime
+      checkMyTurn()
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
     case Tick =>
   }
 
-  def checkMyTurn(): Unit =
+  def checkMyTurn(): Unit = {
     if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
     context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
     epoch = epoch.delete
+  }
 }
 
 object Planner {
@@ -117,4 +120,5 @@ object Planner {
   }
 
   case object Tick
+
 }
