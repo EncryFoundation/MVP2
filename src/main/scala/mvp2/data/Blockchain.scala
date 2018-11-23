@@ -1,7 +1,6 @@
 package mvp2.data
 
 import com.typesafe.scalalogging.StrictLogging
-
 import scala.collection.immutable.SortedSet
 
 sealed trait Chain {

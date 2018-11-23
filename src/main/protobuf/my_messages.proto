@@ -40,6 +40,7 @@ message KeyBlockProtobuf {
     bytes currentBlockHash = 4;
     repeated TransactionProtobuf transactions = 5;
     bytes data = 6;
+    bytes signature = 7;
 }
 
 message TransactionProtobuf {

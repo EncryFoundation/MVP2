@@ -1,14 +1,16 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
+
 import akka.actor.{ActorSelection, Props}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.util.ByteString
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages._
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
-import mvp2.utils.Settings
+import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
 
@@ -56,9 +58,7 @@ class Networker(settings: Settings) extends CommonActor {
           transactions.foreach(tx => publisher ! tx)
       }
     case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(udpSender ! _)
-    case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
     case MyPublicKey(key) => myPublicKey = Some(key)
-    case keyBlock: KeyBlock => peers.getBlockMsg(keyBlock).foreach(msg => udpSender ! msg)
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) =>

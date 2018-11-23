@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import akka.actor.SupervisorStrategy.Resume
-import akka.actor.{ActorRef, ActorSelection, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{OneForOneStrategy, SupervisorStrategy}
 import mvp2.utils.ECDSA._
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -12,7 +12,6 @@ import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockSignatureAndHeight, Get, TimeDelta}
 import mvp2.data._
-import mvp2.utils.Settings
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
@@ -52,17 +51,12 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         blockCache += blocks
         applyBlockFromCache()
     case ExpectedBlockSignatureAndHeight(height, signature) => expectedBlockSignatureAndHeight = Some(height, signature)
-      println(s"Blockchainer got new signature " +
+      logger.info(s"Blockchainer got new signature " +
         s"${EncodingUtils.encode2Base16(expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))}")
     case keyBlock: KeyBlock if verify(keyBlock.signature, keyBlock.getBytes,
-      expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty))
-//      && nextTurn.begin <= keyBlock.timestamp
-//      && keyBlock.timestamp <= nextTurn.end
-    =>
-      println(s"Blockchain got new valid block with height: ${keyBlock.height} ${keyBlock.timestamp}")
-      println(nextTurn.begin <= keyBlock.timestamp)
-      println(keyBlock.timestamp <= nextTurn.end)
-      blockchain = Blockchain(keyBlock :: blockchain.chain)
+      expectedBlockSignatureAndHeight.map(_._2).getOrElse(ByteString.empty)) =>
+      logger.info(s"Blockchain got new valid block with height: ${keyBlock.height}")
+      blockchain = Blockchain(blockchain.chain + keyBlock)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.headOption.map(block => block.height).getOrElse(0),
         blockchain.chain.headOption,
@@ -75,7 +69,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
-      println(s"Blockchainer received period for new block with exact timestamp ${period.begin} ${period.end}.")
+      logger.info(s"Blockchainer received period for new block with exact timestamp ${period.begin} ${period.end}.")
       nextTurn = period
     case CheckRemoteBlockchain(remoteHeight, remote) =>
       blockchain.getMissingPart(remoteHeight).foreach(blocks =>

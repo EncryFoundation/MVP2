@@ -1,14 +1,13 @@
 package mvp2.actors
 
-import java.security.{KeyPair, PublicKey}
-import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
-import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
+import java.security.KeyPair
+import akka.actor.{ActorRef, Props}
 import akka.actor.{ActorSelection, Cancellable}
 import akka.util.ByteString
 import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages.{ExpectedBlockSignatureAndHeight, Get, MyPublicKey, PeerPublicKey}
 import mvp2.data.KeyBlock
-import mvp2.utils.{EncodingUtils, Settings}
+import mvp2.utils.{ECDSA, Settings}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +19,6 @@ class Planner(settings: Settings) extends CommonActor {
   var nextTurn: Period = Period(KeyBlock(), settings)
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   val myKeys: KeyPair = ECDSA.createKeyPair
-  var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
   var myPublicKey: ByteString = ByteString.empty
   var allPublicKeys: Set[ByteString] = Set()
   var nextPeriod: Period = Period(KeyBlock(), settings)
@@ -38,45 +36,29 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-      println(s"Got new keyBlock with height ${keyBlock.height} on a Planner and ${keyBlock.timestamp}")
-      println(s"Got new period on a Planner${nextPeriod.begin} ${nextPeriod.end}")
-    case PeerPublicKey(key) =>
-//      println(s"Set before new peer's Key: $allPublicKeys and key is $key")
-      allPublicKeys = allPublicKeys + key
-//      println(s"Got public key from remote: ${EncodingUtils.encode2Base16(key)} on Planner. " +
-//        s"New key's collection is $allPublicKeys")
+    case PeerPublicKey(key) => allPublicKeys = allPublicKeys + key
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
-      //println(s"Got my public key: ${EncodingUtils.encode2Base16(key)} on Planner.")
     case Tick if epoch.isDone =>
-      //println(s"Epoch is done. Last key block is: $lastBlock. Keys set is: $allPublicKeys. Is it empty ${allPublicKeys.isEmpty}")
       epoch = Epoch(lastBlock, allPublicKeys)
-      println(s"Last epoch has done. Create new epoch - ${epoch.schedule}")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       } else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after creating new and  removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.timeToPublish =>
-      println(s"It's time to publish new block!")
       if (epoch.nextBlock._2 == myPublicKey) {
         publisher ! Get
         context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       }
       else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
       epoch = epoch.delete
-      println(s"Epoch after publishing and after removing last element is: ${epoch.schedule}")
     case Tick if nextPeriod.noBlocksInTime =>
-      //println(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
-      //println(s"${epoch.schedule} before")
       val newEpoch: Epoch = epoch.noBlockInTime
-      println(s"no block in time. Epoch with noBlocks is: ${newEpoch.schedule}")
-      if (newEpoch.isDone) {
-        println(s"no blocks in time Epoch is done. Send self new tick with isDone epoch.")
+      if (newEpoch.isDone)
         epoch = newEpoch
-      } else {
+      else {
         epoch = newEpoch
         if (epoch.nextBlock._2 == myPublicKey) {
           publisher ! Get
@@ -84,12 +66,10 @@ class Planner(settings: Settings) extends CommonActor {
         }
         else context.parent ! ExpectedBlockSignatureAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
         epoch = epoch.delete
-        println(s"no blocks in time Epoch ${epoch.schedule} after no blocks in time")
       }
       val newPeriod = Period(nextPeriod, settings)
       nextPeriod = newPeriod
       context.parent ! nextPeriod
-      //println(s"Epoch after noBlockInTime and after removing last element is: ${epoch.schedule}")
     case Tick =>
   }
 }

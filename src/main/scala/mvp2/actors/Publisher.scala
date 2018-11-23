@@ -1,15 +1,12 @@
 package mvp2.actors
 
 import java.security.KeyPair
-import akka.actor.{ActorRef, ActorSelection, Props}
-import mvp2.data.InnerMessages.{Get, TimeDelta}
 import akka.actor.ActorSelection
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.{KeyBlock, Mempool, Transaction}
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.ECDSA
 import scala.language.postfixOps
-import scala.util.Random
 import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -36,7 +33,6 @@ class Publisher(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case pair: KeyPair => mySignature = Some(pair)
-      //println(s"Got new key pair in publisher.")
     case SyncingDone =>
       logger.info("Syncing done!")
       context.become(publishBlockEnabled)
@@ -71,8 +67,6 @@ class Publisher(settings: Settings) extends CommonActor {
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
     val singnedBlock: KeyBlock = keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes))
-//    println(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
-//      s"${keyBlock.transactions.size} transactions inside.")
       KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, List.empty)
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")

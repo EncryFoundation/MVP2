@@ -55,6 +55,7 @@ object KeyBlock {
     .withTimestamp(block.timestamp)
     .withTransactions(block.transactions.map(Transaction.toProtobuf))
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
+    .withSignature(pByteString.copyFrom(block.signature.toByteBuffer))
 
   def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
     blockProtobuf.height,
@@ -62,7 +63,8 @@ object KeyBlock {
     ByteString(blockProtobuf.previousKeyBlockHash.toByteArray),
     ByteString(blockProtobuf.currentBlockHash.toByteArray),
     blockProtobuf.transactions.map(Transaction.fromProtobuf).toList,
-    ByteString(blockProtobuf.data.toByteArray)
+    ByteString(blockProtobuf.data.toByteArray),
+    ByteString(blockProtobuf.signature.toByteArray)
   )
 }
 
