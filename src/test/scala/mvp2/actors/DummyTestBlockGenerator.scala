@@ -13,7 +13,7 @@ object DummyTestBlockGenerator {
     .map(_ => (generateByteString, 0))
 
   def generateKeyBlock(prevHash: ByteString, prevHeight: Int): KeyBlock =
-    KeyBlock(prevHeight + 1, System.currentTimeMillis, prevHash, generateTenTransactions, ByteString.empty)
+    KeyBlock(prevHeight + 1, System.currentTimeMillis, prevHash, generateTenTransactions.take(2), ByteString.empty)
 
   def generateMicroBlock(prevHash: ByteString, prevMicroHash: ByteString, currentBlockHash: ByteString,
                          prevHeight: Int): MicroBlock =

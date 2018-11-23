@@ -1,5 +1,7 @@
 package mvp2.actors
 
+import java.net.InetSocketAddress
+
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.TestKit
 import org.scalatest.{BeforeAndAfterAll, Matchers, PropSpecLike}

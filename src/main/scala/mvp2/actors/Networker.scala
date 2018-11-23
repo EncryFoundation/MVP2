@@ -24,6 +24,8 @@ class Networker(settings: Settings) extends CommonActor {
 
   val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
 
+  val planner: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/planner")
+
   var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
@@ -62,7 +64,11 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
-    if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
+    if (!myPublicKey.contains(serializedKey)) {
+      val newPublicKey: PeerPublicKey = PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
+      keyKeeper ! newPublicKey
+      planner ! newPublicKey
+    }
 
   def sendPeers(): Unit =
     myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
