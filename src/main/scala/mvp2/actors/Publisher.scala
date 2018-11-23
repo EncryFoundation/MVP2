@@ -1,13 +1,10 @@
 package mvp2.actors
 
 import akka.actor.ActorSelection
-import mvp2.actors.Planner.Tick
 import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.Settings
-import scala.language.postfixOps
-import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps

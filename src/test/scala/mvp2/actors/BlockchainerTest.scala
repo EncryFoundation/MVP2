@@ -35,14 +35,6 @@ class BlockchainerTest extends TestKit(ActorSystem("BlockchainerTestSystem"))
 
   property("Blockchain before and after save should be equals") {
 
-    val block = (0 until 10).map(_ => DummyTestBlockGenerator.generateKeyBlock(Sha256.toSha256("123"), 10))
-
-    val blocks = Blocks(block.toList)
-
-    println(blocks.asJson.toString)
-
-    println(ByteString(blocks.asJson.toString).length)
-
     val settings: Settings = ConfigFactory.load("local.conf").withFallback(ConfigFactory.load)
       .as[Settings]("mvp")
 
