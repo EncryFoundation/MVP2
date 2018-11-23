@@ -55,7 +55,6 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
       context.stop(self)
   }
 
-
   def deserialize(bytes: ByteString): Try[NetworkMessage] = bytes.head match {
     case NetworkMessagesId.PeersId => Peers.parseBytes(bytes.tail)
     case NetworkMessagesId.BlocksId => Blocks.parseBytes(bytes.tail)
