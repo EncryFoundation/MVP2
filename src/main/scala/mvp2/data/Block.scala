@@ -45,6 +45,7 @@ object KeyBlock {
     .withTimestamp(block.timestamp)
     .withTransactions(block.transactions.map(Transaction.toProtobuf))
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
+    .withPreviousKeyBlockHash(pByteString.copyFrom(block.previousKeyBlockHash.toByteBuffer))
 
   def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
     blockProtobuf.height,
