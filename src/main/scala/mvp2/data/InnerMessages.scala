@@ -5,9 +5,6 @@ import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.NetworkMessages.NetworkMessage
-import io.circe.syntax._
-import io.circe.generic.auto._
-import mvp2.utils.EncodingUtils._
 
 object InnerMessages {
 
