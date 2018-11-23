@@ -50,13 +50,13 @@ class InfluxActor(settings: Settings) extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case MsgFromNetwork(message, remote, id) =>
+    case FromNet(message, remote, id) =>
       val (newIncrements, i) = getMsgIncrements(remote, message.name, msgFromRemote)
       msgFromRemote = newIncrements
       influxDB.write(settings.influx.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=${message.name} value=$time""")
       logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
-    case MsgToNetwork(message, id, remote) =>
+    case ToNet(message, remote, id) =>
       val (newIncrements, i) = getMsgIncrements(remote, message.name, msgToRemote)
       msgToRemote = newIncrements
       influxDB.write(settings.influx.port,
@@ -74,7 +74,7 @@ class InfluxActor(settings: Settings) extends CommonActor {
   def syncIterators(): Unit =
     msgToRemote.foreach {
       case (peer, iterators) => context.actorSelection("/user/starter/blockchainer/networker/udpSender") !
-        SendToNetwork(SyncMessageIterators(iterators.map(iter => IterInfo(iter._1, iter._2)).toList), peer)
+        ToNet(SyncMessageIterators(iterators.map(iter => IterInfo(iter._1, iter._2)).toList), peer)
     }
 
   def time: Long = System.currentTimeMillis() + currentDelta

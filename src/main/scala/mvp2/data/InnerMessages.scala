@@ -20,12 +20,11 @@ object InnerMessages {
       s"last microBlock: $lastMicroBlock"
   }
 
-  final case class SendToNetwork(message: NetworkMessage, remote: InetSocketAddress) extends InnerMessage
+  final case class ToNet(message: NetworkMessage, remote: InetSocketAddress,
+                         id: ByteString = ByteString.empty) extends InnerMessage
 
-  final case class MsgToNetwork(message: NetworkMessage, id: ByteString, remote: InetSocketAddress) extends InnerMessage
-
-  final case class MsgFromNetwork(message: NetworkMessage, remote: InetSocketAddress,
-                                  id: ByteString = ByteString.empty) extends InnerMessage
+  final case class FromNet(message: NetworkMessage, remote: InetSocketAddress,
+                           id: ByteString = ByteString.empty) extends InnerMessage
 
   final case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends InnerMessage
 

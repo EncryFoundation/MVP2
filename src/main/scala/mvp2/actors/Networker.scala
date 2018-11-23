@@ -35,7 +35,7 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case msgFromNetwork: MsgFromNetwork =>
+    case msgFromNetwork: FromNet =>
       msgFromNetwork.message match {
         case Peers(peersFromRemote, _) =>
           peers = peersFromRemote.foldLeft(peers) {
@@ -60,7 +60,7 @@ class Networker(settings: Settings) extends CommonActor {
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) =>
-      udpSender ! SendToNetwork(Blocks(blocks), remote)
+      udpSender ! ToNet(Blocks(blocks), remote)
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
