@@ -32,6 +32,8 @@ object InnerMessages {
 
   final case class PeerPublicKey(peerPublicKey: ByteString) extends InnerMessage
 
+  final case class KeysForSchedule(keys: List[ByteString]) extends InnerMessage
+
   final case class MyPublicKey(publicKey: ByteString) extends InnerMessage
 
   final case class ExpectedBlockPublicKeyAndHeight(height: Long, signature: ByteString) extends InnerMessage

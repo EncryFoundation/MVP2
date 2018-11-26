@@ -32,7 +32,7 @@ class Planner(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
-      println(s"Synced done on Planner.")
+      logger.info(s"Synced done on Planner.")
       if (settings.canPublishBlocks)
         context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
       context.become(syncedNode)
@@ -50,30 +50,31 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-    case PeerPublicKey(key) =>
-      allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
+    case KeysForSchedule(keys) =>
+      allPublicKeys = (keys :+ ECDSA.compressPublicKey(myKeys.getPublic))
+        .sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
     case MyPublicKey(key) =>
-      println("Get key")
+      logger.info("Get key")
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
     case Tick if epoch.isDone =>
-      println("epoch done")
+      logger.info("epoch done")
       epoch = Epoch(lastBlock, allPublicKeys)
       checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
-      println("epoch.isDone")
+      logger.info("epoch.isDone")
     case Tick if epoch.prepareNextEpoch =>
       networker ! PrepareScheduler
-      println("epoch.prepareNextEpoch")
+      logger.info("epoch.prepareNextEpoch")
     case Tick if nextPeriod.timeToPublish =>
       checkMyTurn(isFirstBlock = false, List())
-      println("nextPeriod.timeToPublish")
+      logger.info("nextPeriod.timeToPublish")
     case Tick if nextPeriod.noBlocksInTime =>
-      println("nextPeriod.noBlocksInTime")
+      logger.info("nextPeriod.noBlocksInTime")
       epoch = epoch.noBlockInTime
       checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
-    case Tick => println("123")
+    case Tick => logger.info("123")
   }
 
   def checkMyTurn(isFirstBlock: Boolean, schedule: List[ByteString]): Unit = {

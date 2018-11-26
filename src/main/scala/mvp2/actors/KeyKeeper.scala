@@ -11,7 +11,7 @@ class KeyKeeper extends CommonActor {
   var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
 
   override def preStart(): Unit = {
-    println(s"My public key issss: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")
+    logger.info(s"My public key is: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(myKeys.getPublic))}")
     val pubKeyMessage: MyPublicKey =  MyPublicKey(ECDSA.compressPublicKey(myKeys.getPublic))
     context.actorSelection("/user/starter/blockchainer/networker") ! pubKeyMessage
     context.actorSelection("/user/starter/blockchainer/planner") ! pubKeyMessage
