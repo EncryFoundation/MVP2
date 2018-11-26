@@ -59,6 +59,7 @@ object KeyBlock {
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
     .withSignature(pByteString.copyFrom(block.signature.toByteBuffer))
     .withScheduler(block.scheduler.map(publicKey => pByteString.copyFrom(publicKey.toByteBuffer)))
+    .withPreviousKeyBlockHash(pByteString.copyFrom(block.previousKeyBlockHash.toByteBuffer))
 
   def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
     blockProtobuf.height,
