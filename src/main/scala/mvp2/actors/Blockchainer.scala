@@ -80,7 +80,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       publisher ! block
       if (blockCache.isEmpty && !isSynced) {
         isSynced = true
-        println(s"Synced done. Sent this message on the Planner and Publisher.")
+        logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
         publisher ! SyncingDone
         planner ! SyncingDone
       }
