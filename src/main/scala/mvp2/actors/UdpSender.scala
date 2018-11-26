@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef}
 import akka.io.Udp
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.data.InnerMessages.{MsgToNetwork, SendToNetwork, UdpSocket}
+import mvp2.data.InnerMessages.{ToNet, UdpSocket}
 import io.circe.syntax._
 import io.circe.generic.auto._
 import mvp2.data.NetworkMessages._
@@ -19,15 +19,15 @@ class UdpSender(settings: Settings) extends Actor with StrictLogging {
   }
 
   def sendingCycle(connection: ActorRef): Receive = {
-    case SendToNetwork(message, remote) =>
+    case ToNet(message, remote, _) =>
       logger.info(s"Sending $message to $remote")
       connection ! Udp.Send(serialize(message), remote)
       logger.info(s"Msg size: ${serialize(message).length}: ${message.name}")
       context.actorSelection("/user/starter/influxActor") !
-        MsgToNetwork(
+        ToNet(
           message,
-          Sha256.toSha256(encode2Base16(ByteString(message.asJson.toString)) ++ remote.getAddress.toString),
-          remote
+          remote,
+          Sha256.toSha256(encode2Base16(ByteString(message.asJson.toString)) ++ remote.getAddress.toString)
         )
   }
 
