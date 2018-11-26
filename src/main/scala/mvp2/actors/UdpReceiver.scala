@@ -61,7 +61,7 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
       logger.info(s"Unbound $socket")
       context.stop(self)
     case Terminated(_) =>
-
+      IO(Udp) ! Udp.Bind(self, myAddr)
   }
 
 
