@@ -1,13 +1,9 @@
 package mvp2.data
 
 import java.net.InetSocketAddress
-import java.security.PublicKey
 import akka.actor.ActorRef
 import akka.util.ByteString
 import mvp2.data.NetworkMessages.NetworkMessage
-import io.circe.syntax._
-import io.circe.generic.auto._
-import mvp2.utils.EncodingUtils._
 
 object InnerMessages {
 
@@ -51,4 +47,6 @@ object InnerMessages {
   final case class RemoteBlockchainMissingPart(blocks: List[KeyBlock], remote: InetSocketAddress) extends InnerMessage
 
   final case object SyncingDone extends InnerMessage
+
+  final case class PublishNextBlock(scheduler: Set[ByteString]) extends InnerMessage
 }

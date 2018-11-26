@@ -1,6 +1,6 @@
 package mvp2.actors
 
-import akka.actor.SupervisorStrategy.Resume
+import akka.actor.SupervisorStrategy.{Restart, Resume}
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
 import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -11,6 +11,7 @@ import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockPublicKeyAndHeight, Get, TimeDelta}
 import mvp2.data._
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
@@ -33,7 +34,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   var expectedPublicKeyAndHeight: Option[(Long, ByteString)] = None
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
-    case _: Exception => Resume
+    case _: Exception => Restart
   }
 
   override def preStart(): Unit =
@@ -76,9 +77,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       )
       println(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
-      planner ! block
-      publisher ! block
-      if (blockCache.isEmpty && !isSynced) {
+      if (isSynced) {
+        planner ! block
+        publisher ! block
+      }
+      if (blockCache.isEmpty && !isSynced && blockchain.isSynced(settings.blockPeriod)) {
         isSynced = true
         logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
         publisher ! SyncingDone

@@ -26,6 +26,9 @@ final case class Blockchain (var chain: SortedSet[KeyBlock] = SortedSet.empty[Ke
   def getMissingPart(remoteHeight: Long): Option[SortedSet[KeyBlock]] =
     if (chain.lastOption.exists(_.height == remoteHeight)) None
     else Some(chain.drop(remoteHeight.toInt + 1))
+
+  def isSynced(blockInterval: Long): Boolean =
+    lastBlock.timestamp > (System.currentTimeMillis() - blockInterval)
 }
 
 final case class BlocksCache(var chain: SortedSet[KeyBlock] = SortedSet.empty[KeyBlock]) extends Chain {

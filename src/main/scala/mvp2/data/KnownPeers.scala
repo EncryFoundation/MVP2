@@ -7,7 +7,10 @@ import mvp2.data.NetworkMessages.{Blocks, LastBlockHeight, Peers, Transactions}
 import mvp2.utils.Settings
 
 case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteString]],
-                      peersLastTimeUpdateMap: Map[InetSocketAddress, Long]) {
+                      peersLastTimeUpdateMap: Map[InetSocketAddress, Long],
+                      settings: Settings) {
+
+  var lastHeightSyncTime: Map[InetSocketAddress, Long] = peersLastTimeUpdateMap
 
   def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers =
     if (!isSelfIp(peer._1)) this.copy(peersPublicKeyMap + (peer._1 -> Some(peer._2)))
@@ -35,8 +38,14 @@ case class KnownPeers(peersPublicKeyMap: Map[InetSocketAddress, Option[ByteStrin
   def getTransactionMsg(transaction: Transaction): Seq[SendToNetwork] =
     peersPublicKeyMap.map(peer => SendToNetwork(Transactions(List(transaction)), peer._1)).toSeq
 
-  def getHeightMessage(height: Long): Seq[SendToNetwork] =
-    peersPublicKeyMap.keys.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq
+  def getHeightMessage(height: Long): Seq[SendToNetwork] = {
+    val peersToSync = lastHeightSyncTime
+      .filter(_._2 < System.currentTimeMillis() - settings.network.heightMessageInterval).keys
+    println(peersLastTimeUpdateMap.mkString(","))
+    println(s"After filter: ${peersToSync.mkString(",")}")
+    lastHeightSyncTime ++= peersToSync.map(_ -> System.currentTimeMillis()).toMap
+    peersToSync.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq
+  }
 
   def isSelfIp(addr: InetSocketAddress): Boolean =
     (InetAddress.getLocalHost.getAddress sameElements addr.getAddress.getAddress) ||
@@ -48,6 +57,7 @@ object KnownPeers {
   def apply(settings: Settings): KnownPeers =
     new KnownPeers(
       settings.otherNodes.map(node => new InetSocketAddress(node.host, node.port) -> None).toMap,
-      settings.otherNodes.map(node => (new InetSocketAddress(node.host, node.port), 0: Long)).toMap
+      settings.otherNodes.map(node => (new InetSocketAddress(node.host, node.port), 0: Long)).toMap,
+      settings
     )
 }

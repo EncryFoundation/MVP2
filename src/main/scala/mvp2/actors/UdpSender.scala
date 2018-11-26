@@ -13,10 +13,15 @@ import mvp2.utils.{Settings, Sha256}
 
 class UdpSender(settings: Settings) extends Actor with StrictLogging {
 
-  override def receive: Receive = {
-    case UdpSocket(connection) => context.become(sendingCycle(connection))
+  override def receive: Receive = unboundedCycle
+
+  def unboundedCycle: Receive = {
+    case UdpSocket(connection) => context.become(sendingCycleWithUnbounded(connection))
     case smth: Any => logger.info(s"Got smth strange: $smth.")
   }
+
+  def sendingCycleWithUnbounded(socket: ActorRef): Receive =
+    sendingCycle(socket) orElse unboundedCycle
 
   def sendingCycle(connection: ActorRef): Receive = {
     case SendToNetwork(message, remote) =>

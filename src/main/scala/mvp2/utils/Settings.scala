@@ -28,4 +28,4 @@ case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long
 
 case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)
 
-case class NetworkSettings(maxBlockQtyInBlocksMessage: Int)
+case class NetworkSettings(maxBlockQtyInBlocksMessage: Int, heightMessageInterval: Int)

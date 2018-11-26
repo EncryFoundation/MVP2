@@ -24,6 +24,7 @@ class Planner(settings: Settings) extends CommonActor {
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
   var epoch: Epoch = Epoch(Map())
+  var nextEpoch: Option[Epoch] = None
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
@@ -52,6 +53,7 @@ class Planner(settings: Settings) extends CommonActor {
     case MyPublicKey(key) =>
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
+    case Tick if epoch.prepareNextEpoch =>
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
       checkMyTurn()
@@ -65,7 +67,7 @@ class Planner(settings: Settings) extends CommonActor {
   }
 
   def checkMyTurn(): Unit = {
-    if (epoch.nextBlock._2 == myPublicKey) publisher ! Get
+    if (epoch.nextBlock._2 == myPublicKey) publisher ! PublishNextBlock(allPublicKeys)
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
     epoch = epoch.delete
   }
@@ -107,6 +109,8 @@ object Planner {
     def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
 
     def isDone: Boolean = this.schedule.isEmpty
+
+    def prepareNextEpoch: Boolean = schedule.size <= 2
   }
 
   object Epoch {
@@ -121,5 +125,4 @@ object Planner {
   }
 
   case object Tick
-
 }

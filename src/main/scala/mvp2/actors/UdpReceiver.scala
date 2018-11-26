@@ -1,7 +1,8 @@
 package mvp2.actors
 
 import java.net.{InetAddress, InetSocketAddress}
-import akka.actor.{Actor, ActorRef, ActorSelection}
+
+import akka.actor.{Actor, ActorRef, ActorSelection, Terminated}
 import akka.io.{IO, Udp}
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.util.ByteString
@@ -10,6 +11,7 @@ import mvp2.MVP2.system
 import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
+
 import scala.util.Try
 
 class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
@@ -27,10 +29,16 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
     IO(Udp) ! Udp.Bind(self, myAddr)
   }
 
-  override def receive: Receive = {
+  override def receive: Receive = unboundedCycle
+
+  def readCycleWithUnbounded(socket: ActorRef): Receive =
+    readCycle(socket) orElse unboundedCycle
+
+  def unboundedCycle: Receive = {
     case Udp.Bound(local) =>
       logger.info(s"Binded to $local")
-      context.become(readCycle(sender))
+      context.watch(sender)
+      context.become(readCycleWithUnbounded(sender))
       udpSender ! UdpSocket(sender)
     case msg => logger.info(s"Received message $msg from $sender before binding")
   }
@@ -53,6 +61,8 @@ class UdpReceiver(settings: Settings) extends Actor with StrictLogging {
     case Udp.Unbound =>
       logger.info(s"Unbound $socket")
       context.stop(self)
+    case Terminated(_) =>
+
   }
 
 
