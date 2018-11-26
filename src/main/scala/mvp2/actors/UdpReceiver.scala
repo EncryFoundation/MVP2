@@ -11,7 +11,6 @@ import mvp2.MVP2.system
 import mvp2.data.InnerMessages.{MsgFromNetwork, UdpSocket}
 import mvp2.data.NetworkMessages._
 import mvp2.utils.{EncodingUtils, Settings, Sha256}
-
 import scala.util.Try
 
 class UdpReceiver(settings: Settings) extends Actor with StrictLogging {

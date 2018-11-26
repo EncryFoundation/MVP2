@@ -56,18 +56,18 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if epoch.prepareNextEpoch =>
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
-      checkMyTurn()
-    case Tick if nextPeriod.timeToPublish => checkMyTurn()
+      checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
+    case Tick if nextPeriod.timeToPublish => checkMyTurn(isFirstBlock = false, List())
     case Tick if nextPeriod.noBlocksInTime =>
       epoch = epoch.noBlockInTime
-      checkMyTurn()
+      checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
     case Tick =>
   }
 
-  def checkMyTurn(): Unit = {
-    if (epoch.nextBlock._2 == myPublicKey) publisher ! PublishNextBlock(allPublicKeys)
+  def checkMyTurn(isFirstBlock: Boolean, schedule: List[ByteString]): Unit = {
+    if (epoch.nextBlock._2 == myPublicKey) publisher ! RequestForNewBlock(isFirstBlock, schedule)
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
     epoch = epoch.delete
   }
@@ -125,4 +125,5 @@ object Planner {
   }
 
   case object Tick
+
 }

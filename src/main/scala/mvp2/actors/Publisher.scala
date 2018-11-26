@@ -2,7 +2,8 @@ package mvp2.actors
 
 import java.security.KeyPair
 import akka.actor.ActorSelection
-import mvp2.data.InnerMessages.{Get, SyncingDone, TimeDelta}
+import akka.util.ByteString
+import mvp2.data.InnerMessages.{RequestForNewBlock, SyncingDone, TimeDelta}
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.{KeyBlock, Mempool, Transaction}
 import mvp2.utils.ECDSA
@@ -50,8 +51,8 @@ class Publisher(settings: Settings) extends CommonActor {
       networker ! keyBlock
       lastKeyBlock = keyBlock
       mempool.removeUsedTxs(keyBlock.transactions)
-    case Get =>
-      val newBlock: KeyBlock = createKeyBlock
+    case RequestForNewBlock(isFirstBlock, schedule) =>
+      val newBlock: KeyBlock = createKeyBlock(isFirstBlock, schedule)
       logger.info(s"Publisher got new request and published block with height ${newBlock.height}.")
       context.parent ! Blocks(List(newBlock))
       networker ! newBlock
@@ -62,12 +63,15 @@ class Publisher(settings: Settings) extends CommonActor {
 
   def time: Long = System.currentTimeMillis() + currentDelta
 
-  def createKeyBlock: KeyBlock = {
+  def createKeyBlock(isFirstBlock: Boolean, schedule: List[ByteString]): KeyBlock = {
     val currentTime: Long = time
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
-    val singnedBlock: KeyBlock = keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes))
-      KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, List.empty)
+    val singnedBlock: KeyBlock =
+      if (isFirstBlock)
+        keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes), scheduler = schedule)
+      else keyBlock.copy(signature = ECDSA.sign(mySignature.get.getPrivate, keyBlock.getBytes))
+    KeyBlock(lastKeyBlock.height + 1, time, lastKeyBlock.currentBlockHash, List.empty)
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()

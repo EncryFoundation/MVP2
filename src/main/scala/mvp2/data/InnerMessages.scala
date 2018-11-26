@@ -49,4 +49,6 @@ object InnerMessages {
   final case object SyncingDone extends InnerMessage
 
   final case class PublishNextBlock(scheduler: Set[ByteString]) extends InnerMessage
+
+  final case class RequestForNewBlock(firstInEpoch: Boolean, schedule: List[ByteString]) extends InnerMessage
 }
