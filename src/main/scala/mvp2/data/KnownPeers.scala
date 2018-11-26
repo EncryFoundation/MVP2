@@ -19,18 +19,22 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
         .checkPeersIdentity(peersMsg, myAddr)
   }
 
-  def checkPeersIdentity(peersMsg: Peers, myAddr: InetSocketAddress): KnownPeers =
+  def checkPeersIdentity(peersMsg: Peers, myAddr: InetSocketAddress): KnownPeers = {
+    println(s"Remote peers: ${peersMsg.peers.map(_.addr).mkString(",")} from ${peersMsg.remote}")
+    println(s"My peers: ${peersPublicKeyMap.keys.mkString(",")}")
     this.copy(peersPublicKeyMap +
       (peersMsg.remote ->
         peersPublicKeyMap.getOrElse(peersMsg.remote, KnownPeerInfo())
           .copy(
-             knownPeersIdentity = peersMsg
-                 .peers
-                 .filter(_.addr != myAddr)
-                 .forall(peerInfo => peersPublicKeyMap.contains(peerInfo.addr))
-         )
+            knownPeersIdentity = peersMsg
+              .peers
+              .filter(_.addr != myAddr)
+              .forall(peerInfo => peersPublicKeyMap.contains(peerInfo.addr))
+            && peersMsg.peers.length + 1 == peersPublicKeyMap.size
+          )
         )
     )
+  }
 
   def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers =
     if (!isSelfIp(peer._1))
@@ -72,6 +76,8 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
     peersPublicKeyMap = peersToSync.foldLeft(this) {
       case (newPeers, peer) => newPeers.updatePeerTime(peer)
     }.peersPublicKeyMap
+    println(peersPublicKeyMap.mkString(","))
+    println(s"After filter: ${peersToSync.mkString(",")}")
     peersToSync.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq
   }
 
