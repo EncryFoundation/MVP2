@@ -20,7 +20,7 @@ class Planner(settings: Settings) extends CommonActor {
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   val myKeys: KeyPair = ECDSA.createKeyPair
   var myPublicKey: ByteString = ByteString.empty
-  var allPublicKeys: Set[ByteString] = Set()
+  var allPublicKeys: Set[ByteString] = Set.empty[ByteString]
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
   var epoch: Epoch = Epoch(Map())
@@ -47,9 +47,10 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-    case PeerPublicKey(key) => allPublicKeys = allPublicKeys + key
+    case PeerPublicKey(key) =>
+      allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
     case MyPublicKey(key) =>
-      allPublicKeys = allPublicKeys + key
+      allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
@@ -99,9 +100,9 @@ object Planner {
 
     def nextBlock: (Long, ByteString) = schedule.head
 
-    def delete: Epoch = this.copy(schedule - schedule.head._1)
+    def delete: Epoch = this.copy(schedule.tail)
 
-    def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
+    def delete(height: Long): Epoch = this.copy(schedule.drop(height.toInt))
 
     def noBlockInTime: Epoch = this.copy(schedule.map(each => (each._1 - 1, each._2)))
 

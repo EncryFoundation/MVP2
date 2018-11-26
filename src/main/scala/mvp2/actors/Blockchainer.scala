@@ -74,12 +74,13 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         blockchain.chain.lastOption,
         None
       )
-      logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
+      println(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
       planner ! block
       publisher ! block
       if (blockCache.isEmpty && !isSynced) {
         isSynced = true
+        println(s"Synced done. Sent this message on the Planner and Publisher.")
         publisher ! SyncingDone
         planner ! SyncingDone
       }
