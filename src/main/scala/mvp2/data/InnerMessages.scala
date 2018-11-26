@@ -51,4 +51,8 @@ object InnerMessages {
   final case class PublishNextBlock(scheduler: Set[ByteString]) extends InnerMessage
 
   final case class RequestForNewBlock(firstInEpoch: Boolean, schedule: List[ByteString]) extends InnerMessage
+
+  final case object PrepareScheduler extends InnerMessage
+
+  final case class PrepareSchedulerStep(i: Int) extends InnerMessage
 }

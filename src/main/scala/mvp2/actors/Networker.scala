@@ -9,6 +9,7 @@ import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages._
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
 import mvp2.utils.Settings
+import scala.language.postfixOps
 
 class Networker(settings: Settings) extends CommonActor {
 
@@ -37,13 +38,9 @@ class Networker(settings: Settings) extends CommonActor {
   override def specialBehavior: Receive = {
     case msgFromNetwork: MsgFromNetwork =>
       msgFromNetwork.message match {
-        case Peers(peersFromRemote, _) =>
-          peers = peersFromRemote.foldLeft(peers) {
-            case (newKnownPeers, peerToAddOrUpdate) =>
-              updatePeerKey(peerToAddOrUpdate.publicKey)
-              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate.addr, peerToAddOrUpdate.publicKey)
-                .updatePeerTime(msgFromNetwork.remote)
-          }
+        case msg@Peers(peersFromRemote, _) =>
+          peersFromRemote.foreach(peer => updatePeerKey(peer.publicKey))
+          peers = peers.updatePeers(msg, myAddr)
         case Blocks(blocks) =>
           if (blocks.nonEmpty) context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
@@ -57,6 +54,12 @@ class Networker(settings: Settings) extends CommonActor {
       }
     case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(udpSender ! _)
     case MyPublicKey(key) => myPublicKey = Some(key)
+    case PrepareScheduler => self ! PrepareSchedulerStep(settings.network.qtyOfPrepareSchedulerSteps)
+    case PrepareSchedulerStep(currentStep) =>
+      sendPeers()
+      if (currentStep != 0)
+        context.system.scheduler
+          .scheduleOnce((settings.blockPeriod / 10) milliseconds)(self ! PrepareSchedulerStep(currentStep - 1))
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) =>

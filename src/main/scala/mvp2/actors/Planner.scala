@@ -28,6 +28,7 @@ class Planner(settings: Settings) extends CommonActor {
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+  val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
@@ -54,6 +55,7 @@ class Planner(settings: Settings) extends CommonActor {
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
     case Tick if epoch.prepareNextEpoch =>
+      networker ! PrepareScheduler
     case Tick if epoch.isDone =>
       epoch = Epoch(lastBlock, allPublicKeys)
       checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
