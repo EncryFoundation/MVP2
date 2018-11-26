@@ -24,7 +24,6 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   var currentDelta: Long = 0
   var nextTurn: Period = Period(KeyBlock(), settings)
   var isSynced: Boolean = settings.otherNodes.isEmpty
-  val keykeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   val accountant: ActorRef = context.actorOf(Props(classOf[Accountant]), "accountant")
   val networker: ActorRef = context.actorOf(Props(classOf[Networker], settings).withDispatcher("net-dispatcher")
     .withMailbox("net-mailbox"), "networker")

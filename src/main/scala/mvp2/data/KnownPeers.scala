@@ -12,7 +12,7 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
 
 
   def updatePeers(peersMsg: Peers, myAddr: InetSocketAddress): KnownPeers =
-    peersMsg.peers.foldLeft(this) {
+    peersMsg.peers.filter(_.addr == myAddr).foldLeft(this) {
       case (newPeers, nextPeer) => newPeers
         .addOrUpdatePeer(nextPeer.addr, nextPeer.publicKey)
         .updatePeerTime(nextPeer.addr)
@@ -28,9 +28,8 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
           .copy(
             knownPeersIdentity = peersMsg
               .peers
-              .filter(_.addr != myAddr)
               .forall(peerInfo => peersPublicKeyMap.contains(peerInfo.addr))
-            && peersMsg.peers.length + 1 == peersPublicKeyMap.size
+            && peersMsg.peers.length == peersPublicKeyMap.size
           )
         )
     )

@@ -41,6 +41,7 @@ class Planner(settings: Settings) extends CommonActor {
     case MyPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
+      if (settings.otherNodes.isEmpty) self ! SyncingDone
     case _ =>
   }
 
@@ -52,20 +53,27 @@ class Planner(settings: Settings) extends CommonActor {
     case PeerPublicKey(key) =>
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
     case MyPublicKey(key) =>
+      println("Get key")
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
-    case Tick if epoch.prepareNextEpoch =>
-      networker ! PrepareScheduler
     case Tick if epoch.isDone =>
+      println("epoch done")
       epoch = Epoch(lastBlock, allPublicKeys)
       checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
-    case Tick if nextPeriod.timeToPublish => checkMyTurn(isFirstBlock = false, List())
+      println("epoch.isDone")
+    case Tick if epoch.prepareNextEpoch =>
+      networker ! PrepareScheduler
+      println("epoch.prepareNextEpoch")
+    case Tick if nextPeriod.timeToPublish =>
+      checkMyTurn(isFirstBlock = false, List())
+      println("nextPeriod.timeToPublish")
     case Tick if nextPeriod.noBlocksInTime =>
+      println("nextPeriod.noBlocksInTime")
       epoch = epoch.noBlockInTime
       checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
-    case Tick =>
+    case Tick => println("123")
   }
 
   def checkMyTurn(isFirstBlock: Boolean, schedule: List[ByteString]): Unit = {
@@ -122,6 +130,7 @@ object Planner {
       val schedule: Map[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
           yield i).zip(publicKeys).toMap[Long, ByteString]
+      println(s"${schedule.mkString(",")}")
       Epoch(schedule)
     }
   }
