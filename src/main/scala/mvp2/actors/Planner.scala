@@ -138,12 +138,11 @@ object Planner {
       val startingHeight: Long = lastKeyBlock.height + 1
       val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
       val keysSchedule: List[ByteString] = (1 to multiplier).foldLeft(publicKeys.toList) { case (a, _) => a ::: a }
-      val schedule: immutable.Seq[(Long, ByteString)] =
+      val schedule: SortedMap[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
-          yield i).zip(keysSchedule)
-      val resultedSchedule = schedule.foldLeft(SortedMap[Long, ByteString]()) { case (a, b) => a + b }
-      println(s"${resultedSchedule.mkString(",")}")
-      Epoch(resultedSchedule)
+          yield i).zip(keysSchedule).foldLeft(SortedMap[Long, ByteString]()) { case (a, b) => a + b }
+      println(s"${schedule.mkString(",")}")
+      Epoch(schedule)
     }
   }
 
