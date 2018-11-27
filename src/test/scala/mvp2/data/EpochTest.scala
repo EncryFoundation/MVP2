@@ -16,7 +16,6 @@ class EpochTest extends PropSpecLike with Matchers {
 
   val publicKeys2: Set[ByteString] = Set(ByteString("11qwertynddsvm"))
 
-
   property("Epoch size must me 50 after apply method:") {
     val epoch: Epoch = Epoch(KeyBlock(), publicKeys1, 10)
     epoch.schedule.size shouldEqual 50
