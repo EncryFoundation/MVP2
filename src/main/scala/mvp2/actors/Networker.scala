@@ -61,7 +61,7 @@ class Networker(settings: Settings) extends CommonActor {
         context.system.scheduler
           .scheduleOnce((settings.blockPeriod / 10) milliseconds)(self ! PrepareSchedulerStep(currentStep - 1))
       else {
-        peers = peers.cleanPeersByTime
+        peers = peers.cleanPeersByTime.cleanPeersByIdenticalKnownPeers
         planner ! KeysForSchedule(peers.getPeersKeys)
       }
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)

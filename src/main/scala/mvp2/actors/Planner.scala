@@ -7,7 +7,8 @@ import akka.util.ByteString
 import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,6 +60,7 @@ class Planner(settings: Settings) extends CommonActor {
       myPublicKey = key
     case Tick if epoch.isDone =>
       logger.info("epoch done")
+      logger.info(s"Keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       epoch = Epoch(lastBlock, allPublicKeys)
       checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
       logger.info("epoch.isDone")

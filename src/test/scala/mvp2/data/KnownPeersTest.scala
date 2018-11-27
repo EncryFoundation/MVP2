@@ -81,6 +81,5 @@ class KnownPeersTest extends PropSpecLike with Matchers {
       .cleanPeersByTime
       .getPeersKeys
       .length shouldEqual 3
-
   }
 }
