@@ -88,6 +88,8 @@ case class LightKeyBlock(height: Long = 0,
                          previousKeyBlockHash: ByteString = ByteString.empty,
                          currentBlockHash: ByteString = ByteString.empty,
                          txNum: Int = 0,
-                         data: ByteString = ByteString.empty) extends Block {
+                         data: ByteString = ByteString.empty,
+                         signature: ByteString = ByteString.empty,
+                         scheduler: List[ByteString] = List()) extends Block {
   override def isValid(previousBlock: Block): Boolean = true
 }

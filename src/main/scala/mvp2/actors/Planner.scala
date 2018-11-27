@@ -30,6 +30,8 @@ class Planner(settings: Settings) extends CommonActor {
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
+  var scheduleForWriting: List[ByteString] = List()
+  var hasWritten: Boolean = false
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
@@ -48,6 +50,7 @@ class Planner(settings: Settings) extends CommonActor {
 
   def syncedNode: Receive = {
     case keyBlock: KeyBlock =>
+      if (!hasWritten && keyBlock.scheduler.nonEmpty) hasWritten = true
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
@@ -59,11 +62,12 @@ class Planner(settings: Settings) extends CommonActor {
       allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
       myPublicKey = key
     case Tick if epoch.isDone =>
-      logger.info("epoch done")
-      logger.info(s"Keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      epoch = Epoch(lastBlock, allPublicKeys)
-      checkMyTurn(isFirstBlock = true, epoch.schedule.values.toList)
       logger.info("epoch.isDone")
+      logger.info(s"Keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      hasWritten = false
+      epoch = Epoch(lastBlock, allPublicKeys)
+      scheduleForWriting = epoch.schedule.values.toList
+      checkMyTurn(isFirstBlock = true, scheduleForWriting)
     case Tick if epoch.prepareNextEpoch =>
       networker ! PrepareScheduler
       logger.info("epoch.prepareNextEpoch")
@@ -73,7 +77,8 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if nextPeriod.noBlocksInTime =>
       logger.info("nextPeriod.noBlocksInTime")
       epoch = epoch.noBlockInTime
-      checkMyTurn(isFirstBlock = false, List())
+      if (!hasWritten) checkMyTurn(isFirstBlock = true, scheduleForWriting)
+      else checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
     case Tick => logger.info("123")

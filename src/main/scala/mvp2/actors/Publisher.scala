@@ -69,7 +69,7 @@ class Publisher(settings: Settings) extends CommonActor {
     val currentTime: Long = time
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
-    val singnedBlock: KeyBlock =
+    val signedBlock: KeyBlock =
       if (isFirstBlock)
         keyBlock.copy(signature = ECDSA.sign(myKeyPair.get.getPrivate, keyBlock.getBytes), scheduler = schedule)
       else keyBlock.copy(signature = ECDSA.sign(myKeyPair.get.getPrivate, keyBlock.getBytes))
@@ -77,6 +77,6 @@ class Publisher(settings: Settings) extends CommonActor {
     logger.info(s"New keyBlock with height ${keyBlock.height} is published by local publisher. " +
       s"${keyBlock.transactions.size} transactions inside.")
     mempool.cleanMempool()
-    singnedBlock
+    signedBlock
   }
 }
