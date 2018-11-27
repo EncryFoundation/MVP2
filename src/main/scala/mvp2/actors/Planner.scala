@@ -9,6 +9,8 @@ import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
 
+import scala.collection.immutable
+import scala.collection.immutable.{ListMap, SortedMap}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,7 +26,7 @@ class Planner(settings: Settings) extends CommonActor {
   var allPublicKeys: Set[ByteString] = Set.empty[ByteString]
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
-  var epoch: Epoch = Epoch(Map())
+  var epoch: Epoch = Epoch(SortedMap())
   var nextEpoch: Option[Epoch] = None
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
@@ -65,7 +67,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info("epoch.isDone")
       logger.info(s"Keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       hasWritten = false
-      epoch = Epoch(lastBlock, allPublicKeys)
+      epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
       scheduleForWriting = epoch.schedule.values.toList
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
     case Tick if epoch.prepareNextEpoch =>
@@ -116,7 +118,7 @@ object Planner {
     }
   }
 
-  case class Epoch(schedule: Map[Long, ByteString]) {
+  case class Epoch(schedule: SortedMap[Long, ByteString]) {
 
     def nextBlock: (Long, ByteString) = schedule.head
 
@@ -135,12 +137,13 @@ object Planner {
     def apply(lastKeyBlock: KeyBlock, publicKeys: Set[ByteString], multiplier: Int = 1): Epoch = {
       val startingHeight: Long = lastKeyBlock.height + 1
       val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
-      val keysSchedule: List[ByteString] = (1 to multiplier).foldLeft(publicKeys.toList) {case (a, _) => a ::: a }
-      val resultSchedule: Map[Long, ByteString] =
+      val keysSchedule: List[ByteString] = (1 to multiplier).foldLeft(publicKeys.toList) { case (a, _) => a ::: a }
+      val schedule: immutable.Seq[(Long, ByteString)] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
-          yield i).zip(keysSchedule).toMap[Long, ByteString]
-      println(s"${resultSchedule.mkString(",")}")
-      Epoch(resultSchedule)
+          yield i).zip(keysSchedule)
+      val resultedSchedule = schedule.foldLeft(SortedMap[Long, ByteString]()) { case (a, b) => a + b }
+      println(s"${resultedSchedule.mkString(",")}")
+      Epoch(resultedSchedule)
     }
   }
 
