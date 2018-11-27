@@ -1,16 +1,14 @@
 package mvp2.actors
 
-import java.security.KeyPair
 import akka.actor.{ActorRef, Props}
 import akka.actor.{ActorSelection, Cancellable}
 import akka.util.ByteString
+import com.typesafe.scalalogging.StrictLogging
 import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
-import mvp2.utils.{ECDSA, EncodingUtils, Settings}
-
-import scala.collection.immutable
-import scala.collection.immutable.{ListMap, SortedMap}
+import mvp2.utils.{EncodingUtils, Settings}
+import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,9 +19,8 @@ class Planner(settings: Settings) extends CommonActor {
 
   var nextTurn: Period = Period(KeyBlock(), settings)
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
-  val myKeys: KeyPair = ECDSA.createKeyPair
   var myPublicKey: ByteString = ByteString.empty
-  var allPublicKeys: Set[ByteString] = Set.empty[ByteString]
+  var allPublicKeys: Set[ByteString] = Set()
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
   var epoch: Epoch = Epoch(SortedMap())
@@ -42,8 +39,11 @@ class Planner(settings: Settings) extends CommonActor {
         context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
       context.become(syncedNode)
     case keyBlock: KeyBlock => lastBlock = keyBlock
-    case PeerPublicKey(key) => allPublicKeys = allPublicKeys + key
+    case PeerPublicKey(key) =>
+      allPublicKeys = allPublicKeys + key
+      logger.info(s"Set allPublickKeys to1: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
+      logger.info(s"Set allPublickKeys to2: ${EncodingUtils.encode2Base16(key)}")
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
       if (settings.otherNodes.isEmpty) self ! SyncingDone
@@ -57,17 +57,17 @@ class Planner(settings: Settings) extends CommonActor {
       lastBlock = keyBlock
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
-      allPublicKeys = (keys :+ ECDSA.compressPublicKey(myKeys.getPublic))
-        .sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
+      allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
+      logger.info(s"${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")} message from network22")
     case MyPublicKey(key) =>
       logger.info("Get key")
-      allPublicKeys = (allPublicKeys + key).toList.sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
+      allPublicKeys = allPublicKeys + key
       myPublicKey = key
     case Tick if epoch.isDone =>
       logger.info("epoch.isDone")
-      logger.info(s"Keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       hasWritten = false
       epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
+      logger.info(s"New epoch is: ${epoch.schedule}")
       scheduleForWriting = epoch.schedule.values.toList
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
     case Tick if nextPeriod.timeToPublish =>
@@ -133,7 +133,7 @@ object Planner {
     def prepareNextEpoch: Boolean = schedule.size <= 2
   }
 
-  object Epoch {
+  object Epoch extends StrictLogging {
     def apply(lastKeyBlock: KeyBlock, publicKeys: Set[ByteString], multiplier: Int = 1): Epoch = {
       val startingHeight: Long = lastKeyBlock.height + 1
       val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
