@@ -51,7 +51,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
         applyBlockFromCache()
     case ExpectedBlockPublicKeyAndHeight(height, signature) =>
       expectedPublicKeyAndHeight = Some(height, signature)
-      logger.info(s"Blockchainer got new signature " +
+      logger.info(s"Blockchainer got new public key " +
         s"${EncodingUtils.encode2Base16(expectedPublicKeyAndHeight.map(_._2).getOrElse(ByteString.empty))}")
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
