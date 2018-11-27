@@ -135,11 +135,12 @@ object Planner {
     def apply(lastKeyBlock: KeyBlock, publicKeys: Set[ByteString], multiplier: Int = 1): Epoch = {
       val startingHeight: Long = lastKeyBlock.height + 1
       val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
-      val schedule: Map[Long, ByteString] =
+      val keysSchedule: List[ByteString] = (1 to multiplier).foldLeft(publicKeys.toList) {case (a, _) => a ::: a }
+      val resultSchedule: Map[Long, ByteString] =
         (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
-          yield i).zip(publicKeys).toMap[Long, ByteString]
-      println(s"${schedule.mkString(",")}")
-      Epoch(schedule)
+          yield i).zip(keysSchedule).toMap[Long, ByteString]
+      println(s"${resultSchedule.mkString(",")}")
+      Epoch(resultSchedule)
     }
   }
 
