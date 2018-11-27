@@ -70,9 +70,6 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
       scheduleForWriting = epoch.schedule.values.toList
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
-    case Tick if epoch.prepareNextEpoch =>
-      networker ! PrepareScheduler
-      logger.info("epoch.prepareNextEpoch")
     case Tick if nextPeriod.timeToPublish =>
       checkMyTurn(isFirstBlock = false, List())
       logger.info("nextPeriod.timeToPublish")
@@ -83,6 +80,9 @@ class Planner(settings: Settings) extends CommonActor {
       else checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
+    case Tick if epoch.prepareNextEpoch =>
+      networker ! PrepareScheduler
+      logger.info("epoch.prepareNextEpoch")
     case Tick => logger.info("123")
   }
 
@@ -141,7 +141,6 @@ object Planner {
       val schedule: SortedMap[Long, ByteString] =
         SortedMap((for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
           yield i).zip(keysSchedule): _*)
-      println(s"${schedule.mkString(",")}")
       Epoch(schedule)
     }
   }
