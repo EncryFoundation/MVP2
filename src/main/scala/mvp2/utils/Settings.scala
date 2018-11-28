@@ -13,10 +13,8 @@ case class Settings(port: Int,
                     ntp: NetworkTimeProviderSettings,
                     influx: InfluxSettings,
                     testingSettings: TestingSettings,
-                    mempoolSetting: MempoolSetting
-                    ethereumSettings: EthereumSettings,
-                    influx: Option[InfluxSettings],
-                    testingSettings: Option[TestingSettings]
+                    mempoolSetting: MempoolSetting,
+                    ethereumSettings: EthereumSettings
                    )
 
 case class Node(host: String, port: Int)
@@ -29,10 +27,9 @@ case class NetworkTimeProviderSettings(server: String, updateEvery: Int, timeout
 
 case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)
 
-case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)
+case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int, pingPong: Boolean = false)
 
 case class NetworkSettings(maxBlockQtyInBlocksMessage: Int)
-case class EthereumSettings(userAccount: String, userPassword: String, receiverAccount:String,
-                            peerRPCAddress: String, gasPrice: Long)
 
-case class TestingSettings(pingPong: Boolean)
+case class EthereumSettings(userAccount: String, userPassword: String, receiverAccount: String,
+                            peerRPCAddress: String, gasPrice: Long)
