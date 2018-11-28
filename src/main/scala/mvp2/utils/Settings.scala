@@ -27,7 +27,7 @@ case class NetworkTimeProviderSettings(server: String, updateEvery: Int, timeout
 
 case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long)
 
-case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int, pingPong: Boolean = false)
+case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)
 
 case class NetworkSettings(maxBlockQtyInBlocksMessage: Int)
 
