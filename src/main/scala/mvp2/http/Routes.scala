@@ -3,8 +3,8 @@ package mvp2.http
 import akka.http.scaladsl.server.Directives.complete
 import akka.actor.ActorSelection
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
-import mvp2.data.Transaction
-import mvp2.messages.{CurrentBlockchainInfo, Get}
+import mvp2.data.{LightKeyBlock, Transaction}
+import mvp2.utils.{EncodingUtils, Settings}
 import mvp2.utils.Settings
 import akka.actor.ActorRefFactory
 import akka.http.scaladsl.model.StatusCodes
@@ -18,27 +18,34 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
-import akka.util.Timeout
+import akka.util.{ByteString, Timeout}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get, GetLightChain}
 import mvp2.utils.EncodingUtils._
 
 case class Routes(settings: Settings, implicit val context: ActorRefFactory) extends FailFastCirceSupport {
 
+  case class ApiInfo(height: Long = 0, keyBlock: Option[String], microBlock: Option[ByteString])
+
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
   implicit val ec: ExecutionContextExecutor = context.dispatcher
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
 
-  val route: Route = getTxs ~ apiInfo
+  val route: Route = getTxs ~ apiInfo ~ chainInfo
   val publisher: ActorSelection = context.actorSelection("/user/starter/blockchainer/publisher")
-
-  def apiInfoDef: Future[CurrentBlockchainInfo] =
-    (context.actorSelection("/user/starter/informator") ? Get).mapTo[CurrentBlockchainInfo]
+  val informator: ActorSelection = context.actorSelection("/user/starter/informator")
 
   def toJsonResponse(fJson: Future[Json]): Route = onSuccess(fJson)(resp =>
     complete(HttpEntity(ContentTypes.`application/json`, resp.spaces2))
   )
 
   def apiInfo: Route = pathPrefix("info")(
-    toJsonResponse(apiInfoDef.map(_.asJson))
+    toJsonResponse((informator ? Get).mapTo[CurrentBlockchainInfo].map(blockchain =>
+      ApiInfo(
+        blockchain.height,
+        blockchain.lastKeyBlock.map(block => EncodingUtils.encode2Base16(block.currentBlockHash)),
+        blockchain.lastMicroBlock).asJson
+      )
+    )
   )
 
   def getTxs: Route = path("sendTxs") {
@@ -50,4 +57,8 @@ case class Routes(settings: Settings, implicit val context: ActorRefFactory) ext
         }
     })
   }
+
+  def chainInfo: Route = path("chainInfo")(
+    toJsonResponse((informator ? GetLightChain).mapTo[List[LightKeyBlock]].map(_.asJson))
+  )
 }

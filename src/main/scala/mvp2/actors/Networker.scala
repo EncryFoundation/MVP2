@@ -1,82 +1,82 @@
 package mvp2.actors
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
+import akka.actor.{ActorSelection, Props}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import akka.actor.Props
-import mvp2.actors.Networker.Peer
-import mvp2.data.KeyBlock
-import mvp2.messages._
-import mvp2.utils.Settings
+import akka.util.ByteString
+import mvp2.data.InnerMessages._
+import mvp2.data.NetworkMessages._
+import mvp2.data.{KeyBlock, KnownPeers, Transaction}
+import mvp2.utils.{ECDSA, Settings}
 
 class Networker(settings: Settings) extends CommonActor {
 
-  var knownPeers: List[Peer] = settings.otherNodes.map(node =>
-    Peer(new InetSocketAddress(node.host, node.port), System.currentTimeMillis())
-  )
+  var myPublicKey: Option[ByteString] = None
+
+  val myAddr: InetSocketAddress = new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, settings.port)
+
+  val keyKeeper: ActorSelection = context.actorSelection("/user/starter/blockchainer/planner/keyKeeper")
+
+  val udpSender: ActorSelection = context.actorSelection("/user/starter/blockchainer/networker/udpSender")
+
+  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+
+  val influxActor: ActorSelection = context.actorSelection("/user/starter/influxActor")
+
+  val planner: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/planner")
+
+  var peers: KnownPeers = KnownPeers(settings)
 
   override def preStart(): Unit = {
     logger.info("Starting the Networker!")
-    context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(sendPeers())
-    if (settings.influx.isDefined && settings.testingSettings.exists(_.pingPong))
-      context.system.scheduler.schedule(1.seconds, settings.heartbeat.seconds)(pingAllPeers())
+    context.system.scheduler.schedule(1.seconds, settings.heartbeat.millisecond)(sendPeers())
     bornKids()
   }
 
   override def specialBehavior: Receive = {
-    case msgFromRemote: MessageFromRemote =>
-      updatePeerTime(msgFromRemote.remote)
-      msgFromRemote.message match {
-        case Peers(peers, remote) =>
-          (peers :+ msgFromRemote.remote).foreach(addPeer)
-        case Ping =>
-          logger.info(s"Get ping from: ${msgFromRemote.remote} send Pong")
-          context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Pong, msgFromRemote.remote)
-        case Pong =>
-          logger.info(s"Get pong from: ${msgFromRemote.remote} send Pong")
+    case msgFromNetwork: FromNet =>
+      msgFromNetwork.message match {
+        case Peers(peersFromRemote, _) =>
+          peers = peersFromRemote.foldLeft(peers) {
+            case (newKnownPeers, peerToAddOrUpdate) =>
+              updatePeerKey(peerToAddOrUpdate.publicKey)
+              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate.addr, peerToAddOrUpdate.publicKey)
+                .updatePeerTime(msgFromNetwork.remote)
+          }
+        case Blocks(blocks) =>
+          if (blocks.nonEmpty) context.parent ! msgFromNetwork.message
+        case SyncMessageIterators(iterators) =>
+          influxActor ! SyncMessageIteratorsFromRemote(
+            iterators.map(iterInfo => iterInfo.msgName -> iterInfo.msgIter).toMap,
+            msgFromNetwork.remote)
+        case LastBlockHeight(height) => context.parent ! CheckRemoteBlockchain(height, msgFromNetwork.remote)
+        case Transactions(transactions) =>
+          logger.info(s"Got ${transactions.size} new transactions.")
+          transactions.foreach(tx => publisher ! tx)
       }
-    case myPublishedBlock: KeyBlock =>
-      logger.info(s"Networker received published block with height: ${myPublishedBlock.height} to broadcast. " +
-        s"But broadcasting yet implemented not.")
+    case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(udpSender ! _)
+    case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
+    case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
+    case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
+    case RemoteBlockchainMissingPart(blocks, remote) =>
+      udpSender ! ToNet(Blocks(blocks), remote)
   }
 
-  def addPeer(peerAddr: InetSocketAddress): Unit =
-    if (!knownPeers.map(_.remoteAddress).contains(peerAddr))
-      knownPeers = knownPeers :+ Peer(peerAddr, 0)
-
-  def updatePeerTime(peer: InetSocketAddress): Unit =
-    if (knownPeers.par.exists(_.remoteAddress == peer))
-      knownPeers.find(_.remoteAddress == peer).foreach ( prevPeer =>
-        knownPeers = knownPeers.filter(_ != prevPeer) :+ prevPeer.copy(lastMessageTime = System.currentTimeMillis())
-      )
-
-  def pingAllPeers(): Unit =
-    knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") ! SendToNetwork(Ping, peer.remoteAddress)
-    )
+  def updatePeerKey(serializedKey: ByteString): Unit =
+    if (!myPublicKey.contains(serializedKey)) {
+      val newPublicKey: PeerPublicKey = PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
+      keyKeeper ! newPublicKey
+      planner ! newPublicKey
+    }
 
   def sendPeers(): Unit =
-    knownPeers.foreach(peer =>
-      context.actorSelection("/user/starter/networker/sender") !
-        SendToNetwork(
-          Peers(
-            knownPeers.par.filter(_.remoteAddress != peer.remoteAddress).toList.map(_.remoteAddress),
-            peer.remoteAddress
-          ),
-          peer.remoteAddress
-        )
-    )
+    myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
 
   def bornKids(): Unit = {
-    context.actorOf(Props(classOf[Receiver], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "receiver")
-    context.actorOf(Props(classOf[Sender], settings).withDispatcher("net-dispatcher")
-      .withMailbox("net-mailbox"), "sender")
+    context.actorOf(Props(classOf[UdpReceiver], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "udpReceiver")
+    context.actorOf(Props(classOf[UdpSender], settings).withDispatcher("net-dispatcher")
+      .withMailbox("net-mailbox"), "udpSender")
   }
-}
-
-object Networker {
-
-  case class Peer(remoteAddress: InetSocketAddress,
-                  lastMessageTime: Long)
 }

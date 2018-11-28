@@ -38,7 +38,7 @@ class RouteTest
     .as[Settings]("mvp")
 
   implicit val ec: ExecutionContextExecutor = system.dispatcher
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
 
   lazy val routesTest: Route = Routes(settings, system).getTxs
 

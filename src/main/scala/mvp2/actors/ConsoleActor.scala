@@ -1,9 +1,9 @@
 package mvp2.actors
 
 import akka.actor.{Actor, ActorSelection}
-import mvp2.messages.{CurrentBlockchainInfo, Get}
 import akka.pattern.ask
 import akka.util.Timeout
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, Get}
 import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -14,7 +14,7 @@ class ConsoleActor(settings: Settings) extends Actor {
   val promt: String = "$> "
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
 
-  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.second)
+  implicit val timeout: Timeout = Timeout(settings.apiSettings.timeout.millisecond)
 
   override def preStart(): Unit = {
     scala.io.Source.stdin.getLines().foreach {

@@ -1,19 +1,26 @@
 package mvp2.utils
 
-import java.util.Base64
+import java.net.InetSocketAddress
 import akka.util.ByteString
+import com.google.common.io.BaseEncoding
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax._
 
 object EncodingUtils {
-  implicit val byteStringEncoder: Encoder[ByteString] = _.utf8String.asJson
-  implicit val byteStringDecoder: Decoder[ByteString] = Decoder.decodeString.map(str => ByteString(str))
+  implicit val byteStringEncoder: Encoder[ByteString] = str => encode2Base16(str).asJson
+  implicit val byteStringDecoder: Decoder[ByteString] = Decoder.decodeString.map(decodeFromBase16)
+  implicit val inetSocketAddrEncoder: Encoder[InetSocketAddress] = str => fromISA2Str(str).asJson
+  implicit val inetSocketAddrDecoder: Decoder[InetSocketAddress] = str => Decoder.decodeString(str).map(fromStr2ISA)
 
-  private val encoder = Base64.getEncoder
+  def encode2Base16(bytes: ByteString): String = BaseEncoding.base16().encode(bytes.toArray)
 
-  private val decoder = Base64.getDecoder
+  def decodeFromBase16(base16Str: String): ByteString =
+    ByteString(BaseEncoding.base16().decode(base16Str))
 
-  def encode2Base64(bytes: ByteString): String = new String(encoder.encode(bytes.toArray))
+  def fromStr2ISA(str: String): InetSocketAddress = {
+    val split = str.split(":")
+    new InetSocketAddress(split(0), split(1).toInt)
+  }
 
-  def decodeFromBase64(base64Str: String): ByteString = ByteString(decoder.decode(base64Str))
+  def fromISA2Str(addr: InetSocketAddress): String = s"${addr.getAddress.getHostAddress}:${addr.getPort}"
 }
