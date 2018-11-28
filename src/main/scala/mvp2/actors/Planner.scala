@@ -18,12 +18,9 @@ class Planner(settings: Settings) extends CommonActor {
   val myKeys: KeyPair = ECDSA.createKeyPair
   var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
   var nextPeriod: Period = Period(KeyBlock(), settings)
-  val heartBeat: Cancellable =
-    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
-  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
-
   if (settings.canPublishBlocks)
     context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
+  val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
 
   override def specialBehavior: Receive = {
     case keyBlock: KeyBlock =>
