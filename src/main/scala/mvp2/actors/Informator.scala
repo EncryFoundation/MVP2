@@ -31,7 +31,8 @@ class Informator(settings: Settings) extends CommonActor {
         block.transactions.size,
         block.data,
         block.signature,
-        block.scheduler
+        block.scheduler,
+        block.publicKey
       )).getOrElse(LightKeyBlock()) :: lightChain
       actualInfo = currentBlockchainInfo
   }
