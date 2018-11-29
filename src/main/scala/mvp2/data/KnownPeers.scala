@@ -3,8 +3,8 @@ package mvp2.data
 import java.net.{InetAddress, InetSocketAddress}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.data.InnerMessages.SendToNetwork
 import mvp2.data.KnownPeers.KnownPeerInfo
+import mvp2.data.InnerMessages.ToNet
 import mvp2.data.NetworkMessages.{Blocks, LastBlockHeight, Peers, Transactions}
 import mvp2.utils.{EncodingUtils, Settings}
 
@@ -74,9 +74,9 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
     }
     else this
 
-  def getPeersMessages(myAddr: InetSocketAddress, publicKey: ByteString): Seq[SendToNetwork] =
+  def getPeersMessages(myAddr: InetSocketAddress, publicKey: ByteString): Seq[ToNet] =
     peersPublicKeyMap.map(peer =>
-        SendToNetwork(
+      ToNet(
           Peers(
             peersPublicKeyMap.flatMap(peer => peer._2.publicKey.map(key => peer._1 -> key)),
             (myAddr, publicKey),
@@ -86,19 +86,19 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
         )
     ).toSeq
 
-  def getBlockMessage(block: KeyBlock): Seq[SendToNetwork] =
-    peersPublicKeyMap.map(peer => SendToNetwork(Blocks(List(block)), peer._1)).toSeq
+  def getBlockMessage(block: KeyBlock): Seq[ToNet] =
+    peersPublicKeyMap.map(peer => ToNet(Blocks(List(block)), peer._1)).toSeq
 
-  def getTransactionMsg(transaction: Transaction): Seq[SendToNetwork] =
-    peersPublicKeyMap.map(peer => SendToNetwork(Transactions(List(transaction)), peer._1)).toSeq
+  def getTransactionMsg(transaction: Transaction): Seq[ToNet] =
+    peersPublicKeyMap.map(peer => ToNet(Transactions(List(transaction)), peer._1)).toSeq
 
-  def getHeightMessage(height: Long): Seq[SendToNetwork] = {
+  def getHeightMessage(height: Long): Seq[ToNet] = {
     val peersToSync = peersPublicKeyMap
       .filter(_._2.lastResponseTime < System.currentTimeMillis() - settings.network.heightMessageInterval).keys
     peersPublicKeyMap = peersToSync.foldLeft(this) {
       case (newPeers, peer) => newPeers.updatePeerTime(peer)
     }.peersPublicKeyMap
-    peersToSync.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq
+    peersToSync.map(peer => ToNet(LastBlockHeight(height), peer)).toSeq
   }
 
   def isSelfIp(addr: InetSocketAddress): Boolean =

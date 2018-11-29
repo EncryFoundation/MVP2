@@ -11,11 +11,11 @@ sealed trait Chain {
   def lastBlock: Block = chain.last
 }
 
-final case class Blockchain (var chain: SortedSet[KeyBlock] = SortedSet.empty[KeyBlock]) extends Chain with StrictLogging{
+final case class Blockchain(var chain: SortedSet[KeyBlock] = SortedSet.empty[KeyBlock]) extends Chain with StrictLogging {
 
   val maxHeight: Long = chain.lastOption.map(_.height).getOrElse(-1)
 
-  def + (block: KeyBlock): Blockchain = this.copy(chain + block)
+  def +(block: KeyBlock): Blockchain = this.copy(chain + block)
 
   def isApplicable(block: KeyBlock): Boolean = {
     logger.info(s"Trying to apply: ${block.height} with max: ${chain.lastOption.map(_.height)}")
@@ -35,13 +35,10 @@ final case class BlocksCache(var chain: SortedSet[KeyBlock] = SortedSet.empty[Ke
 
   def isEmpty: Boolean = chain.isEmpty
 
-  def + (block: KeyBlock): BlocksCache =
-    this.copy(chain + block)
-
-  def + (blocksToAdd: Seq[KeyBlock]): BlocksCache =
+  def +(blocksToAdd: Seq[KeyBlock]): BlocksCache =
     this.copy(chain ++ blocksToAdd)
 
-  def - (block: KeyBlock): BlocksCache = this.copy(chain.filter(_.height != block.height))
+  def -(block: KeyBlock): BlocksCache = this.copy(chain.filter(_.height != block.height))
 
   def getApplicableBlock(blochchain: Blockchain): Option[KeyBlock] = chain.find(_.height == blochchain.maxHeight + 1)
 }

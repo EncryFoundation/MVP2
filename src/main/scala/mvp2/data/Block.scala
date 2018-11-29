@@ -16,7 +16,7 @@ sealed trait Block {
   def isValid(previousBlock: Block): Boolean
 
   override def toString: String = s"Height: $height, time = $timestamp, " +
-    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}."
+    s"previousKeyBlockHash = ${encode2Base16(previousKeyBlockHash)}, " + s"currentBlockHash = ${encode2Base16(currentBlockHash)}"
 }
 
 final case class KeyBlock(height: Long,
@@ -61,7 +61,7 @@ object KeyBlock {
     .withScheduler(block.scheduler.map(publicKey => pByteString.copyFrom(publicKey.toByteBuffer)))
     .withPreviousKeyBlockHash(pByteString.copyFrom(block.previousKeyBlockHash.toByteBuffer))
 
-  def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock (
+  def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock(
     blockProtobuf.height,
     blockProtobuf.timestamp,
     ByteString(blockProtobuf.previousKeyBlockHash.toByteArray),

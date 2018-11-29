@@ -30,7 +30,7 @@ class TimeProvider(settings: Settings) extends CommonActor {
       info.getOffset
     }.recover {
       case e: Throwable =>
-        logger.error(s"Error during updating time-delta: $e.")
+        logger.error(s"Error during updating time-delta: ${e.getMessage}.")
         throw e
     }.foreach(delta => actors.foreach(_ ! TimeDelta(delta)))
   )
