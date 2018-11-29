@@ -97,7 +97,7 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
 
   def getHeightMessage(height: Long): Seq[ToNet] = {
     val peersToSync = peersPublicKeyMap
-      .filter(_._2.lastResponseTime < System.currentTimeMillis() - settings.network.heightMessageInterval).keys
+      .filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.network.heightMessageInterval).keys
     peersToSync.map(peer => ToNet(LastBlockHeight(height), peer)).toSeq
   }
 
