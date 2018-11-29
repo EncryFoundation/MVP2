@@ -69,6 +69,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Some(block) =>
       blockchain += block
       blockCache -= block
+      planner ! block
+      if (block.scheduler.nonEmpty) planner ! GetNewScheduleFromRemote(block.scheduler)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
         blockchain.chain.lastOption,
@@ -76,10 +78,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       )
       logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
-      if (isSynced) {
-        planner ! block
-        publisher ! block
-      }
+      if (isSynced) publisher ! block
       if (blockCache.isEmpty && !isSynced && blockchain.isSynced(settings.blockPeriod)) {
         isSynced = true
         logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
