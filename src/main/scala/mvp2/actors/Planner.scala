@@ -57,8 +57,8 @@ class Planner(settings: Settings) extends CommonActor {
       lastBlock = keyBlock
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
+      logger.info(s"${keys.map(EncodingUtils.encode2Base16).mkString(",")} message from network22")
       allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
-      logger.info(s"${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")} message from network22")
     case MyPublicKey(key) =>
       logger.info("Get key")
       allPublicKeys = allPublicKeys + key
@@ -72,6 +72,7 @@ class Planner(settings: Settings) extends CommonActor {
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
     case Tick if nextPeriod.timeToPublish =>
       checkMyTurn(isFirstBlock = false, List())
+      checkScheduleUpdateTime()
       logger.info("nextPeriod.timeToPublish")
     case Tick if nextPeriod.noBlocksInTime =>
       logger.info("nextPeriod.noBlocksInTime")
@@ -80,9 +81,7 @@ class Planner(settings: Settings) extends CommonActor {
       else checkMyTurn(isFirstBlock = false, List())
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
-    case Tick if epoch.prepareNextEpoch =>
-      networker ! PrepareScheduler
-      logger.info("epoch.prepareNextEpoch")
+      checkScheduleUpdateTime()
     case Tick => logger.info("123")
   }
 
@@ -91,6 +90,12 @@ class Planner(settings: Settings) extends CommonActor {
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.nextBlock._1, epoch.nextBlock._2)
     epoch = epoch.delete
   }
+
+  def checkScheduleUpdateTime(): Unit =
+    if (epoch.prepareNextEpoch) {
+      networker ! PrepareScheduler
+      logger.info("epoch.prepareNextEpoch")
+    }
 }
 
 object Planner {

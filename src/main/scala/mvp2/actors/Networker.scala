@@ -40,7 +40,7 @@ class Networker(settings: Settings) extends CommonActor {
       msgFromNetwork.message match {
         case msg@Peers(peersFromRemote, _) =>
           peersFromRemote.foreach(peer => updatePeerKey(peer.publicKey))
-          peers = peers.updatePeers(msg, myAddr)
+          peers = peers.updatePeers(msg, myAddr, msgFromNetwork.remote)
         case Blocks(blocks) =>
           if (blocks.nonEmpty) context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>

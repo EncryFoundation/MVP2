@@ -6,41 +6,42 @@ import com.typesafe.scalalogging.StrictLogging
 import mvp2.data.InnerMessages.SendToNetwork
 import mvp2.data.KnownPeers.KnownPeerInfo
 import mvp2.data.NetworkMessages.{Blocks, LastBlockHeight, Peers, Transactions}
-import mvp2.utils.Settings
+import mvp2.utils.{EncodingUtils, Settings}
 
 case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInfo],
                       settings: Settings) extends StrictLogging {
 
 
-  def updatePeers(peersMsg: Peers, myAddr: InetSocketAddress): KnownPeers =
+  def updatePeers(peersMsg: Peers, myAddr: InetSocketAddress, remote: InetSocketAddress): KnownPeers =
     peersMsg.peers.filter(_.addr != myAddr).foldLeft(this) {
       case (newPeers, nextPeer) =>
         newPeers
           .addOrUpdatePeer(nextPeer.addr, nextPeer.publicKey)
           .updatePeerTime(nextPeer.addr)
-          .checkPeersIdentity(peersMsg, myAddr)
+          .checkPeersIdentity(peersMsg, myAddr, remote)
     }
 
-  def checkPeersIdentity(peersMsg: Peers, myAddr: InetSocketAddress): KnownPeers =
-    if (peersMsg.remote != myAddr)
+  def checkPeersIdentity(peersMsg: Peers, myAddr: InetSocketAddress, remote: InetSocketAddress): KnownPeers =
+    if (remote != myAddr) {
       this.copy(peersPublicKeyMap +
-        (peersMsg.remote ->
-          peersPublicKeyMap.getOrElse(peersMsg.remote, KnownPeerInfo())
+        (remote ->
+          peersPublicKeyMap.getOrElse(remote, KnownPeerInfo())
             .copy(
               knownPeersIdentity = peersMsg
                 .peers
                 .filter(_.addr != myAddr)
                 .forall(peerInfo => peersPublicKeyMap.contains(peerInfo.addr))
-              && peersMsg
+                && peersMsg
                 .peers
-                .count(peer => peer.addr != myAddr && peer.addr != peersMsg.remote) == peersPublicKeyMap.count(_._1 != peersMsg.remote)
+                .count(peer => peer.addr != myAddr &&
+                  peer.addr != peersMsg.remote) == peersPublicKeyMap.count(_._1 != peersMsg.remote)
             )
           )
       )
+    }
     else this
 
-  def cleanPeersByTime: KnownPeers =
-    this.copy(
+  def cleanPeersByTime: KnownPeers = this.copy(
       peersPublicKeyMap.filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.blockPeriod)
     )
 
@@ -48,22 +49,29 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
 
   def getPeersKeys: List[ByteString] = peersPublicKeyMap.flatMap(_._2.publicKey).toList
 
-  def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers =
-    if (!isSelfIp(peer._1))
-      this.copy(peersPublicKeyMap + (
+  def addOrUpdatePeer(peer: (InetSocketAddress, ByteString)): KnownPeers = {
+    logger.info(s"Updating peer: $peer")
+    if (!isSelfIp(peer._1)) {
+      val le = this.copy(peersPublicKeyMap + (
         peer._1 -> peersPublicKeyMap.getOrElse(peer._1, KnownPeerInfo())
           .copy(Some(peer._2), lastResponseTime = System.currentTimeMillis()))
       )
+      logger.info(s"Get peer456 ${peer._1}: ${peersPublicKeyMap
+        .getOrElse(peer._1, KnownPeerInfo())}")
+      le
+    }
     else this
+  }
 
   def updatePeerTime(peer: InetSocketAddress): KnownPeers =
-    if (!isSelfIp(peer))
+    if (!isSelfIp(peer)) {
       this.copy(
         peersPublicKeyMap + (peer ->
           peersPublicKeyMap
             .getOrElse(peer, KnownPeerInfo())
             .copy(lastResponseTime = System.currentTimeMillis()))
       )
+    }
     else this
 
   def getPeersMessages(myAddr: InetSocketAddress, publicKey: ByteString): Seq[SendToNetwork] =
@@ -90,8 +98,6 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
     peersPublicKeyMap = peersToSync.foldLeft(this) {
       case (newPeers, peer) => newPeers.updatePeerTime(peer)
     }.peersPublicKeyMap
-    logger.info(peersPublicKeyMap.mkString(","))
-    logger.info(s"After filter: ${peersToSync.mkString(",")}")
     peersToSync.map(peer => SendToNetwork(LastBlockHeight(height), peer)).toSeq
   }
 
@@ -104,7 +110,11 @@ object KnownPeers {
 
   case class KnownPeerInfo(publicKey: Option[ByteString],
                            lastResponseTime: Long,
-                           knownPeersIdentity: Boolean)
+                           knownPeersIdentity: Boolean) {
+
+    override def toString: String = s"(PublicKey: ${publicKey.map(EncodingUtils.encode2Base16)}. " +
+      s"lastResponseTime: $lastResponseTime. knownPeersIdentity: $knownPeersIdentity)"
+  }
 
   object KnownPeerInfo {
 

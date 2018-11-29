@@ -39,27 +39,27 @@ class KnownPeersTest extends PropSpecLike with Matchers {
 
   property("KnownPeers should add peer after knownPeers msg and should ignore myAddr") {
 
-    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1)
+    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1, fakePeer1._1)
 
     newPeers.peersPublicKeyMap.size shouldEqual peers.peersPublicKeyMap.size + fakePeers.size
   }
 
   property("KnownPeers should get all keys of all online nodes") {
 
-    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1).cleanPeersByTime
+    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1, fakePeer1._1).cleanPeersByTime
 
     newPeers.getPeersKeys.length shouldEqual fakePeers.size
   }
 
   property("Known peers should ignore peers with lastResponseTime > System.currentTimeMillis() - settings.blockPeriod") {
 
-    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1)
+    val newPeers = peers.updatePeers(msgWithFakePeers, fakeMyNode._1, fakePeer1._1)
 
     Thread.sleep(settings.blockPeriod + 10)
 
     val msgWithFakePeersTail = Peers(fakePeers.tail, fakeMyNode, fakeMyNode._1)
 
-    newPeers.updatePeers(msgWithFakePeersTail, fakeMyNode._1)
+    newPeers.updatePeers(msgWithFakePeersTail, fakeMyNode._1, fakePeer1._1)
       .cleanPeersByTime
       .getPeersKeys
       .length shouldEqual fakePeers.size - 1
@@ -67,16 +67,17 @@ class KnownPeersTest extends PropSpecLike with Matchers {
 
   property("Known peers should return keys of nodes with equal peers msg") {
 
-    val newPeers = peers.updatePeers(Peers(Map(fakePeer1, fakePeer2, fakePeer3), fakeMyNode, fakeMyNode._1), fakeMyNode._1)
+    val newPeers = peers.updatePeers(Peers(Map(fakePeer2, fakePeer3), fakePeer1, fakeMyNode._1),
+      fakeMyNode._1, fakePeer1._1)
 
-    val msg1WithFakePeers = Peers(Map(fakePeer2, fakePeer3), fakePeer1, fakePeer1._1)
-    val msg2WithFakePeers = Peers(Map(fakePeer1, fakePeer3), fakePeer2, fakePeer2._1)
-    val msg3WithFakePeers = Peers(Map(fakePeer1, fakePeer2), fakePeer3, fakePeer3._1)
-    val msg4WithFakePeers = Peers(Map(fakePeer4), fakePeer4, fakePeer4._1)
+    val msg1WithFakePeers = Peers(Map(fakePeer2, fakePeer3), fakePeer1, fakeMyNode._1) -> fakePeer1
+    val msg2WithFakePeers = Peers(Map(fakePeer1, fakePeer3), fakePeer2, fakeMyNode._1) -> fakePeer2
+    val msg3WithFakePeers = Peers(Map(fakePeer1, fakePeer2), fakePeer3, fakeMyNode._1) -> fakePeer3
+    val msg4WithFakePeers = Peers(Map(fakePeer4), fakePeer4, fakeMyNode._1) -> fakePeer4
 
     Seq(msg1WithFakePeers, msg2WithFakePeers, msg3WithFakePeers, msg4WithFakePeers)
       .foldLeft(newPeers) {
-        case (knownPeers, nextMsg) => knownPeers.checkPeersIdentity(nextMsg, fakeMyNode._1)
+        case (knownPeers, nextMsg) => knownPeers.checkPeersIdentity(nextMsg._1, fakeMyNode._1, nextMsg._2._1)
       }.cleanPeersByIdenticalKnownPeers
       .cleanPeersByTime
       .getPeersKeys
