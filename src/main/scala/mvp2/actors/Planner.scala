@@ -36,6 +36,7 @@ class Planner(settings: Settings) extends CommonActor {
     case GetNewScheduleFromRemote(shedule) =>
       logger.info(s"Got new schedule from remote")
       epoch = Epoch(lastBlock, shedule.toSet, settings.epochMultiplier)
+      logger.info(s"Epoch from remote is: $epoch")
     case SyncingDone =>
       logger.info(s"Synced done on Planner.")
       if (settings.canPublishBlocks)
@@ -67,7 +68,7 @@ class Planner(settings: Settings) extends CommonActor {
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
     case Tick if epoch.isDone =>
-      logger.info("epoch.isDone")
+      logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
       hasWritten = false
       epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
       logger.info(s"New epoch is: ${epoch.schedule}")
@@ -76,9 +77,9 @@ class Planner(settings: Settings) extends CommonActor {
     case Tick if nextPeriod.timeToPublish =>
       checkMyTurn(isFirstBlock = false, List())
       checkScheduleUpdateTime()
-      logger.info("nextPeriod.timeToPublish")
+      logger.info("nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
     case Tick if nextPeriod.noBlocksInTime =>
-      logger.info("nextPeriod.noBlocksInTime")
+      logger.info("nextPeriod.noBlocksInTime. Height of last block is: ${lastBlock.height}")
       epoch = epoch.noBlockInTime
       if (!hasWritten) checkMyTurn(isFirstBlock = true, scheduleForWriting)
       else checkMyTurn(isFirstBlock = false, List())
@@ -139,6 +140,9 @@ object Planner {
     def isDone: Boolean = this.schedule.isEmpty
 
     def prepareNextEpoch: Boolean = schedule.size <= 2
+
+    override def toString: String = this.schedule.map(epochInfo =>
+      s"Height: ${epochInfo._1} -> ${EncodingUtils.encode2Base16(epochInfo._2)}").mkString(",")
   }
 
   object Epoch extends StrictLogging {
