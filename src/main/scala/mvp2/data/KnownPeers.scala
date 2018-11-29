@@ -43,7 +43,7 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
 
   def cleanPeersByTime: KnownPeers = {
     val newPeers: Map[InetSocketAddress, KnownPeerInfo] =
-      peersPublicKeyMap.filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.blockPeriod / 2)
+      peersPublicKeyMap.filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.blockPeriod)
     logger.info(s"Delete from peers: ${peersPublicKeyMap.keys.toList.diff(newPeers.keys.toList).mkString(",")}")
     this.copy(newPeers)
   }
