@@ -37,6 +37,7 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case msgFromNetwork: FromNet =>
+      peers = peers.updatePeerTime(msgFromNetwork.remote)
       msgFromNetwork.message match {
         case msg@Peers(peersFromRemote, _) =>
           peersFromRemote.foreach(peer => updatePeerKey(peer.publicKey))

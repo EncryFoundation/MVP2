@@ -57,7 +57,7 @@ class Planner(settings: Settings) extends CommonActor {
       lastBlock = keyBlock
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
-      logger.info(s"${keys.map(EncodingUtils.encode2Base16).mkString(",")} message from network22")
+      logger.info(s"Get peers public keys for schedule: ${keys.map(EncodingUtils.encode2Base16).mkString(",")}")
       allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
     case MyPublicKey(key) =>
       logger.info("Get key")

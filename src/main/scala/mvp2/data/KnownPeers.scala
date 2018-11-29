@@ -41,9 +41,12 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
     }
     else this
 
-  def cleanPeersByTime: KnownPeers = this.copy(
-      peersPublicKeyMap.filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.blockPeriod)
-    )
+  def cleanPeersByTime: KnownPeers = {
+    val newPeers: Map[InetSocketAddress, KnownPeerInfo] =
+      peersPublicKeyMap.filter(_._2.lastResponseTime > System.currentTimeMillis() - settings.blockPeriod / 2)
+    logger.info(s"Delete from peers: ${peersPublicKeyMap.keys.toList.diff(newPeers.keys.toList).mkString(",")}")
+    this.copy(newPeers)
+  }
 
   def cleanPeersByIdenticalKnownPeers: KnownPeers = this.copy(peersPublicKeyMap.filter(_._2.knownPeersIdentity))
 
@@ -95,9 +98,6 @@ case class KnownPeers(var peersPublicKeyMap: Map[InetSocketAddress, KnownPeerInf
   def getHeightMessage(height: Long): Seq[ToNet] = {
     val peersToSync = peersPublicKeyMap
       .filter(_._2.lastResponseTime < System.currentTimeMillis() - settings.network.heightMessageInterval).keys
-    peersPublicKeyMap = peersToSync.foldLeft(this) {
-      case (newPeers, peer) => newPeers.updatePeerTime(peer)
-    }.peersPublicKeyMap
     peersToSync.map(peer => ToNet(LastBlockHeight(height), peer)).toSeq
   }
 
