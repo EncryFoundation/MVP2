@@ -25,7 +25,8 @@ object InnerMessages {
   final case class FromNet(message: NetworkMessage, remote: InetSocketAddress,
                            id: ByteString = ByteString.empty) extends InnerMessage
 
-  final case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends InnerMessage
+  final case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int],
+                                                  remote: InetSocketAddress) extends InnerMessage
 
   final case class UdpSocket(conection: ActorRef) extends InnerMessage
 
@@ -56,4 +57,6 @@ object InnerMessages {
   final case object PrepareScheduler extends InnerMessage
 
   final case class PrepareSchedulerStep(i: Int) extends InnerMessage
+
+  final case class GetNewScheduleFromRemote(schedule: List[ByteString]) extends InnerMessage
 }
