@@ -33,11 +33,7 @@ final case class KeyBlock(height: Long,
 
   override def compare(that: KeyBlock): Int = this.height compare that.height
 
-  def getBytes: ByteString = previousKeyBlockHash ++
-    currentBlockHash ++
-    data ++
-    Longs.toByteArray(height) ++
-    Longs.toByteArray(timestamp)
+  def getBytes: ByteString = ByteString(KeyBlock.toProtobuf(this).toByteArray)
 }
 
 object KeyBlock {
