@@ -6,16 +6,16 @@ import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.actors.Planner.Period
+import mvp2.actors.Planner.{Epoch, Period}
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockPublicKeyAndHeight, Get, TimeDelta}
 import mvp2.data._
-
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 import mvp2.utils.{EncodingUtils, Settings}
+import scala.collection.immutable.SortedMap
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -31,6 +31,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
   var expectedPublicKeyAndHeight: Option[ByteString] = None
+  var epoch: Epoch = Epoch(List.empty)
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
     case _: Exception => Restart
@@ -69,8 +70,15 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Some(block) =>
       blockchain += block
       blockCache -= block
+      if (block.scheduler.nonEmpty)
+        epoch = Epoch(
+          Option(blockchain.chain.takeRight(2).head).getOrElse(KeyBlock()),
+          block.scheduler.toSet,
+          settings.epochMultiplier
+        )
+      if (epoch.schedule.contains(block.height))
+        epoch = epoch.dropNextPublisherPublicKey
       planner ! block
-      if (block.scheduler.nonEmpty) planner ! GetNewScheduleFromRemote(block.scheduler)
       informator ! CurrentBlockchainInfo(
         blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
         blockchain.chain.lastOption,
@@ -79,9 +87,11 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
       if (isSynced) publisher ! block
+
       if (!isSynced && blockchain.isSynced(settings.blockPeriod)) {
         isSynced = true
         logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
+        planner ! GetNewSyncedEpoch(epoch)
         publisher ! SyncingDone
         planner ! SyncingDone
       }

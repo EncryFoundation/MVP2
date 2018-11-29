@@ -1,8 +1,10 @@
 package mvp2.data
 
 import java.net.InetSocketAddress
+
 import akka.actor.ActorRef
 import akka.util.ByteString
+import mvp2.actors.Planner.Epoch
 import mvp2.data.NetworkMessages.NetworkMessage
 
 object InnerMessages {
@@ -58,5 +60,5 @@ object InnerMessages {
 
   final case class PrepareSchedulerStep(i: Int) extends InnerMessage
 
-  final case class GetNewScheduleFromRemote(schedule: List[ByteString]) extends InnerMessage
+  final case class GetNewSyncedEpoch(epoch: Epoch) extends InnerMessage
 }
