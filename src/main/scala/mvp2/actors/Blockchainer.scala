@@ -30,7 +30,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
-  var expectedPublicKeyAndHeight: Option[(Long, ByteString)] = None
+  var expectedPublicKeyAndHeight: Option[ByteString] = None
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
     case _: Exception => Restart
@@ -49,10 +49,10 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
         blockCache += blocks
         applyBlockFromCache()
-    case ExpectedBlockPublicKeyAndHeight(height, signature) =>
-      expectedPublicKeyAndHeight = Some(height, signature)
+    case ExpectedBlockPublicKeyAndHeight(publicKey) =>
+      expectedPublicKeyAndHeight = Some(publicKey)
       logger.info(s"Blockchainer got new public key " +
-        s"${EncodingUtils.encode2Base16(expectedPublicKeyAndHeight.map(_._2).getOrElse(ByteString.empty))}")
+        s"${EncodingUtils.encode2Base16(expectedPublicKeyAndHeight.getOrElse(ByteString.empty))}")
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>

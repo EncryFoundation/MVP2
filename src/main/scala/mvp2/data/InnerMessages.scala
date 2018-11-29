@@ -36,7 +36,7 @@ object InnerMessages {
 
   final case class MyPublicKey(publicKey: ByteString) extends InnerMessage
 
-  final case class ExpectedBlockPublicKeyAndHeight(height: Long, signature: ByteString) extends InnerMessage
+  final case class ExpectedBlockPublicKeyAndHeight(publicKey: ByteString) extends InnerMessage
 
   final case class TimeDelta(delta: Long) extends InnerMessage
 
