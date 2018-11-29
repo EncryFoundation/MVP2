@@ -33,10 +33,9 @@ class Planner(settings: Settings) extends CommonActor {
   var hasWritten: Boolean = false
 
   override def specialBehavior: Receive = {
-    case GetNewScheduleFromRemote(shedule) =>
-      logger.info(s"Got new schedule from remote")
-      epoch = Epoch(lastBlock, shedule.toSet, settings.epochMultiplier)
-      logger.info(s"Epoch from remote is: $epoch")
+    case GetNewSyncedEpoch(newEpoch) =>
+      epoch = newEpoch
+      logger.info(s"Epoch from remote is: $newEpoch. New epoch is: $epoch")
     case SyncingDone =>
       logger.info(s"Synced done on Planner.")
       if (settings.canPublishBlocks)
