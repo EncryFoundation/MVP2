@@ -44,9 +44,9 @@ class Planner(settings: Settings) extends CommonActor {
       } else epoch.dropNextPublisherPublicKey
     case PeerPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
-      logger.info(s"Set allPublickKeys to1: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      logger.info(s"Set allPublickKeys to1 : ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
-      logger.info(s"Set allPublickKeys to2: ${EncodingUtils.encode2Base16(key)}")
+      logger.info(s"Set allPublickKeys to2 : ${EncodingUtils.encode2Base16(key)}")
       allPublicKeys = allPublicKeys + key
       myPublicKey = key
       if (settings.otherNodes.isEmpty) self ! SyncingDone
