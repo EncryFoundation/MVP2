@@ -24,7 +24,6 @@ class Planner(settings: Settings) extends CommonActor {
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
   var epoch: Epoch = Epoch(List.empty)
-  var nextEpoch: Option[Epoch] = None
   val heartBeat: Cancellable =
     context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
@@ -33,15 +32,16 @@ class Planner(settings: Settings) extends CommonActor {
   var hasWritten: Boolean = false
 
   override def specialBehavior: Receive = {
-    case GetNewSyncedEpoch(newEpoch) =>
-      epoch = newEpoch
-      logger.info(s"Epoch from remote is: $newEpoch. New epoch is: $epoch")
     case SyncingDone =>
       logger.info(s"Synced done on Planner.")
       if (settings.canPublishBlocks)
         context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
       context.become(syncedNode)
-    case keyBlock: KeyBlock => lastBlock = keyBlock
+    case keyBlock: KeyBlock =>
+      lastBlock = keyBlock
+      if (keyBlock.scheduler.nonEmpty) {
+        epoch = Epoch(lastBlock, keyBlock.scheduler.toSet, settings.epochMultiplier)
+      } else epoch.dropNextPublisherPublicKey
     case PeerPublicKey(key) =>
       allPublicKeys = allPublicKeys + key
       logger.info(s"Set allPublickKeys to1: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
@@ -59,10 +59,6 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
-    case GetNewScheduleFromRemote(shedule) =>
-      logger.info(s"Got new schedule from remote")
-      epoch = Epoch(lastBlock, shedule.toSet, settings.epochMultiplier)
-      logger.info(s"Epoch from remote is: $epoch")
     case KeysForSchedule(keys) =>
       logger.info(s"Get peers public keys for schedule: ${keys.map(EncodingUtils.encode2Base16).mkString(",")}")
       allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
@@ -150,7 +146,7 @@ object Planner {
 
     def publicKeyOfNextPublisher: ByteString = schedule.head
 
-    def dropNextPublisherPublicKey: Epoch = this.copy(schedule.tail)
+    def dropNextPublisherPublicKey: Epoch = if (schedule.nonEmpty) this.copy(schedule.tail) else this
 
     def isDone: Boolean = this.schedule.isEmpty
 
