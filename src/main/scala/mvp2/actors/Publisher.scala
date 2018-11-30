@@ -8,14 +8,11 @@ import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.Random
 
 class Publisher(settings: Settings) extends CommonActor {
 
   var lastKeyBlock: KeyBlock = KeyBlock()
-  val randomizer: Random.type = scala.util.Random
   var currentDelta: Long = 0
-  //val testTxGenerator: ActorRef = context.actorOf(Props(classOf[TestTxGenerator]), "testTxGenerator")//TODO delete
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var mempool: Mempool = Mempool(settings)
 
