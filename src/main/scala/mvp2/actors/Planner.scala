@@ -40,7 +40,7 @@ class Planner(settings: Settings) extends CommonActor {
     case keyBlock: KeyBlock =>
       lastBlock = keyBlock
       if (keyBlock.scheduler.nonEmpty) {
-        epoch = Epoch(lastBlock, keyBlock.scheduler, settings.epochMultiplier)
+        epoch = Epoch(keyBlock.scheduler, settings.epochMultiplier)
       } else epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
     case PeerPublicKey(key) =>
@@ -74,7 +74,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
+      epoch = Epoch(allPublicKeys, settings.epochMultiplier)
       logger.info(s"New epoch is: $epoch")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
@@ -138,7 +138,7 @@ object Planner {
     }
   }
 
-  case class Epoch(schedule: List[ByteString], full: Boolean = false) {
+  case class Epoch(schedule: List[ByteString], full: Boolean) {
 
     def isApplicableBlock(block: KeyBlock): Boolean = block.publicKey == schedule.head
 
@@ -155,7 +155,7 @@ object Planner {
 
   object Epoch extends StrictLogging {
 
-    def apply(lastKeyBlock: KeyBlock, publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
+    def apply(publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
       Epoch((1 to multiplier).foldLeft(List[ByteString]()) { case (a, _) => a ::: publicKeys }, full = true)
   }
 
