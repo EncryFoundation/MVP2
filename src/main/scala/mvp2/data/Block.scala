@@ -1,6 +1,7 @@
 package mvp2.data
 
 import akka.util.ByteString
+import com.google.common.primitives.Longs
 import com.google.protobuf.{ByteString => pByteString}
 import mvp2.data.my_messages.KeyBlockProtobuf
 import mvp2.utils.Sha256
@@ -23,10 +24,16 @@ final case class KeyBlock(height: Long,
                           previousKeyBlockHash: ByteString,
                           currentBlockHash: ByteString,
                           transactions: List[Transaction],
-                          data: ByteString) extends Block with Ordered[KeyBlock] {
+                          data: ByteString,
+                          signature: ByteString,
+                          scheduler: List[ByteString],
+                          publicKey: ByteString) extends Block with Ordered[KeyBlock] {
+
   override def isValid(previousBlock: Block): Boolean = previousBlock.height + 1 == this.height
 
   override def compare(that: KeyBlock): Int = this.height compare that.height
+
+  def getBytes: ByteString = ByteString(KeyBlock.toProtobuf(this).toByteArray)
 }
 
 object KeyBlock {
@@ -34,9 +41,12 @@ object KeyBlock {
             timestamp: Long = System.currentTimeMillis,
             previousKeyBlockHash: ByteString = ByteString.empty,
             transactions: List[Transaction] = List.empty,
-            data: ByteString = ByteString.empty): KeyBlock = {
+            data: ByteString = ByteString.empty,
+            signature: ByteString = ByteString.empty,
+            scheduler: List[ByteString] = List.empty,
+            publicKey: ByteString = ByteString.empty): KeyBlock = {
     val currentBlockHash: ByteString = Sha256.toSha256(height.toString + timestamp.toString + previousKeyBlockHash.toString)
-    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data)
+    new KeyBlock(height, timestamp, previousKeyBlockHash, currentBlockHash, transactions, data, signature, scheduler, publicKey)
   }
 
   def toProtobuf(block: KeyBlock): KeyBlockProtobuf = KeyBlockProtobuf()
@@ -45,7 +55,11 @@ object KeyBlock {
     .withTimestamp(block.timestamp)
     .withTransactions(block.transactions.map(Transaction.toProtobuf))
     .withData(pByteString.copyFrom(block.data.toByteBuffer))
+    .withSignature(pByteString.copyFrom(block.signature.toByteBuffer))
+    .withScheduler(block.scheduler.map(publicKey => pByteString.copyFrom(publicKey.toByteBuffer)))
     .withPreviousKeyBlockHash(pByteString.copyFrom(block.previousKeyBlockHash.toByteBuffer))
+    .withPublicKey(pByteString.copyFrom(block.publicKey.toByteBuffer))
+
 
   def fromProtobuf(blockProtobuf: KeyBlockProtobuf): KeyBlock = KeyBlock(
     blockProtobuf.height,
@@ -53,7 +67,10 @@ object KeyBlock {
     ByteString(blockProtobuf.previousKeyBlockHash.toByteArray),
     ByteString(blockProtobuf.currentBlockHash.toByteArray),
     blockProtobuf.transactions.map(Transaction.fromProtobuf).toList,
-    ByteString(blockProtobuf.data.toByteArray)
+    ByteString(blockProtobuf.data.toByteArray),
+    ByteString(blockProtobuf.signature.toByteArray),
+    blockProtobuf.scheduler.map(protKey => ByteString(protKey.toByteArray)).toList,
+    ByteString(blockProtobuf.publicKey.toByteArray)
   )
 }
 
@@ -72,6 +89,9 @@ case class LightKeyBlock(height: Long = 0,
                          previousKeyBlockHash: ByteString = ByteString.empty,
                          currentBlockHash: ByteString = ByteString.empty,
                          txNum: Int = 0,
-                         data: ByteString = ByteString.empty) extends Block {
+                         data: ByteString = ByteString.empty,
+                         signature: ByteString = ByteString.empty,
+                         scheduler: List[ByteString] = List(),
+                         publicKey: ByteString = ByteString.empty) extends Block {
   override def isValid(previousBlock: Block): Boolean = true
 }

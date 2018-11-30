@@ -1,10 +1,14 @@
 package mvp2.actors
 
-import java.security.{KeyPair, PublicKey}
-import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
-import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
+import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorSelection, Cancellable}
+import akka.util.ByteString
+import com.typesafe.scalalogging.StrictLogging
+import mvp2.actors.Planner.Epoch
+import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
-import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+import mvp2.utils.{EncodingUtils, Settings}
+import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,31 +19,100 @@ class Planner(settings: Settings) extends CommonActor {
 
   var nextTurn: Period = Period(KeyBlock(), settings)
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
-  val myKeys: KeyPair = ECDSA.createKeyPair
-  var allPublicKeys: Set[PublicKey] = Set.empty[PublicKey]
+  var myPublicKey: ByteString = ByteString.empty
+  var allPublicKeys: Set[ByteString] = Set()
   var nextPeriod: Period = Period(KeyBlock(), settings)
-  if (settings.canPublishBlocks)
-    context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
+  var lastBlock: KeyBlock = KeyBlock()
+  var epoch: Epoch = Epoch(List.empty)
+  val heartBeat: Cancellable =
+    context.system.scheduler.schedule(10.seconds, settings.plannerHeartbeat milliseconds, self, Tick)
   val publisher: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/publisher")
+  val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
+  var scheduleForWriting: List[ByteString] = List()
+  var hasWritten: Boolean = false
 
   override def specialBehavior: Receive = {
+    case SyncingDone =>
+      logger.info(s"Synced done on Planner.")
+      if (settings.canPublishBlocks)
+        context.system.scheduler.schedule(0 seconds, settings.plannerHeartbeat milliseconds, self, Tick)
+      context.become(syncedNode)
     case keyBlock: KeyBlock =>
-      logger.info(s"Planner received new keyBlock with height: ${keyBlock.height}.")
-      nextPeriod = Period(keyBlock, settings)
-      context.parent ! nextPeriod
+      lastBlock = keyBlock
+      if (keyBlock.scheduler.nonEmpty) {
+        epoch = Epoch(lastBlock, keyBlock.scheduler.toSet, settings.epochMultiplier)
+      } else epoch.dropNextPublisherPublicKey
     case PeerPublicKey(key) =>
-      logger.info(s"Got public key from remote: ${EncodingUtils.encode2Base16(ECDSA.compressPublicKey(key))} on Planner.")
       allPublicKeys = allPublicKeys + key
+      logger.info(s"Set allPublickKeys to1: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
-    case Tick if nextPeriod.timeToPublish =>
-      publisher ! Get
-      logger.info("Planner sent publisher request: time to publish!")
-    case Tick if nextPeriod.noBlocksInTime =>
-      val newPeriod = Period(nextPeriod, settings)
-      logger.info(s"No blocks in time. Planner added ${newPeriod.exactTime - System.currentTimeMillis} milliseconds.")
-      nextPeriod = newPeriod
-    case Tick =>
+      logger.info(s"Set allPublickKeys to2: ${EncodingUtils.encode2Base16(key)}")
+      allPublicKeys = allPublicKeys + key
+      myPublicKey = key
+      if (settings.otherNodes.isEmpty) self ! SyncingDone
+    case _ =>
   }
+
+  def syncedNode: Receive = {
+    case keyBlock: KeyBlock =>
+      if (!hasWritten && keyBlock.scheduler.nonEmpty) hasWritten = true
+      nextPeriod = Period(keyBlock, settings)
+      lastBlock = keyBlock
+      context.parent ! nextPeriod
+    case KeysForSchedule(keys) =>
+      logger.info(s"Get peers public keys for schedule: ${keys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+    case MyPublicKey(key) =>
+      logger.info("Get key")
+      allPublicKeys = allPublicKeys + key
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      myPublicKey = key
+    case Tick if epoch.isDone =>
+      logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      hasWritten = false
+      epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
+      logger.info(s"New epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      scheduleForWriting = epoch.schedule
+      checkMyTurn(isFirstBlock = true, scheduleForWriting)
+    case Tick if nextPeriod.timeToPublish =>
+      checkMyTurn(isFirstBlock = false, List())
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      checkScheduleUpdateTime()
+      logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
+    case Tick if nextPeriod.noBlocksInTime =>
+      logger.info(s"nextPeriod.noBlocksInTime. Height of last block is: ${lastBlock.height}")
+      epoch = epoch.dropNextPublisherPublicKey
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      if (!hasWritten) checkMyTurn(isFirstBlock = true, scheduleForWriting)
+      else checkMyTurn(isFirstBlock = false, List())
+      nextPeriod = Period(nextPeriod, settings)
+      context.parent ! nextPeriod
+      checkScheduleUpdateTime()
+    case Tick =>
+      logger.info("123")
+      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+  }
+
+  def checkMyTurn(isFirstBlock: Boolean, schedule: List[ByteString]): Unit = {
+    if (epoch.publicKeyOfNextPublisher == myPublicKey) publisher ! RequestForNewBlock(isFirstBlock, schedule)
+    context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.publicKeyOfNextPublisher)
+    epoch = epoch.dropNextPublisherPublicKey
+  }
+
+  def checkScheduleUpdateTime(): Unit =
+    if (epoch.prepareNextEpoch) {
+      networker ! PrepareScheduler
+      logger.info("epoch.prepareNextEpoch")
+    }
 }
 
 object Planner {
@@ -62,33 +135,30 @@ object Planner {
     }
 
     def apply(previousPeriod: Period, settings: Settings): Period = {
-      val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod / 2
+      val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod
       Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
     }
   }
 
-  case class Epoch(schedule: Map[Long, PublicKey]) {
+  case class Epoch(schedule: List[ByteString]) {
 
-    def nextBlock: (Long, PublicKey) = schedule.head
+    def isApplicableBlock(block: KeyBlock): Boolean = block.publicKey == schedule.head
 
-    def delete: Epoch = this.copy(schedule - schedule.head._1)
+    def publicKeyOfNextPublisher: ByteString = schedule.head
 
-    def delete(height: Long): Epoch = this.copy(schedule = schedule.drop(height.toInt))
-
-    def noBlockInTime: Epoch = this.copy((schedule - schedule.head._1).map(each => (each._1 - 1, each._2)))
+    def dropNextPublisherPublicKey: Epoch = if (schedule.nonEmpty) this.copy(schedule.tail) else this
 
     def isDone: Boolean = this.schedule.isEmpty
+
+    def prepareNextEpoch: Boolean = schedule.size <= 2
+
+    override def toString: String = this.schedule.map(EncodingUtils.encode2Base16).mkString(",")
   }
 
-  object Epoch {
-    def apply(lastKeyBlock: KeyBlock, publicKeys: List[PublicKey], multiplier: Int = 1): Epoch = {
-      val startingHeight: Long = lastKeyBlock.height + 1
-      val numberOfBlocksInEpoch: Int = publicKeys.size * multiplier
-      var schedule: Map[Long, PublicKey] =
-        (for (i <- startingHeight until startingHeight + numberOfBlocksInEpoch)
-          yield i).zip(publicKeys).toMap[Long, PublicKey]
-      Epoch(schedule)
-    }
+  object Epoch extends StrictLogging {
+
+    def apply(lastKeyBlock: KeyBlock, publicKeys: Set[ByteString], multiplier: Int = 1): Epoch =
+      Epoch((1 to multiplier).foldLeft(publicKeys.toList) { case (a, _) => a ::: a })
   }
 
   case object Tick

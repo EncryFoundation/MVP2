@@ -143,5 +143,4 @@ object NetworkMessages {
       LastBlockHeight(LastBlockHeightProtobuf.parseFrom(bytes.toArray).height)
     }
   }
-
 }

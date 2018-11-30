@@ -5,6 +5,7 @@ case class Settings(port: Int,
                     network: NetworkSettings,
                     heartbeat: Int,
                     plannerHeartbeat: Int,
+                    epochMultiplier: Int,
                     blockPeriod: Long,
                     canPublishBlocks: Boolean,
                     biasForBlockPeriod: Long,
@@ -28,4 +29,6 @@ case class MempoolSetting(transactionsValidTime: Long, mempoolCleaningTime: Long
 
 case class TestingSettings(messagesTime: Boolean, iteratorsSyncTime: Int)
 
-case class NetworkSettings(maxBlockQtyInBlocksMessage: Int)
+case class NetworkSettings(maxBlockQtyInBlocksMessage: Int,
+                           heightMessageInterval: Int,
+                           qtyOfPrepareSchedulerSteps: Int)

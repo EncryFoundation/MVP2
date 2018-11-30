@@ -1,9 +1,10 @@
 package mvp2.data
 
 import java.net.InetSocketAddress
-import java.security.PublicKey
+
 import akka.actor.ActorRef
 import akka.util.ByteString
+import mvp2.actors.Planner.Epoch
 import mvp2.data.NetworkMessages.NetworkMessage
 
 object InnerMessages {
@@ -26,13 +27,18 @@ object InnerMessages {
   final case class FromNet(message: NetworkMessage, remote: InetSocketAddress,
                            id: ByteString = ByteString.empty) extends InnerMessage
 
-  final case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int], remote: InetSocketAddress) extends InnerMessage
+  final case class SyncMessageIteratorsFromRemote(iterators: Map[String, Int],
+                                                  remote: InetSocketAddress) extends InnerMessage
 
   final case class UdpSocket(conection: ActorRef) extends InnerMessage
 
-  final case class PeerPublicKey(peerPublicKey: PublicKey) extends InnerMessage
+  final case class PeerPublicKey(peerPublicKey: ByteString) extends InnerMessage
 
-  final case class MyPublicKey(publicKey: PublicKey) extends InnerMessage
+  final case class KeysForSchedule(keys: List[ByteString]) extends InnerMessage
+
+  final case class MyPublicKey(publicKey: ByteString) extends InnerMessage
+
+  final case class ExpectedBlockPublicKeyAndHeight(publicKey: ByteString) extends InnerMessage
 
   final case class TimeDelta(delta: Long) extends InnerMessage
 
@@ -46,4 +52,13 @@ object InnerMessages {
 
   final case object SyncingDone extends InnerMessage
 
+  final case class PublishNextBlock(scheduler: Set[ByteString]) extends InnerMessage
+
+  final case class RequestForNewBlock(firstInEpoch: Boolean, schedule: List[ByteString]) extends InnerMessage
+
+  final case object PrepareScheduler extends InnerMessage
+
+  final case class PrepareSchedulerStep(i: Int) extends InnerMessage
+
+  final case class GetNewSyncedEpoch(epoch: Epoch) extends InnerMessage
 }

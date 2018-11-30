@@ -1,17 +1,21 @@
 package mvp2.actors
 
-import akka.actor.SupervisorStrategy.Resume
-import akka.actor.{ActorRef, ActorSelection, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.SupervisorStrategy.{Restart, Resume}
+import akka.actor.{OneForOneStrategy, SupervisorStrategy}
+import akka.actor.{ActorRef, ActorSelection, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
-import mvp2.actors.Planner.Period
+import mvp2.actors.Planner.{Epoch, Period}
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
+import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockPublicKeyAndHeight, Get, TimeDelta}
 import mvp2.data._
-import mvp2.utils.Settings
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
+import mvp2.utils.{EncodingUtils, Settings}
+import scala.collection.immutable.SortedMap
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -26,14 +30,16 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val publisher: ActorRef = context.actorOf(Props(classOf[Publisher], settings), "publisher")
   val informator: ActorSelection = context.system.actorSelection("/user/starter/informator")
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
+  var expectedPublicKeyAndHeight: Option[ByteString] = None
+  var epoch: Epoch = Epoch(List.empty)
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
-    case _: Exception => Resume
+    case _: Exception => Restart
   }
 
   override def preStart(): Unit =
     if (settings.otherNodes.nonEmpty)
-      context.system.scheduler.scheduleOnce(2 seconds)(networker !
+      context.system.scheduler.scheduleOnce(5 seconds)(networker !
         OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(-1)))
 
   override def receiveRecover: Receive = {
@@ -44,10 +50,14 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Blocks(blocks) =>
         blockCache += blocks
         applyBlockFromCache()
+    case ExpectedBlockPublicKeyAndHeight(publicKey) =>
+      expectedPublicKeyAndHeight = Some(publicKey)
+      logger.info(s"Blockchainer got new public key " +
+        s"${EncodingUtils.encode2Base16(expectedPublicKeyAndHeight.getOrElse(ByteString.empty))}")
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
-      logger.info(s"Blockchainer received period for new block with exact timestamp ${period.exactTime}.")
+      logger.info(s"Blockchainer received period for new block with exact timestamp ${period.begin} ${period.end}.")
       nextTurn = period
     case CheckRemoteBlockchain(remoteHeight, remote) =>
       blockchain.getMissingPart(remoteHeight).foreach(blocks =>
@@ -60,6 +70,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case Some(block) =>
       blockchain += block
       blockCache -= block
+      planner ! block
       informator ! CurrentBlockchainInfo(
         blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
         blockchain.chain.lastOption,
@@ -67,11 +78,12 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       )
       logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
-      planner ! block
-      publisher ! block
-      if (blockCache.isEmpty && !isSynced) {
+      if (isSynced) publisher ! block
+      if (!isSynced && blockchain.isSynced(settings.blockPeriod)) {
         isSynced = true
+        logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
         publisher ! SyncingDone
+        planner ! SyncingDone
       }
       applyBlockFromCache()
     case None =>

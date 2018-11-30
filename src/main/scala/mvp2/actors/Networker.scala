@@ -8,7 +8,8 @@ import akka.util.ByteString
 import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages._
 import mvp2.data.{KeyBlock, KnownPeers, Transaction}
-import mvp2.utils.{ECDSA, Settings}
+import mvp2.utils.Settings
+import scala.language.postfixOps
 
 class Networker(settings: Settings) extends CommonActor {
 
@@ -36,14 +37,11 @@ class Networker(settings: Settings) extends CommonActor {
 
   override def specialBehavior: Receive = {
     case msgFromNetwork: FromNet =>
+      peers = peers.updatePeerTime(msgFromNetwork.remote)
       msgFromNetwork.message match {
-        case Peers(peersFromRemote, _) =>
-          peers = peersFromRemote.foldLeft(peers) {
-            case (newKnownPeers, peerToAddOrUpdate) =>
-              updatePeerKey(peerToAddOrUpdate.publicKey)
-              newKnownPeers.addOrUpdatePeer(peerToAddOrUpdate.addr, peerToAddOrUpdate.publicKey)
-                .updatePeerTime(msgFromNetwork.remote)
-          }
+        case msg@Peers(peersFromRemote, _) =>
+          peersFromRemote.foreach(peer => updatePeerKey(peer.publicKey))
+          peers = peers.updatePeers(msg, myAddr, msgFromNetwork.remote)
         case Blocks(blocks) =>
           if (blocks.nonEmpty) context.parent ! msgFromNetwork.message
         case SyncMessageIterators(iterators) =>
@@ -56,7 +54,19 @@ class Networker(settings: Settings) extends CommonActor {
           transactions.foreach(tx => publisher ! tx)
       }
     case OwnBlockchainHeight(height) => peers.getHeightMessage(height).foreach(udpSender ! _)
-    case MyPublicKey(key) => myPublicKey = Some(ECDSA.compressPublicKey(key))
+    case MyPublicKey(key) => myPublicKey = Some(key)
+    case PrepareScheduler => self ! PrepareSchedulerStep(settings.network.qtyOfPrepareSchedulerSteps)
+    case PrepareSchedulerStep(currentStep) =>
+      sendPeers()
+      if (currentStep != 0)
+        context.system.scheduler
+          .scheduleOnce((settings.blockPeriod / 10) milliseconds)(self ! PrepareSchedulerStep(currentStep - 1))
+      else {
+        logger.info(s"Before cleaning: ${peers.peersPublicKeyMap.mkString(",")}")
+        peers = peers.cleanPeersByTime.cleanPeersByIdenticalKnownPeers
+        logger.info(s"After cleaning: ${peers.peersPublicKeyMap.mkString(",")}")
+        planner ! KeysForSchedule(peers.getPeersKeys)
+      }
     case transaction: Transaction => peers.getTransactionMsg(transaction).foreach(msg => udpSender ! msg)
     case keyBlock: KeyBlock => peers.getBlockMessage(keyBlock).foreach(udpSender ! _)
     case RemoteBlockchainMissingPart(blocks, remote) =>
@@ -64,11 +74,7 @@ class Networker(settings: Settings) extends CommonActor {
   }
 
   def updatePeerKey(serializedKey: ByteString): Unit =
-    if (!myPublicKey.contains(serializedKey)) {
-      val newPublicKey: PeerPublicKey = PeerPublicKey(ECDSA.uncompressPublicKey(serializedKey))
-      keyKeeper ! newPublicKey
-      planner ! newPublicKey
-    }
+    if (!myPublicKey.contains(serializedKey)) keyKeeper ! PeerPublicKey(serializedKey)
 
   def sendPeers(): Unit =
     myPublicKey.foreach(key => peers.getPeersMessages(myAddr, key).foreach(msg => udpSender ! msg))
