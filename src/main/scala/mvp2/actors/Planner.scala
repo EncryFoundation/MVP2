@@ -1,5 +1,7 @@
 package mvp2.actors
 
+import java.text.SimpleDateFormat
+
 import akka.actor.{ActorRef, Props}
 import akka.actor.{ActorSelection, Cancellable}
 import akka.util.ByteString
@@ -8,6 +10,7 @@ import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
 import mvp2.utils.{EncodingUtils, Settings}
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -119,6 +122,9 @@ class Planner(settings: Settings) extends CommonActor {
 object Planner {
 
   case class Period(begin: Long, exactTime: Long, end: Long) {
+
+    val df = new SimpleDateFormat("HH:mm:ss")
+
     def timeToPublish: Boolean = {
       val now: Long = System.currentTimeMillis
       now >= this.begin && now <= this.end
@@ -126,9 +132,11 @@ object Planner {
 
     def noBlocksInTime: Boolean = System.currentTimeMillis > this.end
 
+    override def toString: String = s"Period(begin: ${df.format(begin)}. " +
+      s"ExactTime: ${df.format(exactTime)}. end: ${df.format(end)})"
   }
 
-  object Period {
+  object Period extends StrictLogging {
 
     def apply(lastKeyBlock: KeyBlock, settings: Settings): Period = {
       val exactTimestamp: Long = lastKeyBlock.timestamp + settings.blockPeriod
@@ -137,7 +145,15 @@ object Planner {
 
     def apply(previousPeriod: Period, settings: Settings): Period = {
       val exactTimestamp: Long = previousPeriod.exactTime + settings.blockPeriod
-      Period(exactTimestamp - settings.biasForBlockPeriod, exactTimestamp, exactTimestamp + settings.biasForBlockPeriod)
+      logger.info(s"Generating next period after $previousPeriod")
+      val newPeriod: Period =
+        Period(
+          exactTimestamp - settings.biasForBlockPeriod,
+          exactTimestamp,
+          exactTimestamp + settings.biasForBlockPeriod
+        )
+      logger.info(s"New period: $newPeriod")
+      newPeriod
     }
   }
 

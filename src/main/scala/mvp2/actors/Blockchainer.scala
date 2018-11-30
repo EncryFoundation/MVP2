@@ -1,5 +1,7 @@
 package mvp2.actors
 
+import java.text.SimpleDateFormat
+
 import akka.actor.SupervisorStrategy.{Restart, Resume}
 import akka.actor.{OneForOneStrategy, SupervisorStrategy}
 import akka.actor.{ActorRef, ActorSelection, Props}
@@ -11,6 +13,7 @@ import mvp2.data.InnerMessages._
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.InnerMessages.{CurrentBlockchainInfo, ExpectedBlockPublicKeyAndHeight, Get, TimeDelta}
 import mvp2.data._
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
@@ -31,6 +34,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
   val planner: ActorRef = context.actorOf(Props(classOf[Planner], settings), "planner")
   var expectedPublicKeyAndHeight: Option[ByteString] = None
   var epoch: Epoch = Epoch(List.empty)
+  val df = new SimpleDateFormat("HH:mm:ss")
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
     case _: Exception => Restart
@@ -56,7 +60,8 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
     case TimeDelta(delta: Long) => currentDelta = delta
     case Get => sender ! blockchain
     case period: Period =>
-      logger.info(s"Blockchainer received period for new block with exact timestamp ${period.begin} ${period.end}.")
+      logger.info(s"Blockchainer received period for new block with exact timestamp ${df.format(period.begin)} -" +
+        s" ${df.format(period.end)}.")
       nextTurn = period
     case CheckRemoteBlockchain(remoteHeight, remote) =>
       blockchain.getMissingPart(remoteHeight).foreach(blocks =>
