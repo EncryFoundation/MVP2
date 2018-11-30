@@ -6,7 +6,7 @@ import org.scalatest.{Matchers, PropSpecLike}
 
 class EpochTest extends PropSpecLike with Matchers {
 
-  val publicKeys1: Set[ByteString] = Set(
+  val publicKeys1: List[ByteString] = List(
     ByteString("11qwertynddsvm"),
     ByteString("22qwertynddsvmwerf"),
     ByteString("33qwertynwerqewrddsvm"),
@@ -14,7 +14,7 @@ class EpochTest extends PropSpecLike with Matchers {
     ByteString("55qwertyndd1241svm"),
   )
 
-  val publicKeys2: Set[ByteString] = Set(ByteString("11qwertynddsvm"))
+  val publicKeys2: List[ByteString] = List(ByteString("11qwertynddsvm"))
 
   property("Epoch size must me 50 after apply method:") {
     val epoch: Epoch = Epoch(KeyBlock(), publicKeys1, 10)
