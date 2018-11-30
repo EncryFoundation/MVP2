@@ -57,6 +57,7 @@ class Networker(settings: Settings) extends CommonActor {
     case MyPublicKey(key) => myPublicKey = Some(key)
     case PrepareScheduler => self ! PrepareSchedulerStep(settings.network.qtyOfPrepareSchedulerSteps)
     case PrepareSchedulerStep(currentStep) =>
+      logger.info(s"Get PrepareSchedulerStep: $currentStep")
       sendPeers()
       if (currentStep != 0)
         context.system.scheduler
