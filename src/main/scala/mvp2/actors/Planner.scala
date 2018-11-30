@@ -1,7 +1,7 @@
 package mvp2.actors
 
 import java.security.{KeyPair, PublicKey}
-import akka.actor.{ActorRef, ActorSelection, Cancellable, Props}
+import akka.actor.{ActorRef, ActorSelection, Props}
 import mvp2.data.InnerMessages.{Get, MyPublicKey, PeerPublicKey}
 import mvp2.data.KeyBlock
 import mvp2.utils.{ECDSA, EncodingUtils, Settings}
