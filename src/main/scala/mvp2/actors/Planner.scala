@@ -20,7 +20,7 @@ class Planner(settings: Settings) extends CommonActor {
   var nextTurn: Period = Period(KeyBlock(), settings)
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   var myPublicKey: ByteString = ByteString.empty
-  var allPublicKeys: Set[ByteString] = Set()
+  var allPublicKeys: List[ByteString] = List.empty
   var nextPeriod: Period = Period(KeyBlock(), settings)
   var lastBlock: KeyBlock = KeyBlock()
   var epoch: Epoch = Epoch(List.empty)
@@ -40,14 +40,15 @@ class Planner(settings: Settings) extends CommonActor {
     case keyBlock: KeyBlock =>
       lastBlock = keyBlock
       if (keyBlock.scheduler.nonEmpty) {
-        epoch = Epoch(lastBlock, keyBlock.scheduler.toSet, settings.epochMultiplier)
+        epoch = Epoch(lastBlock, keyBlock.scheduler, settings.epochMultiplier)
       } else epoch.dropNextPublisherPublicKey
+      logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
     case PeerPublicKey(key) =>
-      allPublicKeys = allPublicKeys + key
+      allPublicKeys = allPublicKeys :+ key
       logger.info(s"Set allPublickKeys to1 : ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
       logger.info(s"Set allPublickKeys to2 : ${EncodingUtils.encode2Base16(key)}")
-      allPublicKeys = allPublicKeys + key
+      allPublicKeys = allPublicKeys :+ key
       myPublicKey = key
       if (settings.otherNodes.isEmpty) self ! SyncingDone
     case _ =>
@@ -61,18 +62,18 @@ class Planner(settings: Settings) extends CommonActor {
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
       logger.info(s"Get peers public keys for schedule: ${keys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1).toSet
-      logger.info(s"Current epoch is: $epoch")
+      allPublicKeys = (keys :+ myPublicKey).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
       logger.info("Get key")
-      allPublicKeys = allPublicKeys + key
-      logger.info(s"Current epoch is: $epoch")
+      allPublicKeys = allPublicKeys :+ key
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       myPublicKey = key
     case Tick if epoch.isDone =>
       logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
-      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       hasWritten = false
       epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
@@ -82,7 +83,7 @@ class Planner(settings: Settings) extends CommonActor {
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
     case Tick if nextPeriod.timeToPublish =>
       checkMyTurn(isFirstBlock = false, List())
-      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       checkScheduleUpdateTime()
       logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
@@ -98,7 +99,7 @@ class Planner(settings: Settings) extends CommonActor {
       checkScheduleUpdateTime()
     case Tick =>
       logger.info("123")
-      logger.info(s"Current epoch is: $epoch")
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
   }
 
@@ -157,8 +158,8 @@ object Planner {
 
   object Epoch extends StrictLogging {
 
-    def apply(lastKeyBlock: KeyBlock, publicKeys: Set[ByteString], multiplier: Int = 1): Epoch =
-      Epoch((1 to multiplier).foldLeft(publicKeys.toList) { case (a, _) => a ::: a })
+    def apply(lastKeyBlock: KeyBlock, publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
+      Epoch((1 to multiplier).foldLeft(publicKeys) { case (a, _) => a ::: a })
   }
 
   case object Tick
