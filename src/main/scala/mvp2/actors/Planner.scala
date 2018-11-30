@@ -167,7 +167,7 @@ object Planner {
   object Epoch extends StrictLogging {
 
     def apply(lastKeyBlock: KeyBlock, publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
-      Epoch((1 to multiplier).foldLeft(publicKeys) { case (a, _) => a ::: publicKeys })
+      Epoch((1 to multiplier).foldLeft(List[ByteString]()) { case (a, _) => a ::: publicKeys })
   }
 
   case object Tick
