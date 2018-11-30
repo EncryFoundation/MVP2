@@ -81,6 +81,20 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
       checkMyTurn(isFirstBlock = true, scheduleForWriting)
+    case Tick if nextPeriod.timeToPublish =>
+      println("Epoch.timeToPublish checkMyTurn = false")
+            if (!hasWritten) {
+              println("Epoch.timeToPublish checkMyTurn = true")
+              checkMyTurn(isFirstBlock = true, scheduleForWriting)
+            }
+            else {
+              println("Epoch.TimeToPublish checkMyTurn = false")
+              checkMyTurn(isFirstBlock = false, List())
+            }
+      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
+      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+      checkScheduleUpdateTime()
+      logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
     case Tick if nextPeriod.noBlocksInTime =>
       logger.info(s"nextPeriod.noBlocksInTime. Height of last block is: ${lastBlock.height}")
       epoch = epoch.dropNextPublisherPublicKey
@@ -91,20 +105,6 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
       checkScheduleUpdateTime()
-    case Tick if nextPeriod.timeToPublish =>
-      println("Epoch.timeToPublish checkMyTurn = false")
-      //      if (!hasWritten) {
-      //        println("Epoch.timeToPublish checkMyTurn = true")
-      //        checkMyTurn(isFirstBlock = true, scheduleForWriting)
-      //      }
-      //      else {
-      //        println("Epoch.TimeToPublish checkMyTurn = false")
-      //        checkMyTurn(isFirstBlock = false, List())
-      //      }
-      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
-      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      checkScheduleUpdateTime()
-      logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
     case Tick =>
       logger.info("123")
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
@@ -167,7 +167,7 @@ object Planner {
   object Epoch extends StrictLogging {
 
     def apply(lastKeyBlock: KeyBlock, publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
-      Epoch((1 to multiplier).foldLeft(publicKeys) { case (a, _) => a ::: a })
+      Epoch((1 to multiplier).foldLeft(publicKeys) { case (a, _) => a ::: publicKeys })
   }
 
   case object Tick
