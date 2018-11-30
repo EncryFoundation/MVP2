@@ -15,7 +15,6 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 import mvp2.utils.{EncodingUtils, Settings}
-import scala.collection.immutable.SortedMap
 
 class Blockchainer(settings: Settings) extends PersistentActor with StrictLogging {
 
@@ -78,13 +77,13 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       )
       logger.info(s"Blockchainer apply new keyBlock with height ${block.height}. " +
         s"Blockchain's height is ${blockchain.chain.size}.")
-      if (isSynced) publisher ! block
       if (!isSynced && blockchain.isSynced(settings.blockPeriod)) {
         isSynced = true
         logger.info(s"Synced done. Sent this message on the Planner and Publisher.")
         publisher ! SyncingDone
         planner ! SyncingDone
       }
+      if (isSynced) publisher ! block
       applyBlockFromCache()
     case None =>
       networker ! OwnBlockchainHeight(blockchain.chain.lastOption.map(_.height).getOrElse(-1))
