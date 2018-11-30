@@ -47,11 +47,11 @@ class Planner(settings: Settings) extends CommonActor {
       } else epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
     case PeerPublicKey(key) =>
-      allPublicKeys = allPublicKeys :+ key
+      allPublicKeys = (allPublicKeys :+ key).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
       logger.info(s"Set allPublickKeys to1 : ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
       logger.info(s"Set allPublickKeys to2 : ${EncodingUtils.encode2Base16(key)}")
-      allPublicKeys = allPublicKeys :+ key
+      allPublicKeys = (allPublicKeys :+ key).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
       myPublicKey = key
       if (settings.otherNodes.isEmpty) self ! SyncingDone
     case _ =>
@@ -69,7 +69,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
       logger.info("Get key")
-      allPublicKeys = allPublicKeys :+ key
+      allPublicKeys = (allPublicKeys :+ key).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       myPublicKey = key
