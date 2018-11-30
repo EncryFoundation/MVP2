@@ -56,7 +56,6 @@ class Planner(settings: Settings) extends CommonActor {
 
   def syncedNode: Receive = {
     case keyBlock: KeyBlock =>
-      if (!hasWritten && keyBlock.scheduler.nonEmpty) hasWritten = true
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
       context.parent ! nextPeriod
@@ -75,22 +74,13 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      hasWritten = false
       epoch = Epoch(lastBlock, allPublicKeys, settings.epochMultiplier)
       logger.info(s"New epoch is: $epoch")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
-      checkMyTurn(isFirstBlock = true, scheduleForWriting)
+      checkMyTurn(scheduleForWriting)
     case Tick if nextPeriod.timeToPublish =>
-      println("Epoch.timeToPublish checkMyTurn = false")
-            if (!hasWritten) {
-              println("Epoch.timeToPublish checkMyTurn = true")
-              checkMyTurn(isFirstBlock = true, scheduleForWriting)
-            }
-            else {
-              println("Epoch.TimeToPublish checkMyTurn = false")
-              checkMyTurn(isFirstBlock = false, List())
-            }
+      checkMyTurn(scheduleForWriting)
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       checkScheduleUpdateTime()
@@ -100,8 +90,7 @@ class Planner(settings: Settings) extends CommonActor {
       epoch = epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is: $epoch")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      if (!hasWritten) checkMyTurn(isFirstBlock = true, scheduleForWriting)
-      else checkMyTurn(isFirstBlock = false, List())
+      checkMyTurn(scheduleForWriting)
       nextPeriod = Period(nextPeriod, settings)
       context.parent ! nextPeriod
       checkScheduleUpdateTime()
@@ -111,8 +100,8 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
   }
 
-  def checkMyTurn(isFirstBlock: Boolean, schedule: List[ByteString]): Unit = {
-    if (epoch.publicKeyOfNextPublisher == myPublicKey) publisher ! RequestForNewBlock(isFirstBlock, schedule)
+  def checkMyTurn(schedule: List[ByteString]): Unit = {
+    if (epoch.publicKeyOfNextPublisher == myPublicKey) publisher ! RequestForNewBlock(epoch.full, schedule)
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.publicKeyOfNextPublisher)
     epoch = epoch.dropNextPublisherPublicKey
   }
@@ -149,13 +138,13 @@ object Planner {
     }
   }
 
-  case class Epoch(schedule: List[ByteString]) {
+  case class Epoch(schedule: List[ByteString], full: Boolean = false) {
 
     def isApplicableBlock(block: KeyBlock): Boolean = block.publicKey == schedule.head
 
     def publicKeyOfNextPublisher: ByteString = schedule.head
 
-    def dropNextPublisherPublicKey: Epoch = if (schedule.nonEmpty) this.copy(schedule.tail) else this
+    def dropNextPublisherPublicKey: Epoch = if (schedule.nonEmpty) this.copy(schedule.tail, full = false) else this
 
     def isDone: Boolean = this.schedule.isEmpty
 
@@ -167,7 +156,7 @@ object Planner {
   object Epoch extends StrictLogging {
 
     def apply(lastKeyBlock: KeyBlock, publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
-      Epoch((1 to multiplier).foldLeft(List[ByteString]()) { case (a, _) => a ::: publicKeys })
+      Epoch((1 to multiplier).foldLeft(List[ByteString]()) { case (a, _) => a ::: publicKeys }, full = true)
   }
 
   case object Tick
