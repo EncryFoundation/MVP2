@@ -10,8 +10,6 @@ import mvp2.actors.Planner.Epoch
 import mvp2.data.InnerMessages._
 import mvp2.data.KeyBlock
 import mvp2.utils.{EncodingUtils, Settings}
-
-import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -60,6 +58,8 @@ class Planner(settings: Settings) extends CommonActor {
     case keyBlock: KeyBlock =>
       nextPeriod = Period(keyBlock, settings)
       lastBlock = keyBlock
+      logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
+        s"New period is: $nextPeriod.")
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
       logger.info(s"Get peers public keys for schedule: ${keys.map(EncodingUtils.encode2Base16).mkString(",")}")
@@ -67,7 +67,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
     case MyPublicKey(key) =>
-      logger.info("Get key")
+      logger.info("Get my key")
       allPublicKeys = (allPublicKeys :+ key).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
