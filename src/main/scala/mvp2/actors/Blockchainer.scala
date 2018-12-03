@@ -75,6 +75,7 @@ class Blockchainer(settings: Settings) extends PersistentActor with StrictLoggin
       blockchain += block
       blockCache -= block
       planner ! block
+      logger.info(s"Blockchainer sent new bloch to a planner with height ${block.height}")
       informator ! CurrentBlockchainInfo(
         blockchain.chain.lastOption.map(block => block.height).getOrElse(0),
         blockchain.chain.lastOption,

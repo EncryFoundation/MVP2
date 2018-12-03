@@ -31,6 +31,7 @@ class Planner(settings: Settings) extends CommonActor {
   var scheduleForWriting: List[ByteString] = List()
   var hasWritten: Boolean = false
   var needToCheckTimeToPublish: Boolean = true
+  var isRemoved: Boolean = false
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
@@ -61,6 +62,7 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       needToCheckTimeToPublish = true
       lastBlock = keyBlock
+      if (!isRemoved) epoch.dropNextPublisherPublicKey
       if (lastBlock.scheduler.nonEmpty) hasWritten = true
       logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
         s"New period is: $nextPeriod.")
@@ -86,13 +88,15 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
       checkMyTurn(scheduleForWriting)
+      isRemoved = true
     case Tick if nextPeriod.timeToPublish && needToCheckTimeToPublish =>
+      logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
       checkMyTurn(scheduleForWriting)
       needToCheckTimeToPublish = false
+      isRemoved = true
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       checkScheduleUpdateTime()
-      logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
     case Tick if nextPeriod.noBlocksInTime =>
       logger.info(s"nextPeriod.noBlocksInTime. Height of last block is: ${lastBlock.height}")
       //epoch = epoch.dropNextPublisherPublicKey
@@ -104,6 +108,7 @@ class Planner(settings: Settings) extends CommonActor {
       context.parent ! nextPeriod
       needToCheckTimeToPublish = true
       checkScheduleUpdateTime()
+      isRemoved = true
     case Tick =>
       logger.info("123")
     //      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")

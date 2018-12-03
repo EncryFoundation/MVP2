@@ -11,8 +11,8 @@ class Zombie extends CommonActor {
   }
 
   override def specialBehavior: Receive = {
-    case deadMessage: DeadLetter => logger.info(s"Dead letter: ${deadMessage.toString}.")
-    case unhandled: UnhandledMessage => logger.info(s"Unhandled message ${unhandled.toString}")
+    case deadMessage: DeadLetter => println(s"Dead letter: ${deadMessage.toString}.")
+    case unhandled: UnhandledMessage => println(s"Unhandled message ${unhandled.toString}")
   }
 
 }
