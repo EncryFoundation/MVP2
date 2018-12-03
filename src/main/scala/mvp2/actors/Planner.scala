@@ -98,8 +98,8 @@ class Planner(settings: Settings) extends CommonActor {
       checkScheduleUpdateTime()
     case Tick =>
       logger.info("123")
-      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
-      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
+//      logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
+//      logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
   }
 
   def checkMyTurn(schedule: List[ByteString]): Unit = {
