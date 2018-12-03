@@ -109,11 +109,12 @@ class Planner(settings: Settings) extends CommonActor {
   }
 
   def checkMyTurn(schedule: List[ByteString]): Unit = {
-    println(s"Going to check publisher at height: ${lastBlock.height + 1}." +
+    logger.info(s"Going to check publisher at height: ${lastBlock.height + 1}." +
       s" Next publisher is: ${EncodingUtils.encode2Base16(epoch.publicKeyOfNextPublisher)}. " +
-      s"My key: ${EncodingUtils.encode2Base16(myPublicKey)}. Result: ${epoch.publicKeyOfNextPublisher == myPublicKey}")
+      s"My key: ${EncodingUtils.encode2Base16(myPublicKey)}. Result: ${epoch.publicKeyOfNextPublisher == myPublicKey}." +
+      s"${epoch.publicKeyOfNextPublisher == myPublicKey}")
     if (epoch.publicKeyOfNextPublisher == myPublicKey) publisher ! RequestForNewBlock(epoch.full, schedule)
-    println(s"${epoch.full} && ${lastBlock.height}")
+    logger.info(s"${epoch.full} && ${lastBlock.height}")
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.publicKeyOfNextPublisher)
     epoch = epoch.dropNextPublisherPublicKey
     logger.info(s"Epoch after checkMyTurn is: $epoch")
