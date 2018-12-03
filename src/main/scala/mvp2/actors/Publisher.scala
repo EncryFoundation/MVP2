@@ -1,14 +1,15 @@
 package mvp2.actors
 
 import java.security.KeyPair
+
 import akka.actor.ActorSelection
 import akka.util.ByteString
 import mvp2.data.InnerMessages.{RequestForNewBlock, SyncingDone, TimeDelta}
 import mvp2.data.NetworkMessages.Blocks
 import mvp2.data.{KeyBlock, Mempool, Transaction}
-import mvp2.utils.ECDSA
+import mvp2.utils.{ECDSA, EncodingUtils, Settings}
+
 import scala.language.postfixOps
-import mvp2.utils.Settings
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -66,6 +67,7 @@ class Publisher(settings: Settings) extends CommonActor {
   def time: Long = System.currentTimeMillis() + currentDelta
 
   def createKeyBlock(isFirstBlock: Boolean, schedule: List[ByteString]): KeyBlock = {
+    logger.info(s"This is schedule for writing into new block ${schedule.map(EncodingUtils.encode2Base16).mkString(",")}")
     val currentTime: Long = time
     val keyBlock: KeyBlock =
       KeyBlock(lastKeyBlock.height + 1, currentTime, lastKeyBlock.currentBlockHash, mempool.mempool)
