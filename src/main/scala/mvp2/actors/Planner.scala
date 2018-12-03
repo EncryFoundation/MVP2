@@ -82,7 +82,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
       checkMyTurn(scheduleForWriting)
-    case Tick if nextPeriod.timeToPublish(needToCheckTimeToPublish) =>
+    case Tick if nextPeriod.timeToPublish && needToCheckTimeToPublish =>
       checkMyTurn(scheduleForWriting)
       needToCheckTimeToPublish = false
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
@@ -128,9 +128,9 @@ object Planner {
 
     val df = new SimpleDateFormat("HH:mm:ss")
 
-    def timeToPublish(needToCheckTimeToPublish: Boolean): Boolean = {
+    def timeToPublish: Boolean = {
       val now: Long = System.currentTimeMillis
-      now >= this.begin && now <= this.end && needToCheckTimeToPublish
+      now >= this.begin && now <= this.end
     }
 
     def noBlocksInTime: Boolean = System.currentTimeMillis > this.end
