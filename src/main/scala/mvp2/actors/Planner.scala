@@ -62,7 +62,7 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       needToCheckTimeToPublish = true
       lastBlock = keyBlock
-      if (!isRemoved) epoch.dropNextPublisherPublicKey
+      if (!isRemoved) epoch = epoch.dropNextPublisherPublicKey
       if (lastBlock.scheduler.nonEmpty) hasWritten = true
       logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
         s"New period is: $nextPeriod.")
