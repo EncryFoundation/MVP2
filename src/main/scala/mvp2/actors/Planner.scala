@@ -112,7 +112,7 @@ class Planner(settings: Settings) extends CommonActor {
     logger.info(s"Going to check publisher at height: ${lastBlock.height + 1}." +
       s" Next publisher is: ${EncodingUtils.encode2Base16(epoch.publicKeyOfNextPublisher)}. " +
       s"My key: ${EncodingUtils.encode2Base16(myPublicKey)}. Result: ${epoch.publicKeyOfNextPublisher == myPublicKey}." +
-      s" ${epoch.publicKeyOfNextPublisher == myPublicKey} ... $schedule")
+      s" ${epoch.publicKeyOfNextPublisher == myPublicKey} ... ${schedule.map(EncodingUtils.encode2Base16).mkString(",")}")
     if (epoch.publicKeyOfNextPublisher == myPublicKey) {
       logger.info(s"Got request for a new local block. Write schedule inside is. ${epoch.full}. Schedule is: " +
         s"${schedule.map(EncodingUtils.encode2Base16).mkString(",")}")
