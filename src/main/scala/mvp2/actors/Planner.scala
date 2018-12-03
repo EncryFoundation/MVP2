@@ -41,7 +41,7 @@ class Planner(settings: Settings) extends CommonActor {
     case keyBlock: KeyBlock =>
       lastBlock = keyBlock
       if (keyBlock.scheduler.nonEmpty) epoch = Epoch(keyBlock.scheduler)
-      epoch.dropNextPublisherPublicKey
+      epoch = epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
     case PeerPublicKey(key) =>
       allPublicKeys = (allPublicKeys :+ key).sortWith((a, b) => a.utf8String.compareTo(b.utf8String) > 1)
