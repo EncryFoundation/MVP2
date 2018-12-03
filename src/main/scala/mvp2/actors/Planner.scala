@@ -59,7 +59,8 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(keyBlock, settings)
       needToCheckTimeToPublish = true
       lastBlock = keyBlock
-      logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
+      if (lastBlock.scheduler.nonEmpty) hasWritten = true
+        logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
         s"New period is: $nextPeriod.")
       context.parent ! nextPeriod
     case KeysForSchedule(keys) =>
@@ -74,6 +75,7 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       myPublicKey = key
     case Tick if epoch.isDone =>
+      hasWritten = false
       logger.info(s"epoch.isDone. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
