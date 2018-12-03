@@ -40,7 +40,7 @@ class Planner(settings: Settings) extends CommonActor {
       context.become(syncedNode)
     case keyBlock: KeyBlock =>
       lastBlock = keyBlock
-      if (keyBlock.scheduler.nonEmpty) epoch = Epoch(keyBlock.scheduler, settings.epochMultiplier)
+      if (keyBlock.scheduler.nonEmpty) epoch = Epoch(keyBlock.scheduler)
       epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
     case PeerPublicKey(key) =>
@@ -175,6 +175,8 @@ object Planner {
 
     def apply(publicKeys: List[ByteString], multiplier: Int = 1): Epoch =
       Epoch((1 to multiplier).foldLeft(List[ByteString]()) { case (a, _) => a ::: publicKeys }, full = true)
+
+    def apply(schedule: List[ByteString]): Epoch = Epoch(schedule, full = true)
   }
 
   case object Tick

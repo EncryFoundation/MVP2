@@ -55,18 +55,18 @@ class InfluxActor(settings: Settings) extends CommonActor {
       msgFromRemote = newIncrements
       influxDB.write(settings.influx.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=${message.name} value=$time""")
-      logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
+//      logger.info(s"Report about msg:${EncodingUtils.encode2Base16(id)} with incr: $i")
     case ToNet(message, remote, id) =>
       val (newIncrements, i) = getMsgIncrements(remote, message.name, msgToRemote)
       msgToRemote = newIncrements
       influxDB.write(settings.influx.port,
         s"""networkMsg,node=$myNodeAddress,msgid=${EncodingUtils.encode2Base16(id) + i},msg=${message.name} value=$time""")
-      logger.info(s"Sent data about message to influx: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
+//      logger.info(s"Sent data about message to influx: $message with id: ${EncodingUtils.encode2Base16(id)} with incr: $i")
     case SyncMessageIteratorsFromRemote(iterators, remote) =>
-      logger.info(s"Sync iterators from $remote")
+//      logger.info(s"Sync iterators from $remote")
       msgFromRemote = msgFromRemote - remote + (remote -> iterators)
     case TimeDelta(delta: Long) =>
-      logger.info(s"Update delta to: $delta")
+//      logger.info(s"Update delta to: $delta")
       currentDelta = delta
     case _ =>
   }
