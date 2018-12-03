@@ -30,7 +30,7 @@ class Planner(settings: Settings) extends CommonActor {
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var scheduleForWriting: List[ByteString] = List()
   var hasWritten: Boolean = false
-  var isUsedInThisPeriod: Boolean = false
+  var needToCheckTimeToPublish: Boolean = true
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
@@ -57,7 +57,7 @@ class Planner(settings: Settings) extends CommonActor {
   def syncedNode: Receive = {
     case keyBlock: KeyBlock =>
       nextPeriod = Period(keyBlock, settings)
-      isUsedInThisPeriod = false
+      needToCheckTimeToPublish = true
       lastBlock = keyBlock
       logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
         s"New period is: $nextPeriod.")
@@ -82,9 +82,9 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
       checkMyTurn(scheduleForWriting)
-    case Tick if nextPeriod.timeToPublish(isUsedInThisPeriod) =>
+    case Tick if nextPeriod.timeToPublish(needToCheckTimeToPublish) =>
       checkMyTurn(scheduleForWriting)
-      isUsedInThisPeriod = true
+      needToCheckTimeToPublish = false
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       checkScheduleUpdateTime()
@@ -97,7 +97,7 @@ class Planner(settings: Settings) extends CommonActor {
       nextPeriod = Period(nextPeriod, settings)
       checkMyTurn(scheduleForWriting)
       context.parent ! nextPeriod
-      isUsedInThisPeriod = false
+      needToCheckTimeToPublish = true
       checkScheduleUpdateTime()
     case Tick =>
       logger.info("123")
@@ -128,9 +128,9 @@ object Planner {
 
     val df = new SimpleDateFormat("HH:mm:ss")
 
-    def timeToPublish(isUsed: Boolean): Boolean = {
+    def timeToPublish(needToCheckTimeToPublish: Boolean): Boolean = {
       val now: Long = System.currentTimeMillis
-      now >= this.begin && now <= this.end && !isUsed
+      now >= this.begin && now <= this.end && needToCheckTimeToPublish
     }
 
     def noBlocksInTime: Boolean = System.currentTimeMillis > this.end
