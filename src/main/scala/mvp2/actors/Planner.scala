@@ -40,6 +40,7 @@ class Planner(settings: Settings) extends CommonActor {
       context.become(syncedNode)
     case keyBlock: KeyBlock =>
       lastBlock = keyBlock
+      logger.info(s"Epoch before trying to update with new block from network is: $epoch")
       if (keyBlock.scheduler.nonEmpty) epoch = Epoch(keyBlock.scheduler)
       epoch = epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is(before sync): $epoch. Height of last block is: ${lastBlock.height}")
