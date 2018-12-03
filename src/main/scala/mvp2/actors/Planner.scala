@@ -18,7 +18,6 @@ class Planner(settings: Settings) extends CommonActor {
 
   import Planner.{Period, Tick}
 
-  var nextTurn: Period = Period(KeyBlock(), settings)
   val keyKeeper: ActorRef = context.actorOf(Props(classOf[KeyKeeper]), "keyKeeper")
   var myPublicKey: ByteString = ByteString.empty
   var allPublicKeys: List[ByteString] = List.empty
@@ -31,6 +30,7 @@ class Planner(settings: Settings) extends CommonActor {
   val networker: ActorSelection = context.system.actorSelection("/user/starter/blockchainer/networker")
   var scheduleForWriting: List[ByteString] = List()
   var hasWritten: Boolean = false
+  var isUsedInThisPeriod: Boolean = false
 
   override def specialBehavior: Receive = {
     case SyncingDone =>
@@ -57,6 +57,7 @@ class Planner(settings: Settings) extends CommonActor {
   def syncedNode: Receive = {
     case keyBlock: KeyBlock =>
       nextPeriod = Period(keyBlock, settings)
+      isUsedInThisPeriod = false
       lastBlock = keyBlock
       logger.info(s"Last block was updated. Height of last block is: ${lastBlock.height}. Period was updated. " +
         s"New period is: $nextPeriod.")
@@ -81,20 +82,22 @@ class Planner(settings: Settings) extends CommonActor {
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       scheduleForWriting = epoch.schedule
       checkMyTurn(scheduleForWriting)
-    case Tick if nextPeriod.timeToPublish =>
+    case Tick if nextPeriod.timeToPublish(isUsedInThisPeriod) =>
       checkMyTurn(scheduleForWriting)
+      isUsedInThisPeriod = true
       logger.info(s"Current epoch is: $epoch. Height of last block is: ${lastBlock.height}")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
       checkScheduleUpdateTime()
       logger.info(s"nextPeriod.timeToPublish. Height of last block is: ${lastBlock.height}")
     case Tick if nextPeriod.noBlocksInTime =>
       logger.info(s"nextPeriod.noBlocksInTime. Height of last block is: ${lastBlock.height}")
-      epoch = epoch.dropNextPublisherPublicKey
+      //epoch = epoch.dropNextPublisherPublicKey
       logger.info(s"Current epoch is: $epoch")
       logger.info(s"Current public keys: ${allPublicKeys.map(EncodingUtils.encode2Base16).mkString(",")}")
-      checkMyTurn(scheduleForWriting)
       nextPeriod = Period(nextPeriod, settings)
+      checkMyTurn(scheduleForWriting)
       context.parent ! nextPeriod
+      isUsedInThisPeriod = false
       checkScheduleUpdateTime()
     case Tick =>
       logger.info("123")
@@ -109,6 +112,7 @@ class Planner(settings: Settings) extends CommonActor {
     if (epoch.publicKeyOfNextPublisher == myPublicKey) publisher ! RequestForNewBlock(epoch.full, schedule)
     context.parent ! ExpectedBlockPublicKeyAndHeight(epoch.publicKeyOfNextPublisher)
     epoch = epoch.dropNextPublisherPublicKey
+    logger.info(s"Epoch after checkMyTurn is: $epoch")
   }
 
   def checkScheduleUpdateTime(): Unit =
@@ -124,9 +128,9 @@ object Planner {
 
     val df = new SimpleDateFormat("HH:mm:ss")
 
-    def timeToPublish: Boolean = {
+    def timeToPublish(isUsed: Boolean): Boolean = {
       val now: Long = System.currentTimeMillis
-      now >= this.begin && now <= this.end
+      now >= this.begin && now <= this.end && !isUsed
     }
 
     def noBlocksInTime: Boolean = System.currentTimeMillis > this.end
